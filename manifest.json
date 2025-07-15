@@ -1,12 +1,12 @@
 {
     "entry": "main.js",
     "name": "PShop",
-    "type": "lse-quickjs",
+    "type": "lse-nodejs",
     "description": "商店系统插件",
     "version": "3.0.0",
     "dependencies": [
         {
-            "name": "legacy-script-engine-quickjs"
+            "name": "legacy-script-engine-nodejs"
         }
     ]
 }
