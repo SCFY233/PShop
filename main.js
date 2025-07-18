@@ -786,6 +786,7 @@ mc.listen("onServerStarted", () => {
     log(`PShop 商店系统插件---加载成功,当前版本:${versions[1]}${fix} 作者: ${author}`);
     if (fix != "" && fix != " Release") logger.warn("你现在使用的版本为开发版,请勿用于生产环境!!!")
 })
+/*debug命令
 mc.regConsoleCmd("d", "debug", (args) => {
     eval(args[0])
 })
@@ -799,4 +800,4 @@ mc.regPlayerCmd("dd", "debug", (player, args) => {
 })
 mc.regPlayerCmd("ddd", "debug", (player, args) => {
     var2 = eval(args[0])
-})
+})*/
