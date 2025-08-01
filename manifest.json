@@ -2,7 +2,8 @@
     "entry": "main.js",
     "name": "PShop",
     "type": "lse-quickjs",
-    "description": "商店系统插件",
+    "author": "Planet工作室-星辰开发组-春风",
+    "description": "商店插件",
     "version": "3.0.0",
     "dependencies": [
         {
