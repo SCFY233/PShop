@@ -69,14 +69,21 @@ lang.inits({
     "shop.sell.group": "{info}{name}",
     "shop.itembuttonname": "{item.name} {item.money}{money.name}/个",
     "shop.groupbuttonname": "{item.name}",
-    "shop.button.lastpage": "上一页",
-    "shop.button.nextpage": "下一页",
+    "gui.button.lastpage": "上一页",
+    "gui.button.nextpage": "下一页",
     "gui.group.content": "第 {page} 页,共 {totalPages} 页",
-    "market.title": "{info2}主菜单",
-    "market.button.buy": "购买商品",
-    "market.button.ctrl": "管理商品",
-    "market.button.add": "上架商品",
-    "market.button.edit": "编辑商品",
+    "market.title": "主菜单",
+    "market.button.buy_sell": "购买/出售商品",
+    "market.buy_sell.maintitle": "{info}购买/出售商品",
+    "market.buy_sell.button.list": "以列表显示",
+    "market.buy_sell.button.search.normal": "简易搜索",
+    "market.buy_sell.button.search.better": "高级搜索",
+    "market.buy_sell.search.normal.input": "搜索名称(可带[求购]/[出售]前缀)",
+    "market.group.item": "{item.name} {item.count}个/{item.money}{money.name}",
+    "market.buy_sell_item.title": "{info2}{item.name}",
+    "market.buy_sell_item.content.old": `商品数据如下:\n物品名称:{item.name}\n物品数量:{itemdata.count}\n物品数据值:{itemdata.aux}\n总价格:{item.money}{money.name}\n平均价格:{avgmoney}{money.name}/个\n上架时间{item.time}\n上架玩家:{item.player}`, "market.button.ctrl": "管理商品",
+    "market.button.ctrl.button.add": "上架商品",
+    "market.button.crtl.button.edit": "编辑商品",
     "market.money": "商品价格",
     "market.buybypartial": "是否允许部分购买",
     "market.switch.delete": "删除此商品",
@@ -148,26 +155,27 @@ var initlogo = {
     "gui.back": "",
     "shop.buy": "",
     "shop.sell": "",
-    "shop.lastpage": "",
-    "shop.nextpage": "",
+    "gui.lastpage": "",
+    "gui.nextpage": "",
     "market.add": "",
     "market.add.byitemtype": "",
     "market.add.byitemnbt": "",
-    "market.buy": "",
-    "market.search": "",
-    "market.search.normal": "",
-    "market.search.better": "",
-    "market.manage": "",
+    "market.buy_sell": "",
+    "market.buy_sell.list": "",
+    "market.buy_sell.search.normal": "",
+    "market.buy_sell.search.better": "",
+    "market.ctrl": "",
     "market.reduce": "",
 }
+config.init("logo", initlogo)
 if (!same(config.get("logo"), initlogo)) {
-    var oldlogo = config.get("logo")
+    var oldlogo = config.get("logo") || {}
     for (let key in oldlogo) {
         if (!initlogo[key]) {
             initlogo[key] = oldlogo[key]
         }
     }
-    config.init("logo", oldlogo)
+    config.set("logo", initlogo)
 }
 config.inits({ "itemsperpage": 10 })
 const info = config.get("info").shop || "§l§b[Shop] §r";
@@ -590,10 +598,10 @@ function shopgroupgui(type, player, path, page = 0, backpages) {
     });
     // 添加翻页按钮
     if (page > 0) {
-        gui.addButton(lang.get("shop.button.lastpage"), config.get("logo")["shop.lastpage"]);
+        gui.addButton(lang.get("gui.button.lastpage"), config.get("logo")["gui.lastpage"]);
     }
     if (endIndex < groupdata.length) {
-        gui.addButton(lang.get("shop.button.nextpage"), config.get("logo")["shop.nextpage"]);
+        gui.addButton(lang.get("gui.button.nextpage"), config.get("logo")["gui.nextpage"]);
     }
     if (!same(backpages, [])) {
         gui.addButton(lang.get("gui.back"), config.get("logo")["gui.back"]);
@@ -757,6 +765,14 @@ if (config.get("enable").shop) {
     });
     com.setup();
 }
+function getIndexInArray(arr, item) {
+    const len = arr.length;
+    for (let i = 0; i < len; i++) {
+        if (same(arr[i], item)) return i;
+    }
+    return -1;
+}
+
 //市场翻页功能,类似shopgroupgui
 function marketitemsgui(player, title, items, page = 0, callback, backfunceval) {
     const ITEMS_PER_PAGE = config.get("itemsperpage"); // 每页显示的条目数
@@ -769,7 +785,7 @@ function marketitemsgui(player, title, items, page = 0, callback, backfunceval) 
     gui.setContent(replacestr(lang.get("gui.group.content"), { page: page + 1, totalPages: totalPages }));
     currentPageData.forEach(item => {
         var itemnbt = parseItemNbt(NBT.parseSNBT(item.itemnbt))
-        var str = replacestr(lang.get("market.group.item"), { "item.name": item.name, "item.count": itemnbt.Count, "item.money": item.money, "money.name": moneys.conf.name })
+        var str = replacestr(lang.get("market.group.item"), { "item.name": item.name, "item.count": itemnbt.parsednbtobj.Count, "item.money": item.money, "money.name": moneys.conf.name })
         if (item.image != null && item.image != "") {
             gui.addButton(str, item.image)
         } else if (item.type == "item") {
@@ -778,36 +794,79 @@ function marketitemsgui(player, title, items, page = 0, callback, backfunceval) 
             gui.addButton(str)
         }
     })
-    if (startIndex != 0) {
-        gui.addButton(lang.get("gui.cancel"), config.get("logo")["gui.cancel"])
+    if (page != 0) {
+        gui.addButton(lang.get("gui.button.lastpage"), config.get("logo")["gui.lastpage"])
     }
+    if (endIndex < items.length) {
+        gui.addButton(lang.get("gui.button.nextpage"), config.get("logo")["gui.nextpage"])
+    }
+    gui.addButton("gui.back", config.get("logo")["gui.back"])
+    player.sendForm(gui, (pl, id) => {
+        if (id == null) {
+            pl.tell(info + lang.get("gui.exit"));
+            return;
+        }
+        const lastButtonIndex = currentPageData.length + (page > 0 ? 1 : 0) + (endIndex < items.length ? 1 : 0);
+        if (id === lastButtonIndex) {
+            eval(backfunceval)
+        }
+        log([id, lastButtonIndex, currentPageData.length, currentPageData.length + (page > 0 ? 1 : 0)])
+        if (page > 0 && id === currentPageData.length) {
+            // 上一页
+            marketitemsgui(player, title, items, page - 1, callback, backfunceval)
+        } else if (endIndex < items.length && id === currentPageData.length + (page > 0 ? 1 : 0)) {
+            // 下一页
+            marketitemsgui(player, title, items, page + 1, callback, backfunceval)
+        } else {
+            const selectedData = items[startIndex + id];
+            callback(pl, selectedData, [
+                `marketitemsgui(pl,${title},${items},${page},this,backfuncevals[1])`,
+                backfunceval
+            ])
+        }
+    })
 }
 const market = {
     data: [],
     loaddata() {
-        market.data = JSON.parse(marketdatajson.read())
+        market.data = JSON.parse(marketdatajson.read()).data
     },
-    /**
-     *
-     */
     buy_sell_item(player, item, backargs) {
         const gui = mc.newSimpleForm()
         gui.setTitle(replacestr(lang.get("market.buy_sell_item.title"), { "info2": info2, "item.name": item.name }))
-        const itemdata = mc.newItem(itemnbt.parsednbtobj.Name, itemnbt.Count, itemnbt.parsednbtobj.tag)
+        const itemdata = mc.newItem(NBT.parseSNBT(item.itemnbt))
         if (item.content) {
             gui.setContent(item.content)
         } else {
-            gui.setContent(replacestr(lang.get("market.buy_sell_item.content"), {
+            gui.setContent(replacestr(lang.get("market.buy_sell_item.content.old"), {
                 "item.name": item.name,
-                "itemdata.count": itemdata.Count,
+                "itemdata.count": itemdata.count,
                 "itemdata.aux": itemdata.aux,
                 "item.money": item.money,
-                "avgmoney": (item.money / itemdata.Count).toFixed(2),
+                "avgmoney": (item.money / itemdata.count).toFixed(2),
                 "money.name": moneys.conf.name,
                 "item.time": item.time,
                 "item.player": item.player
             }))
         }
+        if (item.type == "sell") {
+            gui.addButton(lang.get("market.buy_sell_item.button.buy"), config.get("logo")["market.buy_sell_item.buy"])
+        } else {
+            gui.addButton(lang.get("market.buy_sell_item.button.sell"), config.get("logo")["market.buy_sell_item.sell"])
+        }
+        gui.addButton(lang.get("gui.back"), config.get("logo")["gui.back"])
+        player.sendForm(gui, (pl, id) => {
+            if (id == null) {
+                pl.tell(info + lang.get("gui.exit"));
+                return
+            }
+            if (id == 0) {
+                if (item.type == "sell") {
+                    getI
+                } else {
+                }
+            }
+        })
     },
     /**
      * 主界面
@@ -815,7 +874,7 @@ const market = {
      */
     main(player) {
         const gui = mc.newSimpleForm()
-        gui.setTitle(info + lang.get("market.title"))
+        gui.setTitle(info2 + lang.get("market.title"))
         gui.addButton(lang.get("market.button.buy_sell"), config.get("logo")["market.buy_sell"])
         gui.addButton(lang.get("market.button.ctrl"), config.get("logo")["market.ctrl"])
         gui.addButton(lang.get("gui.cancel"), config.get("logo")["gui.cancel"])
@@ -877,8 +936,7 @@ const market = {
         })
     }
 }
-
-
+market.loaddata()
 
 
 
