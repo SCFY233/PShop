@@ -1,0 +1,1045 @@
+{
+    "enchants": [
+        {
+            "id": 0,
+            "name": "protection",
+            "desc": "enchantment.protect.all",
+            "maxLevel": 4,
+            "frequency": "Common"
+        },
+        {
+            "id": 1,
+            "name": "fire_protection",
+            "desc": "enchantment.protect.fire",
+            "maxLevel": 4,
+            "frequency": "Uncommon"
+        },
+        {
+            "id": 2,
+            "name": "feather_falling",
+            "desc": "enchantment.protect.fall",
+            "maxLevel": 4,
+            "frequency": "Uncommon"
+        },
+        {
+            "id": 3,
+            "name": "blast_protection",
+            "desc": "enchantment.protect.explosion",
+            "maxLevel": 4,
+            "frequency": "Rare"
+        },
+        {
+            "id": 4,
+            "name": "projectile_protection",
+            "desc": "enchantment.protect.projectile",
+            "maxLevel": 4,
+            "frequency": "Uncommon"
+        },
+        {
+            "id": 5,
+            "name": "thorns",
+            "desc": "enchantment.thorns",
+            "maxLevel": 3,
+            "frequency": "VeryRare"
+        },
+        {
+            "id": 6,
+            "name": "respiration",
+            "desc": "enchantment.oxygen",
+            "maxLevel": 3,
+            "frequency": "Rare"
+        },
+        {
+            "id": 7,
+            "name": "depth_strider",
+            "desc": "enchantment.waterWalker",
+            "maxLevel": 3,
+            "frequency": "Rare"
+        },
+        {
+            "id": 8,
+            "name": "aqua_affinity",
+            "desc": "enchantment.waterWorker",
+            "maxLevel": 1,
+            "frequency": "Rare"
+        },
+        {
+            "id": 9,
+            "name": "sharpness",
+            "desc": "enchantment.damage.all",
+            "maxLevel": 5,
+            "frequency": "Common"
+        },
+        {
+            "id": 10,
+            "name": "smite",
+            "desc": "enchantment.damage.undead",
+            "maxLevel": 5,
+            "frequency": "Uncommon"
+        },
+        {
+            "id": 11,
+            "name": "bane_of_arthropods",
+            "desc": "enchantment.damage.arthropods",
+            "maxLevel": 5,
+            "frequency": "Uncommon"
+        },
+        {
+            "id": 12,
+            "name": "knockback",
+            "desc": "enchantment.knockback",
+            "maxLevel": 2,
+            "frequency": "Uncommon"
+        },
+        {
+            "id": 13,
+            "name": "fire_aspect",
+            "desc": "enchantment.fire",
+            "maxLevel": 2,
+            "frequency": "Rare"
+        },
+        {
+            "id": 14,
+            "name": "looting",
+            "desc": "enchantment.lootBonus",
+            "maxLevel": 3,
+            "frequency": "Rare"
+        },
+        {
+            "id": 15,
+            "name": "efficiency",
+            "desc": "enchantment.digging",
+            "maxLevel": 5,
+            "frequency": "Common"
+        },
+        {
+            "id": 16,
+            "name": "silk_touch",
+            "desc": "enchantment.untouching",
+            "maxLevel": 1,
+            "frequency": "VeryRare"
+        },
+        {
+            "id": 17,
+            "name": "unbreaking",
+            "desc": "enchantment.durability",
+            "maxLevel": 3,
+            "frequency": "Uncommon"
+        },
+        {
+            "id": 18,
+            "name": "fortune",
+            "desc": "enchantment.lootBonusDigger",
+            "maxLevel": 3,
+            "frequency": "Rare"
+        },
+        {
+            "id": 19,
+            "name": "power",
+            "desc": "enchantment.arrowDamage",
+            "maxLevel": 5,
+            "frequency": "Common"
+        },
+        {
+            "id": 20,
+            "name": "punch",
+            "desc": "enchantment.arrowKnockback",
+            "maxLevel": 2,
+            "frequency": "Rare"
+        },
+        {
+            "id": 21,
+            "name": "flame",
+            "desc": "enchantment.arrowFire",
+            "maxLevel": 1,
+            "frequency": "Rare"
+        },
+        {
+            "id": 22,
+            "name": "infinity",
+            "desc": "enchantment.arrowInfinite",
+            "maxLevel": 1,
+            "frequency": "VeryRare"
+        },
+        {
+            "id": 23,
+            "name": "luck_of_the_sea",
+            "desc": "enchantment.lootBonusFishing",
+            "maxLevel": 3,
+            "frequency": "Rare"
+        },
+        {
+            "id": 24,
+            "name": "lure",
+            "desc": "enchantment.fishingSpeed",
+            "maxLevel": 3,
+            "frequency": "Rare"
+        },
+        {
+            "id": 25,
+            "name": "frost_walker",
+            "desc": "enchantment.frostwalker",
+            "maxLevel": 2,
+            "frequency": "Rare"
+        },
+        {
+            "id": 26,
+            "name": "mending",
+            "desc": "enchantment.mending",
+            "maxLevel": 1,
+            "frequency": "Rare"
+        },
+        {
+            "id": 27,
+            "name": "binding",
+            "desc": "enchantment.curse.binding",
+            "maxLevel": 1,
+            "frequency": "VeryRare"
+        },
+        {
+            "id": 28,
+            "name": "vanishing",
+            "desc": "enchantment.curse.vanishing",
+            "maxLevel": 1,
+            "frequency": "VeryRare"
+        },
+        {
+            "id": 29,
+            "name": "impaling",
+            "desc": "enchantment.tridentImpaling",
+            "maxLevel": 5,
+            "frequency": "Uncommon"
+        },
+        {
+            "id": 30,
+            "name": "riptide",
+            "desc": "enchantment.tridentRiptide",
+            "maxLevel": 3,
+            "frequency": "Rare"
+        },
+        {
+            "id": 31,
+            "name": "loyalty",
+            "desc": "enchantment.tridentLoyalty",
+            "maxLevel": 3,
+            "frequency": "Common"
+        },
+        {
+            "id": 32,
+            "name": "channeling",
+            "desc": "enchantment.tridentChanneling",
+            "maxLevel": 1,
+            "frequency": "VeryRare"
+        },
+        {
+            "id": 33,
+            "name": "multishot",
+            "desc": "enchantment.crossbowMultishot",
+            "maxLevel": 1,
+            "frequency": "Rare"
+        },
+        {
+            "id": 34,
+            "name": "piercing",
+            "desc": "enchantment.crossbowPiercing",
+            "maxLevel": 4,
+            "frequency": "Common"
+        },
+        {
+            "id": 35,
+            "name": "quick_charge",
+            "desc": "enchantment.crossbowQuickCharge",
+            "maxLevel": 3,
+            "frequency": "Uncommon"
+        },
+        {
+            "id": 36,
+            "name": "soul_speed",
+            "desc": "enchantment.soul_speed",
+            "maxLevel": 3,
+            "frequency": "VeryRare"
+        },
+        {
+            "id": 37,
+            "name": "swift_sneak",
+            "desc": "enchantment.swift_sneak",
+            "maxLevel": 3,
+            "frequency": "VeryRare"
+        },
+        {
+            "id": 38,
+            "name": "wind_burst",
+            "desc": "enchantment.heavy_weapon.windburst",
+            "maxLevel": 3,
+            "frequency": "Rare"
+        },
+        {
+            "id": 39,
+            "name": "density",
+            "desc": "enchantment.heavy_weapon.density",
+            "maxLevel": 5,
+            "frequency": "Uncommon"
+        },
+        {
+            "id": 40,
+            "name": "breach",
+            "desc": "enchantment.heavy_weapon.breach",
+            "maxLevel": 4,
+            "frequency": "Rare"
+        }
+    ],
+    "potions": [
+        {
+            "id": 4,
+            "name": "awkward",
+            "desc": {
+                "Regular": "potion.awkward.name",
+                "Splash": "potion.awkward.splash.name",
+                "Lingering": "potion.awkward.linger.name"
+            },
+            "effect": {
+                "id": 0,
+                "name": "empty",
+                "desc": "",
+                "duration": 0,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 15,
+            "name": "long_swiftness",
+            "desc": {
+                "Regular": "potion.moveSpeed.name",
+                "Splash": "potion.moveSpeed.splash.name",
+                "Lingering": "potion.moveSpeed.linger.name"
+            },
+            "effect": {
+                "id": 1,
+                "name": "speed",
+                "desc": "potion.moveSpeed",
+                "duration": 9600,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 0,
+            "name": "water",
+            "desc": {
+                "Regular": "potion.emptyPotion.name",
+                "Splash": "potion.emptyPotion.splash.name",
+                "Lingering": "potion.emptyPotion.linger.name"
+            },
+            "effect": {
+                "id": 0,
+                "name": "empty",
+                "desc": "",
+                "duration": 0,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 1,
+            "name": "mundane",
+            "desc": {
+                "Regular": "potion.mundane.name",
+                "Splash": "potion.mundane.splash.name",
+                "Lingering": "potion.mundane.linger.name"
+            },
+            "effect": {
+                "id": 0,
+                "name": "empty",
+                "desc": "",
+                "duration": 0,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 34,
+            "name": "weakness",
+            "desc": {
+                "Regular": "potion.weakness.name",
+                "Splash": "potion.weakness.splash.name",
+                "Lingering": "potion.weakness.linger.name"
+            },
+            "effect": {
+                "id": 18,
+                "name": "weakness",
+                "desc": "potion.weakness",
+                "duration": 1800,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 2,
+            "name": "long_mundane",
+            "desc": {
+                "Regular": "potion.mundane.extended.name",
+                "Splash": "potion.mundane.extended.splash.name",
+                "Lingering": "potion.mundane.extended.linger.name"
+            },
+            "effect": {
+                "id": 0,
+                "name": "empty",
+                "desc": "",
+                "duration": 0,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 7,
+            "name": "invisibility",
+            "desc": {
+                "Regular": "potion.invisibility.name",
+                "Splash": "potion.invisibility.splash.name",
+                "Lingering": "potion.invisibility.linger.name"
+            },
+            "effect": {
+                "id": 14,
+                "name": "invisibility",
+                "desc": "potion.invisibility",
+                "duration": 3600,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 3,
+            "name": "thick",
+            "desc": {
+                "Regular": "potion.thick.name",
+                "Splash": "potion.thick.splash.name",
+                "Lingering": "potion.thick.linger.name"
+            },
+            "effect": {
+                "id": 0,
+                "name": "empty",
+                "desc": "",
+                "duration": 0,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 5,
+            "name": "nightvision",
+            "desc": {
+                "Regular": "potion.nightVision.name",
+                "Splash": "potion.nightVision.splash.name",
+                "Lingering": "potion.nightVision.linger.name"
+            },
+            "effect": {
+                "id": 16,
+                "name": "night_vision",
+                "desc": "potion.nightVision",
+                "duration": 3600,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 33,
+            "name": "strong_strength",
+            "desc": {
+                "Regular": "potion.damageBoost.name",
+                "Splash": "potion.damageBoost.splash.name",
+                "Lingering": "potion.damageBoost.linger.name"
+            },
+            "effect": {
+                "id": 5,
+                "name": "strength",
+                "desc": "potion.damageBoost",
+                "duration": 1800,
+                "amplifier": 1
+            }
+        },
+        {
+            "id": 20,
+            "name": "long_water_breathing",
+            "desc": {
+                "Regular": "potion.waterBreathing.name",
+                "Splash": "potion.waterBreathing.splash.name",
+                "Lingering": "potion.waterBreathing.linger.name"
+            },
+            "effect": {
+                "id": 13,
+                "name": "water_breathing",
+                "desc": "potion.waterBreathing",
+                "duration": 9600,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 6,
+            "name": "long_nightvision",
+            "desc": {
+                "Regular": "potion.nightVision.name",
+                "Splash": "potion.nightVision.splash.name",
+                "Lingering": "potion.nightVision.linger.name"
+            },
+            "effect": {
+                "id": 16,
+                "name": "night_vision",
+                "desc": "potion.nightVision",
+                "duration": 9600,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 8,
+            "name": "long_invisibility",
+            "desc": {
+                "Regular": "potion.invisibility.name",
+                "Splash": "potion.invisibility.splash.name",
+                "Lingering": "potion.invisibility.linger.name"
+            },
+            "effect": {
+                "id": 14,
+                "name": "invisibility",
+                "desc": "potion.invisibility",
+                "duration": 9600,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 9,
+            "name": "leaping",
+            "desc": {
+                "Regular": "potion.jump.name",
+                "Splash": "potion.jump.splash.name",
+                "Lingering": "potion.jump.linger.name"
+            },
+            "effect": {
+                "id": 8,
+                "name": "jump_boost",
+                "desc": "potion.jump",
+                "duration": 3600,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 10,
+            "name": "long_leaping",
+            "desc": {
+                "Regular": "potion.jump.name",
+                "Splash": "potion.jump.splash.name",
+                "Lingering": "potion.jump.linger.name"
+            },
+            "effect": {
+                "id": 8,
+                "name": "jump_boost",
+                "desc": "potion.jump",
+                "duration": 9600,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 22,
+            "name": "strong_healing",
+            "desc": {
+                "Regular": "potion.heal.name",
+                "Splash": "potion.heal.splash.name",
+                "Lingering": "potion.heal.linger.name"
+            },
+            "effect": {
+                "id": 6,
+                "name": "instant_health",
+                "desc": "potion.heal",
+                "duration": 1,
+                "amplifier": 1
+            }
+        },
+        {
+            "id": 17,
+            "name": "slowness",
+            "desc": {
+                "Regular": "potion.moveSlowdown.name",
+                "Splash": "potion.moveSlowdown.splash.name",
+                "Lingering": "potion.moveSlowdown.linger.name"
+            },
+            "effect": {
+                "id": 2,
+                "name": "slowness",
+                "desc": "potion.moveSlowdown",
+                "duration": 1800,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 11,
+            "name": "strong_leaping",
+            "desc": {
+                "Regular": "potion.jump.name",
+                "Splash": "potion.jump.splash.name",
+                "Lingering": "potion.jump.linger.name"
+            },
+            "effect": {
+                "id": 8,
+                "name": "jump_boost",
+                "desc": "potion.jump",
+                "duration": 1800,
+                "amplifier": 1
+            }
+        },
+        {
+            "id": 14,
+            "name": "swiftness",
+            "desc": {
+                "Regular": "potion.moveSpeed.name",
+                "Splash": "potion.moveSpeed.splash.name",
+                "Lingering": "potion.moveSpeed.linger.name"
+            },
+            "effect": {
+                "id": 1,
+                "name": "speed",
+                "desc": "potion.moveSpeed",
+                "duration": 3600,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 12,
+            "name": "fire_resistance",
+            "desc": {
+                "Regular": "potion.fireResistance.name",
+                "Splash": "potion.fireResistance.splash.name",
+                "Lingering": "potion.fireResistance.linger.name"
+            },
+            "effect": {
+                "id": 12,
+                "name": "fire_resistance",
+                "desc": "potion.fireResistance",
+                "duration": 3600,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 31,
+            "name": "strength",
+            "desc": {
+                "Regular": "potion.damageBoost.name",
+                "Splash": "potion.damageBoost.splash.name",
+                "Lingering": "potion.damageBoost.linger.name"
+            },
+            "effect": {
+                "id": 5,
+                "name": "strength",
+                "desc": "potion.damageBoost",
+                "duration": 3600,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 13,
+            "name": "long_fire_resistance",
+            "desc": {
+                "Regular": "potion.fireResistance.name",
+                "Splash": "potion.fireResistance.splash.name",
+                "Lingering": "potion.fireResistance.linger.name"
+            },
+            "effect": {
+                "id": 12,
+                "name": "fire_resistance",
+                "desc": "potion.fireResistance",
+                "duration": 9600,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 41,
+            "name": "long_slow_falling",
+            "desc": {
+                "Regular": "potion.slowFalling.name",
+                "Splash": "potion.slowFalling.splash.name",
+                "Lingering": "potion.slowFalling.linger.name"
+            },
+            "effect": {
+                "id": 27,
+                "name": "slow_falling",
+                "desc": "potion.slowFalling",
+                "duration": 4800,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 16,
+            "name": "strong_swiftness",
+            "desc": {
+                "Regular": "potion.moveSpeed.name",
+                "Splash": "potion.moveSpeed.splash.name",
+                "Lingering": "potion.moveSpeed.linger.name"
+            },
+            "effect": {
+                "id": 1,
+                "name": "speed",
+                "desc": "potion.moveSpeed",
+                "duration": 1800,
+                "amplifier": 1
+            }
+        },
+        {
+            "id": 18,
+            "name": "long_slowness",
+            "desc": {
+                "Regular": "potion.moveSlowdown.name",
+                "Splash": "potion.moveSlowdown.splash.name",
+                "Lingering": "potion.moveSlowdown.linger.name"
+            },
+            "effect": {
+                "id": 2,
+                "name": "slowness",
+                "desc": "potion.moveSlowdown",
+                "duration": 4800,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 46,
+            "name": "infested",
+            "desc": {
+                "Regular": "potion.infested.name",
+                "Splash": "potion.infested.splash.name",
+                "Lingering": "potion.infested.linger.name"
+            },
+            "effect": {
+                "id": 35,
+                "name": "infested",
+                "desc": "effect.infested",
+                "duration": 3600,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 19,
+            "name": "water_breathing",
+            "desc": {
+                "Regular": "potion.waterBreathing.name",
+                "Splash": "potion.waterBreathing.splash.name",
+                "Lingering": "potion.waterBreathing.linger.name"
+            },
+            "effect": {
+                "id": 13,
+                "name": "water_breathing",
+                "desc": "potion.waterBreathing",
+                "duration": 3600,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 21,
+            "name": "healing",
+            "desc": {
+                "Regular": "potion.heal.name",
+                "Splash": "potion.heal.splash.name",
+                "Lingering": "potion.heal.linger.name"
+            },
+            "effect": {
+                "id": 6,
+                "name": "instant_health",
+                "desc": "potion.heal",
+                "duration": 1,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 38,
+            "name": "long_turtle_master",
+            "desc": {
+                "Regular": "potion.turtleMaster.name",
+                "Splash": "potion.turtleMaster.splash.name",
+                "Lingering": "potion.turtleMaster.linger.name"
+            },
+            "effect": {
+                "id": 2,
+                "name": "slowness",
+                "desc": "potion.moveSlowdown",
+                "duration": 800,
+                "amplifier": 3
+            }
+        },
+        {
+            "id": 23,
+            "name": "harming",
+            "desc": {
+                "Regular": "potion.harm.name",
+                "Splash": "potion.harm.splash.name",
+                "Lingering": "potion.harm.linger.name"
+            },
+            "effect": {
+                "id": 7,
+                "name": "instant_damage",
+                "desc": "potion.harm",
+                "duration": 1,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 24,
+            "name": "strong_harming",
+            "desc": {
+                "Regular": "potion.harm.name",
+                "Splash": "potion.harm.splash.name",
+                "Lingering": "potion.harm.linger.name"
+            },
+            "effect": {
+                "id": 7,
+                "name": "instant_damage",
+                "desc": "potion.harm",
+                "duration": 1,
+                "amplifier": 1
+            }
+        },
+        {
+            "id": 25,
+            "name": "poison",
+            "desc": {
+                "Regular": "potion.poison.name",
+                "Splash": "potion.poison.splash.name",
+                "Lingering": "potion.poison.linger.name"
+            },
+            "effect": {
+                "id": 19,
+                "name": "poison",
+                "desc": "potion.poison",
+                "duration": 900,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 39,
+            "name": "strong_turtle_master",
+            "desc": {
+                "Regular": "potion.turtleMaster.name",
+                "Splash": "potion.turtleMaster.splash.name",
+                "Lingering": "potion.turtleMaster.linger.name"
+            },
+            "effect": {
+                "id": 2,
+                "name": "slowness",
+                "desc": "potion.moveSlowdown",
+                "duration": 400,
+                "amplifier": 5
+            }
+        },
+        {
+            "id": 26,
+            "name": "long_poison",
+            "desc": {
+                "Regular": "potion.poison.name",
+                "Splash": "potion.poison.splash.name",
+                "Lingering": "potion.poison.linger.name"
+            },
+            "effect": {
+                "id": 19,
+                "name": "poison",
+                "desc": "potion.poison",
+                "duration": 2400,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 27,
+            "name": "strong_poison",
+            "desc": {
+                "Regular": "potion.poison.name",
+                "Splash": "potion.poison.splash.name",
+                "Lingering": "potion.poison.linger.name"
+            },
+            "effect": {
+                "id": 19,
+                "name": "poison",
+                "desc": "potion.poison",
+                "duration": 450,
+                "amplifier": 1
+            }
+        },
+        {
+            "id": 44,
+            "name": "weaving",
+            "desc": {
+                "Regular": "potion.weaving.name",
+                "Splash": "potion.weaving.splash.name",
+                "Lingering": "potion.weaving.linger.name"
+            },
+            "effect": {
+                "id": 33,
+                "name": "weaving",
+                "desc": "effect.weaving",
+                "duration": 3600,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 28,
+            "name": "regeneration",
+            "desc": {
+                "Regular": "potion.regeneration.name",
+                "Splash": "potion.regeneration.splash.name",
+                "Lingering": "potion.regeneration.linger.name"
+            },
+            "effect": {
+                "id": 10,
+                "name": "regeneration",
+                "desc": "potion.regeneration",
+                "duration": 900,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 29,
+            "name": "long_regeneration",
+            "desc": {
+                "Regular": "potion.regeneration.name",
+                "Splash": "potion.regeneration.splash.name",
+                "Lingering": "potion.regeneration.linger.name"
+            },
+            "effect": {
+                "id": 10,
+                "name": "regeneration",
+                "desc": "potion.regeneration",
+                "duration": 2400,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 30,
+            "name": "strong_regeneration",
+            "desc": {
+                "Regular": "potion.regeneration.name",
+                "Splash": "potion.regeneration.splash.name",
+                "Lingering": "potion.regeneration.linger.name"
+            },
+            "effect": {
+                "id": 10,
+                "name": "regeneration",
+                "desc": "potion.regeneration",
+                "duration": 450,
+                "amplifier": 1
+            }
+        },
+        {
+            "id": 32,
+            "name": "long_strength",
+            "desc": {
+                "Regular": "potion.damageBoost.name",
+                "Splash": "potion.damageBoost.splash.name",
+                "Lingering": "potion.damageBoost.linger.name"
+            },
+            "effect": {
+                "id": 5,
+                "name": "strength",
+                "desc": "potion.damageBoost",
+                "duration": 9600,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 35,
+            "name": "long_weakness",
+            "desc": {
+                "Regular": "potion.weakness.name",
+                "Splash": "potion.weakness.splash.name",
+                "Lingering": "potion.weakness.linger.name"
+            },
+            "effect": {
+                "id": 18,
+                "name": "weakness",
+                "desc": "potion.weakness",
+                "duration": 4800,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 36,
+            "name": "wither",
+            "desc": {
+                "Regular": "potion.wither.name",
+                "Splash": "potion.wither.splash.name",
+                "Lingering": "potion.wither.linger.name"
+            },
+            "effect": {
+                "id": 20,
+                "name": "wither",
+                "desc": "potion.wither",
+                "duration": 800,
+                "amplifier": 1
+            }
+        },
+        {
+            "id": 37,
+            "name": "turtle_master",
+            "desc": {
+                "Regular": "potion.turtleMaster.name",
+                "Splash": "potion.turtleMaster.splash.name",
+                "Lingering": "potion.turtleMaster.linger.name"
+            },
+            "effect": {
+                "id": 2,
+                "name": "slowness",
+                "desc": "potion.moveSlowdown",
+                "duration": 400,
+                "amplifier": 3
+            }
+        },
+        {
+            "id": 40,
+            "name": "slow_falling",
+            "desc": {
+                "Regular": "potion.slowFalling.name",
+                "Splash": "potion.slowFalling.splash.name",
+                "Lingering": "potion.slowFalling.linger.name"
+            },
+            "effect": {
+                "id": 27,
+                "name": "slow_falling",
+                "desc": "potion.slowFalling",
+                "duration": 1800,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 45,
+            "name": "oozing",
+            "desc": {
+                "Regular": "potion.oozing.name",
+                "Splash": "potion.oozing.splash.name",
+                "Lingering": "potion.oozing.linger.name"
+            },
+            "effect": {
+                "id": 34,
+                "name": "oozing",
+                "desc": "effect.oozing",
+                "duration": 3600,
+                "amplifier": 0
+            }
+        },
+        {
+            "id": 42,
+            "name": "strong_slowness",
+            "desc": {
+                "Regular": "potion.moveSlowdown.name",
+                "Splash": "potion.moveSlowdown.splash.name",
+                "Lingering": "potion.moveSlowdown.linger.name"
+            },
+            "effect": {
+                "id": 2,
+                "name": "slowness",
+                "desc": "potion.moveSlowdown",
+                "duration": 400,
+                "amplifier": 3
+            }
+        },
+        {
+            "id": 43,
+            "name": "wind_charged",
+            "desc": {
+                "Regular": "potion.windCharged.name",
+                "Splash": "potion.windCharged.splash.name",
+                "Lingering": "potion.windCharged.linger.name"
+            },
+            "effect": {
+                "id": 32,
+                "name": "wind_charged",
+                "desc": "effect.wind_charged",
+                "duration": 3600,
+                "amplifier": 0
+            }
+        }
+    ]
+}

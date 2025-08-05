@@ -1,5 +1,6 @@
 // LiteLoader-AIDS automatic generated
 /// <reference path="c:/ll3/dev/dts/helperlib/src/index.d.ts" />
+///<reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
 const versions = [3, 0, 0]
 const fix = " Beta 25.07.18-1 开发版";
 const author = "Planet工作室-星辰开发组-春风";
@@ -10,25 +11,13 @@ const lang = new JsonConfigFile(path + "lang.json", JSON.stringify({
     "money.error.pl": "经济系统配置错误!请上报服务器管理员!",
     "gui.exit": "表单已关闭,未收到操作",
     "shop.buy.ok": "购买成功!",
-    "shop.buy.no": "你没有那么多钱,你只有:",
     "shop.mustnum": "数量必须是整数而且不能是负数",
-    "market.mustnum": "价格必须是整数而且不能是负数",
     "shop.sell.ok": "出售成功!",
-    "shop.sell.no": "你没有那么多物品,你只有:",
-    "market.error.nocount": "你没有填入价格!",
-    "market.buy.no": "你没有那么多钱,你只有:",
-    "market.buy.no2": "请先清理背包!",
-    "market.add.ok": "上架成功!",
-    "market.buy.ok": "购买成功!",
-    "market.reduce.ok": "下架成功!",
-    "market.opmenu.noperm": "你无权操作!"
 }));
-lang.delete("shop.buy.noroom")
-lang.delete("shop.sell.no2")
 /**
-* 初始化配置项组(方便函数)
-* @param {Object} obj 
-*/
+ * 初始化配置项(方便函数)
+ * @param {Object} obj 
+ */
 JsonConfigFile.prototype.inits = function (obj) {
     for (let i = 0; i < Object.keys(obj).length; i++) {
         this.init(Object.keys(obj)[i], obj[Object.keys(obj)[i]]);
@@ -38,11 +27,97 @@ JsonConfigFile.prototype._get = JsonConfigFile.prototype.get
 JsonConfigFile.prototype.get = function (name, _default = null) {
     var getdata = this._get(name, _default); return (getdata == null) ? name : getdata
 }
-LLSE_SimpleForm.prototype.addButtons = function (names, logos) {
+JsonConfigFile.prototype.deletes =
+    /**
+    * 删除配置(方便函数)
+    * @param {String} names 
+    */
+    function (names) {
+        for (let i = 0; i < names.length; i++) {
+            this.delete(names[i]);
+        }
+    }
+
+LLSE_SimpleForm.prototype.addButtons =
+    /**
+    * 添加按钮(方便函数)
+    * @param {Array<String>} names 
+    * @param {Array<String>} logos 
+    * @returns {LLSE_SimpleForm}
+    */
+    function (names, logos) {
     for (let i = 0; i < names.length; i++) {
         this.addButton(names[i], logos[i]);
     }
+        return this;
 }
+
+LLSE_SimpleForm.prototype.addLabels =
+    /**
+    * 添加文本(方便函数)
+    * @param {Array<String} texts 
+    * @returns {LLSE_SimpleForm}
+    */
+    function (texts) {
+        var str = ""
+        for (let i = 0; i < texts.length; i++) {
+            str += texts[i] + "\n";
+        }
+        str.slice(0, -2)
+        this.setContent(str);
+        return this;
+    }
+
+LLSE_Player.prototype.sendBetterModalForm =
+    /**
+    * 发送更好的模式表单
+    * @param {String} title 
+    * @param {String} content 
+    * @param {String} confirmButton 
+    * @param {String} cancelButton 
+    * @param {Function} callback 
+    * @param {String} confirmButtonImage 
+    * @param {String} cancelButtonImage 
+    */
+    function (title, content, confirmButton, cancelButton, callback, confirmButtonImage, cancelButtonImage) {
+        var gui = mc.newSimpleForm()
+        gui.setTitle(title).setContent(content).addButtons([confirmButton, cancelButton], [confirmButtonImage, cancelButtonImage])
+        this.sendForm(gui, function (player, id) {
+            if (id == null) callback(player, id); else callback(player, !id);
+        })
+    };
+
+LLSE_Player.prototype.sendMessageForm =
+    /**
+    * 发送一个消息框表单
+    * @param {String} title 
+    * @param {Array<String>||String} contents 
+    * @param {String} buttonName 
+    * @param {String} buttonImage 
+    * @param {Function} yescallback 
+    * @param {Function} nocallback 
+    */
+    function (title, contents, buttonName, buttonImage, yescallback, nocallback) {
+        var gui = mc.newSimpleForm()
+        gui.setTitle(title)
+        if (contents instanceof Array) {
+            gui.addLabels(contents)
+        } else gui.setContent(contents)
+        gui.addButton(buttonName, buttonImage)
+        this.sendForm(gui, function (player, id) {
+            if (id == 0) yescallback(player); else nocallback(player);
+        })
+    }
+lang.deletes([
+    "shop.sell.no2",
+    "shop.buy.noroom",
+    "market.error.nocount",
+    "market.buy.no",
+    "market.buy.no2",
+    "market.add.ok",
+    "market.buy.ok",
+    "market.reduce.ok",
+    "market.opmenu.noperm"])
 lang.inits({
     "import.error.PVip": "依赖 PVip 未安装,vip打折无法使用!",
     "import.warn.PMail": "依赖 PMail 未安装,已启用文件方式来给予玩家市场获得的经济",
@@ -54,11 +129,14 @@ lang.inits({
     "shop.buy.title": "{info}购买物品:{item.name}",
     "log.shop.buy": "购买物品:{item.name} 物品id:{item.id} 数量:{quantity} 价格:{totalCost}",
     "log.shop.sell": "出售物品:{item.name} 物品id:{item.id} 数量:{quantity} 价格:{totalCost}",
+    "log.market.buy": "购买商品:{item.name} 上架玩家:{item.player} 上架时间：{item.time} 数量:{count} 价格:{totalCost}",
     "gui.cancel": "取消",
     "gui.back": "返回",
+    "gui.confirm": "确定",
     "command.ori.typeerror": "请不要在命令方块或控制台使用商店的命令",
     "command.shop.desc": "商店",
     "command.market.desc": "全球市场",
+    "command.pshop.desc": "PShop插件主命令",
     "shop.input.buycount": "购买数量",
     "shop.sell.title": "{info}出售物品:{item.name}",
     "shop.sell.tip": "出售物品{data.name}\n物品标准类型名:{itemdata.id}\n价格:{itemdata.money}/个",
@@ -69,6 +147,8 @@ lang.inits({
     "shop.sell.group": "{info}{name}",
     "shop.itembuttonname": "{item.name} {item.money}{money.name}/个",
     "shop.groupbuttonname": "{item.name}",
+    "shop.buy.no": "{info}你没有那么多钱,你只有:{pl.money}",
+    "shop.sell.no": "{info}你没有那么多物品,你只有:{count}",
     "gui.button.lastpage": "上一页",
     "gui.button.nextpage": "下一页",
     "gui.group.content": "第 {page} 页,共 {totalPages} 页",
@@ -81,13 +161,12 @@ lang.inits({
     "market.buy_sell.search.normal.input": "搜索名称(可带[求购]/[出售]前缀)",
     "market.group.item": "{item.name} {item.count}个/{item.money}{money.name}",
     "market.buy_sell_item.title": "{info2}{item.name}",
-    "market.buy_sell_item.content.old": `商品数据如下: \n物品名称:{item.name}\n物品数量:{itemdata.count}\n物品数据值:{itemdata.aux} \n总价格:{item.money}{money.name}\n平均价格:{avgmoney}{money.name}/个\n上架时间{item.time}\n上架玩家:{item.player}`,
+    "market.buy_sell_item.content": `商品数据如下: \n物品名称:{item.name}\n物品数量:{itemdata.count}\n物品数据值:{itemdata.aux} \n总价格:{item.money}{money.name}\n平均价格:{avgmoney}{money.name}/个\n上架时间{item.time}\n上架玩家:{item.player}`,
     "market.buy_sell_item.content": "",
+    "market.buy_sell_item.buy.nomoney": "你没有那么多钱!,需要花费:{totalCost}{money.name},你只有：{pl.money}{money.name}",
+    "market.buy_sell_item.buy.confirm": "你确定要购买吗，你将花费{totalCost}{money.name}",
     "market.buy_sell_item.button.buy": "购买",
     "market.buy_sell_item.button.sell": "出售",
-    "market.buy_sell_item.cantbypartial": "该物品不允许部分购买",
-    "market.buy_sell_item.count": "购买数量:{count}",
-    "market.buy_sell_item.slider.count": "请选择购买数量",
     "market.sell.ok": "出售成功",
     "market.button.ctrl": "管理商品",
     "market.button.ctrl.button.add": "上架商品",
@@ -95,7 +174,8 @@ lang.inits({
     "market.edit.input.money": "商品价格",
     "market.edit.switch.buybypartial": "是否允许部分购买",
     "market.edit.switch.delete": "下架此商品",
-})
+}
+)
 //释放配置文件
 const config = new JsonConfigFile(path + "config.json", JSON.stringify({
     money: {
@@ -151,16 +231,20 @@ mc.listen("onServerStarted", function () {
     }
 })
 config.init("nbt", {
-    MatchBucketEntityCustomName: true,
+    MatchBucketEntityCustomName: false,
     MatchBucketEntityFallDistance: false,
     MatchBucketEntityFire: true,
     MatchBucketEntityStrength: true,
     MatchBucketEntitySheared: true,
     MatchRepairCost: false,
 })
+config.init("minPayment", 1)
+config.init("enablelang", ["zh_CN", "en_US"])
+config.init("defaultlang", "zh_CN")
 var initlogo = {
     "gui.cancel": "",
     "gui.back": "",
+    "gui.confirm": "",
     "shop.buy": "",
     "shop.sell": "",
     "gui.lastpage": "",
@@ -202,6 +286,62 @@ if (config.get("enable").log) {
         return logfile
     }
 } else var addlog = function () { }
+//常量
+var constsdata = new JsonConfigFile("./plugins/PShop/data.json")
+if (constsdata.read() == "{}") {
+    logger.error("数据文件为空,请检查文件是否损坏!")
+}
+const consts = {
+    enchants: {},
+    potions: {},
+    loaddata() {
+        this.enchants = constsdata.get("enchants") || []
+        this.potions = constsdata.get("potions") || []
+        loadconstsmap()
+    }
+}
+var enchs = {}
+var potions = {}
+function loadconstsmap() {
+    for (let i = 0; i < consts.enchants.length; i++) {
+        enchs[consts.enchants[i].id] = consts.enchants[i]
+    }
+    for (let i = 0; i < consts.potions.length; i++) {
+        potions[consts.potions[i].id] = consts.potions[i]
+
+    }
+}
+/**
+ * 解析lang
+ * @param {String} text 
+ * @returns 
+ */
+function parseLangFile(text) {
+    const lines = text.split('\n');
+    const result = {};
+
+    lines.forEach(line => {
+        const trimmedLine = line.trim();
+        if (trimmedLine === '' || trimmedLine.startsWith('#')) {
+            return;
+        }
+        // 使用正则表达式分割键值对，以第一个等号为分隔符
+        const [key, ...valueParts] = trimmedLine.split('=');
+        const value = valueParts.join('=');
+        result[key.trim()] = value.trim();
+    });
+    return result;
+}
+let gamelang = {}
+function loadlang(langcode) {
+    gamelang[langcode] = parseLangFile(File.readFrom("./resource_packs/vanilla/texts/" + langcode + ".lang"))
+}
+function loadlangs() {
+    let enablelangs = config.get("enablelang")
+    for (let i = 0; i < enablelangs.length; i++) {
+        loadlang(enablelangs[i])
+    }
+}
 //检测前置插件
 const imports = {
     "PMail": {
@@ -213,15 +353,18 @@ const imports = {
         enable: false,
         getplvipstatus: function () { },
     },
-    "PLib": {
-        enable: false,
-        getItem: function () { },
-    },
     "FinalTextures": {
         enable: false,
         getTextures: function () { },
     },
+    "GMLIB": {
+        enable: false,
+    },
+    "GMLIB-LegacyRemoteCallApi": {
+        enable: false,
+    }
 }
+
 //检测插件并导入相关函数
 function ChecAndImportPlugin(Plugins, PluginName, ImportsNames, ImportsToNames, LoggerLevel, LoggerMsgKey, ShouldUnload = false) {
     if (Plugins.includes(PluginName)) {
@@ -264,21 +407,30 @@ mc.listen("onServerStarted", () => {
             shouldUnload: false
         },
         {
-            name: "PLib",
-            importsNames: ["item"],
-            importsToNames: ["getItem"],
-            loggerLevel: 1,
-            loggerMsgKey: "import.error.PLib",
-            shouldUnload: true
-        },
-        {
             name: "FinalTextures",
             importsNames: ["getTextures"],
             importsToNames: ["getTextures"],
             loggerLevel: 1,
             loggerMsgKey: "import.error.FinalTextures",
             shouldUnload: true
+        },
+        {
+            name: "GMLIB",
+            importsNames: [],
+            importsToNames: [],
+            loggerLevel: 1,
+            loggerMsgKey: "import.error.GMLIB",
+            shouldUnload: true
+        },
+        {
+            name: "GMLIB-LegacyRemoteCallApi",
+            importsNames: [],
+            importsToNames: [],
+            loggerLevel: 1,
+            loggerMsgKey: "import.error.GMLIB.LegacyRemoteCall",
+            shouldUnload: true
         }
+
     ];
     for (let i = 0; i < pluginsToCheck.length; i++) {
         const plugin = pluginsToCheck[i];
@@ -296,6 +448,16 @@ mc.listen("onServerStarted", () => {
         }
     }
 });
+const { PAPI } = require('./GMLIB-LegacyRemoteCallApi/lib/BEPlaceholderAPI-JS');
+const { Event } = require('./GMLIB-LegacyRemoteCallApi/lib/EventAPI-JS');
+const { Scoreboard } = require('./GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS');
+const { JsonConfig } = require('./GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS');
+const { StaticFloatingText } = require('./GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS');
+const { DynamicFloatingText } = require('./GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS');
+const { Minecraft } = require('./GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS');
+const { Recipes } = require('./GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS');
+const { Experiments } = require('./GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS');
+const { GMLIB } = require('./GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS');
 //检测旧版本替换语言文件自动替换回来
 mc.listen("onServerStarted", function () {
     function a() {
@@ -358,35 +520,38 @@ const moneys = {
     get conf() {
         return config.get("money")
     },
+    get minPayment() {
+        return config.get("minPayment")
+    },
     /**
      * 加载配置文件
      * @returns {Boolean} 是否加载成功
      */
     loadconf() {
         try {
-            switch (moneys.conf.type) {
+            switch (this.conf.type) {
                 case "llmoney":
-                    moneys.get = (player) => {
+                    this.get = (player) => {
                         return Number(money.get(player.xuid))
                     }
-                    moneys.add = (player, value) => {
+                    this.add = (player, value) => {
                         player.addMoney(Number(value));
                         return true
                     }
-                    moneys.reduce = (player, value) => {
+                    this.reduce = (player, value) => {
                         player.reduceMoney(Number(value));
                         return true
                     }
                     break
                 case "score":
-                    moneys.get = (player) => {
+                    this.get = (player) => {
                         return Number(player.getScore(config.get("moneyscore")))
                     }
-                    moneys.add = (player, value) => {
+                    this.add = (player, value) => {
                         player.addScore(config.get("moneyscore"), Number(value));
                         return true
                     }
-                    moneys.reduce = (player, value) => {
+                    this.reduce = (player, value) => {
                         player.reduceScore(config.get("moneyscore"), Number(value));
                         return true
                     }
@@ -396,9 +561,9 @@ const moneys = {
                         player.tell(info + Format.Red + lang.get("money.error.pl"));
                         throw new Error(lang.get("money.error"));
                     }
-                    moneys.get = error
-                    moneys.add = error
-                    moneys.reduce = error
+                    this.get = error
+                    this.add = error
+                    this.reduce = error
             }
         } catch (e) {
             throw e
@@ -423,6 +588,34 @@ const moneys = {
      * @returns {Boolean} 是否成功增加
      */
     add(player, value) { },
+    cumulativeError: 0.0,
+    calculatePayment(beforemoney) {
+        const originalAmount = beforemoney;
+        const fractionalPart = originalAmount - Math.floor(originalAmount);
+        this.cumulativeError += fractionalPart;
+        let payment;
+        if (this.cumulativeError >= 1.0) {
+            this.cumulativeError -= 1.0;
+            payment = Math.floor(originalAmount) + 1;
+        }
+        else if (this.cumulativeError <= -1.0) {
+            this.cumulativeError += 1.0;
+            payment = Math.floor(originalAmount) - 1;
+        }
+        else {
+            const randomValue = Math.random();
+            if (randomValue < Math.abs(this.cumulativeError)) {
+                if (this.cumulativeError > 0) {
+                    payment = Math.floor(originalAmount) + 1;
+                } else {
+                    payment = Math.floor(originalAmount) - 1;
+                }
+            } else {
+                payment = Math.floor(originalAmount);
+            }
+        }
+        return Math.max(payment, this.minPayment);
+    }
 }
 moneys.loadconf()
 //检测正整数函数
@@ -463,21 +656,20 @@ function reductItembytype(player, itemtype, count) {
 */
 function parseItemNbt(nbt) {
     try {
-        var nbtobj = (Object.prototype.toString(nbt.getData).includes("function")) ? nbt : nbt.toObject();
-        var nbtobjItems = null;
-        var chargedItem = null;
-        // 基础属性
+        if (nbt == null || nbt == undefined) return
+        var nbtobj = nbt instanceof NbtCompound ? NBTtoObject(nbt) : nbt;
+        var nbtobjItems
+        var chargedItem
         delete nbtobj.Damage;
         delete nbtobj.WasPickedUp;
+        delete nbtobj.Slot;
         !!nbtobj.Block && delete nbtobj.Block.version;
-        // 自定义名称相关属性
         if (typeof nbtobj.tag == "object") {
             if (!config.get("nbt").MatchEntityBucketCustomName) {
                 const nameTags = ['CustomName', 'AppendCustomName', 'ColorID', 'ColorID2', 'BodyID', 'GroupName'];
                 nameTags.forEach(tag => delete nbtobj.tag[tag]);
             }
             !config.get("nbt").MatchRepairCost && delete nbtobj.tag.RepairCost;
-            // 实体属性
             const Tags = [
                 'FallDistance', 'Fire', 'Strength', 'Sheared', 'trackingHandle',
                 'definitions', 'UniqueID', 'Pos', 'Rotation', 'Motion',
@@ -490,12 +682,13 @@ function parseItemNbt(nbt) {
                 'InventoryVersion', 'LootTable', 'LootTableSeed', 'DamageTime', 'GeneArray',
                 'entries', 'TimeStamp', 'HasExecuted', 'CountTime', 'TrustedPlayersAmount',
                 'TrustedPlayer', 'fogCommandStack', 'properties', 'map_uuid', 'map_name_index',
-                'wasJustBrewed'
+                'wasJustBrewed', "Slot"
             ];
             Tags.forEach(tag => delete nbtobj.tag[tag]);
+            same(nbtobj.tag, {}) && delete nbtobj.tag;
             // 特殊处理Items和ChargedItem,Damage
-            nbtobj.tag.Items && (nbtobjItems = nbtobj.tag.Items && delete nbtobj.tag.Items);
-            nbtobj.tag && (chargedItem = nbtobj.tag.ChargedItem && delete nbtobj.tag.ChargedItem);
+            nbtobj.tag.Items != null && (nbtobjItems = nbtobj.tag.Items) && (delete nbtobj.tag.Items);
+            nbtobj.tag && (chargedItem = nbtobj.tag.ChargedItem) && (delete nbtobj.tag.ChargedItem);
             (nbtobj.tag.Damage == 0) && delete nbtobj.tag.Damage;
         }
         return {
@@ -507,16 +700,35 @@ function parseItemNbt(nbt) {
 };
 function parseallitems(items) {
     var r = []
-    if (items.length == 0) return r
-    for (let i = 0; i < items.length; i++) {
-        var pd = parseItemNbt(items[i])
-        if (pd.nbtitems != null) r.push(...parseallitems(pd.nbtitems))
-        if (pd.chargedItem != null) r.push(...parseallitems([pd.chargedItem]))
-        r.push(pd.parsednbtobj)
+    for (var i = 0; i < items.length; i++) {
+        r.push(parseItem(items[i]))
     }
     return r
 }
-
+function parseItem(item) {
+    var r = []
+    var pd
+    if (item instanceof LLSE_Item) {
+        pd = parseItemNbt(item.getNbt())
+    }
+    if (item instanceof NbtCompound) {
+        pd = parseItemNbt(item)
+    }
+    if (item instanceof String || typeof item == "string") {
+        pd = parseItemNbt(N.parseSNBT(item))
+    }
+    if (pd.nbtitems != undefined && pd.nbtitems != null) {
+        pd.nbtitems.forEach(item => {
+            var parse = parseItemNbt(item)
+            if (parse != undefined) {
+                r.push(item)
+            }
+        })
+    }
+    if (pd.chargedItem != undefined && pd.chargedItem != null) r.push(parseItem(pd.chargedItem))
+    r.push(pd.parsednbtobj)
+    return r
+}
 /**
  * 使用物品snbt扣除物品
  * @param {Player} player 
@@ -527,16 +739,10 @@ function reductItembysnbt(player, itemsnbt, count) {
     var inv = player.getInventory()
     var items = inv.getAllItems()
     var remainingcount = count
-    var canremovecount = 0
-    var itemparsed = parseallitems([NBT.parseSNBT(itemsnbt)])
-    for (var i = 0; i < items.length; i++) {
-        if (same(itemparsed, parseallitems([items[i].getNbt()]))) {
-            canremovecount += items[i].count
-        }
-    }
+    var canremovecount = getSameItemCount(items, parseItem(itemsnbt))
     if (canremovecount < count) { return false } else {
         for (var i = 0; i < items.length; i++) {
-            if (same(itemparsed, parseallitems([items[i].getNbt()]))) {
+            if (same(parseItem(items[i]), parseItem(itemsnbt))) {
                 inv.removeItem(i, ((remainingcount - items[i].count) >= 0) ? items[i].count : remainingcount)
                 remainingcount -= items[i].count
                 player.refreshItems()
@@ -545,6 +751,27 @@ function reductItembysnbt(player, itemsnbt, count) {
         }
     }
 }
+/**
+ * 获取相同类型物品数量
+ * @param {Array<Item>} items 
+ * @param {Item} item 
+ * @returns 
+ */
+function getSameItemCount(items, item) {
+    var count = 0;
+    for (var i = 0; i < items.length; i++) {
+        if (same(parseItem(items[i]), parseItem(item))) {
+            count += items[i].count;
+        }
+    }
+    return count;
+}
+/**
+ * 
+ * @param {Any} a 
+ * @param {Any} b 
+ * @returns 
+ */
 function same(a, b) {
     if (typeof a == "object" && typeof b == "object") {
         if (Array.isArray(a) && Array.isArray(b)) {
@@ -554,8 +781,10 @@ function same(a, b) {
             }
             return true;
         } else {
-            for (let key in a) {
-                if (!same(a[key], b[key])) return false;
+            const keys = Object.keys(a);
+            if (keys.length != Object.keys(b).length) return false;
+            for (var i = 0; i < keys.length; i++) {
+                if (!same(a[keys[i]], b[keys[i]])) return false;
             }
             return true;
         }
@@ -563,6 +792,75 @@ function same(a, b) {
         return a == b;
     }
 }
+/**
+ * 将NBT对象转换为JavaScript对象
+ * @param {NbtCompound | NbtList} nbt NBT对象
+ * @returns {Object | Array} 转换后的JavaScript对象或数组
+ */
+function NBTtoObject(nbt) {
+    const simpleTypes = [NBT.Byte, NBT.Short, NBT.Int, NBT.Long, NBT.Float, NBT.Double, NBT.String];
+    if (nbt.getType() === NBT.Compound) {
+        const obj = {};
+        const keys = nbt.getKeys();
+        for (let i = 0; i < keys.length; i++) {
+            const key = keys[i];
+            const tag = nbt.getTag(key);
+            const type = tag.getType();
+            if (simpleTypes.includes(type)) {
+                obj[key] = tag.get();
+            } else if (type === NBT.ByteArray) {
+                obj[key] = tag.getData(); // 或者你可以选择将其转换为Base64字符串
+            } else if (type === NBT.List) {
+                obj[key] = NBTtoObject(tag);
+            } else if (type === NBT.Compound) {
+                obj[key] = NBTtoObject(tag);
+            }
+        }
+        return obj;
+
+    } else if (nbt.getType() === NBT.List) {
+        const array = [];
+        const size = nbt.getSize();
+        for (let i = 0; i < size; i++) {
+            const tag = nbt.getTag(i);
+            const type = tag.getType();
+            if (simpleTypes.includes(type)) {
+                array.push(tag.get());
+            } else if (type === NBT.ByteArray) {
+                array.push(tag.getData());
+            } else if (type === NBT.List) {
+                array.push(NBTtoObject(tag));
+            } else if (type === NBT.Compound) {
+                array.push(NBTtoObject(tag));
+            }
+        }
+        return array;
+    }
+    return null;
+}
+function Num2Roman(num) {
+    const romanMap = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+    return (num <= 10 && num >= 1) ? romanMap[num] : num
+}
+/**
+ * 获取物品信息
+ * @param {Item} item 
+ * @param {String} langcode 
+ */
+function getItemInfo(item, langcode) {
+    var pd = parseItemNbt(item.getNbt())
+    if (pd.parsednbtobj.Name == undefined || pd.parsednbtobj.Name == "") return
+    var id = pd.parsednbtobj.Name
+    var items = []
+    if (pd.nbtitems != undefined && pd.nbtitems != null) {
+        for (let i = 0; i < pd.nbtitems; i++) {
+            items.push(getItemInfo(pd.nbtitems[i], langcode))
+        }
+    }
+    return potions[item.aux]
+    return [id, item.getCategoryName(), item.getCustomName(), item.getItemLockMode(), item.getTranslateName(langcode), item.getMaxCount()].join("|")
+}
+
 /**
  * 替换字符串
  * @param {String} str 字符串
@@ -574,6 +872,13 @@ function replacestr(str, replaceobj) {
         str = str.replaceAll("{" + key + "}", replaceobj[key])
     }
     return str
+}
+function getIndexInArray(arr, item) {
+    const len = arr.length;
+    for (let i = 0; i < len; i++) {
+        if (same(arr[i], item)) return i;
+    }
+    return -1;
 }
 /**
  * 商店组gui
@@ -676,14 +981,23 @@ const shop = {
                 }
                 const quantity = Number(data[1]);
                 if (!isPositiveInteger(quantity)) {
-                    pl.tell(info + lang.get("shop.mustnum"));
+                    pl.sendMessageForm(info, lang.get("shop.mustnum"), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => {
+                        shop.buy(type, pl, path, backpages)
+                    });
                     return
                 }
                 const totalCost = price * quantity;
                 if (moneys.get(pl) < totalCost) {
-                    pl.tell(info + lang.get("shop.buy.no") + moneys.get(pl));
+                    pl.sendMessageForm(info, replacestr(lang.get("shop.buy.no"), { "info": info, "pl.money": moneys.get(pl) }), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => {
+                        shop.buy(type, pl, path, backpages)
+                    });
                 } else {
                     moneys.reduce(pl, totalCost) && mc.runcmdEx(`give "${pl.realName}" ${itemdata.id} ${quantity} ${itemdata.aux} `)
+                    pl.sendBetterModalForm(info, replacestr(lang.get("shop.buy.ok"), { "info": "", "item.name": data.name, "item.id": itemdata.id, "quantity": quantity, "totalCost": totalCost }), lang.get("gui.back"), lang.get("gui.cancel"), (pl, res) => {
+                        if (res) {
+                            shop.buy(type, pl, path, backpages)
+                        } else return
+                    }, config.get("logo")["gui.back"], config.get("logo")["gui.cancel"])
                     addlog(player, replacestr(lang.get("log.shop.buy"), { "item.name": _data.name, "item.id": itemdata.id, "quantity": quantity, "totalCost": totalCost }))
                 }
             })
@@ -706,7 +1020,7 @@ const shop = {
                     var path1 = path.replace(/\./g, ' ').replace(/\[/g, ' [').trim().split(/\s+/);
                     var path2 = path1.slice(0, path1.length - 1)
                     if (path2.at(-1) == "data") path2.pop()
-                    shopgroupgui(type, player, path2.reduce((acc, cur) => { if (cur.startsWith('[')) { return acc + cur; } else { return acc + (acc ? '.' : '') + cur; } }, ''), backpages[backpages.length - 1], backpages.slice(0, backpages.length - 1));
+                    shopgroupgui(1, player, path2.reduce((acc, cur) => { if (cur.startsWith('[')) { return acc + cur; } else { return acc + (acc ? '.' : '') + cur; } }, ''), backpages[backpages.length - 1], backpages.slice(0, backpages.length - 1));
                     return
                 }
                 const quantity = data[1] == "all" ? itemCount : Number(data[1]);
@@ -714,15 +1028,22 @@ const shop = {
                     pl.tell(info + lang.get("shop.mustnum"));
                     return
                 } else if (quantity == 0) {
-                    pl.tell(info + lang.get("shop.sell.no") + itemCount)
-                    return
+                    pl.sendMessageForm(info, replacestr(lang.get("shop.sell.no"), { "info": info, "count": String(itemCount) }), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => {
+                        shop.sell(type, pl, path, backpages)
+                    })
                 }
                 const totalgive = quantity * itemdata.money;
                 if (itemCount < quantity) {
-                    pl.tell(info + lang.get("shop.sell.no") + itemCount);
+                    pl.sendMessageForm(info, replacestr(lang.get("shop.sell.no"), { "info": "", "count": String(itemCount) }), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => {
+                        shop.sell(type, pl, path, backpages)
+                    })
                 } else {
                     reductItembytype(pl, itemdata.id, quantity) && moneys.add(pl, totalgive)
-                    pl.tell(info + lang.get("shop.sell.ok"))
+                    pl.sendBetterModalForm(info, replacestr(lang.get("shop.sell.ok"), { "info": "", "item.name": data.name, "item.id": itemdata.id, "quantity": quantity, "totalCost": totalgive }), lang.get("gui.back"), lang.get("gui.cancel"), (pl, res) => {
+                        if (res) {
+                            shop.sell(type, pl, path, backpages)
+                        } else return
+                    }, config.get("logo")["gui.back"], config.get("logo")["gui.cancel"])
                     addlog(player, replacestr(lang.get("log.shop.sell"), { "item.name": _data.name, "item.id": itemdata.id, "quantity": quantity, "totalCost": totalgive }))
                 }
             })
@@ -766,21 +1087,14 @@ if (config.get("enable").shop) {
                 });
                 break;
             case "buy":
-                shop.buy(1, player, { name: replacestr(lang.get("shop.buy.maintitle"), { info: "" }), data: shop.data.Buy, type: "group" });
+                shopgroupgui(0, player, "shop.data.Buy", 0, [])
                 break;
             case "sell":
-                shop.sell(1, player, { name: replacestr(lang.get("shop.sell.maintitle"), { info: "" }), data: shop.data.Sell, type: "group" });
+                shopgroupgui(1, player, "shop.data.Sell", 0, [])
                 break;
         }
     });
     com.setup();
-}
-function getIndexInArray(arr, item) {
-    const len = arr.length;
-    for (let i = 0; i < len; i++) {
-        if (same(arr[i], item)) return i;
-    }
-    return -1;
 }
 
 //市场翻页功能,类似shopgroupgui
@@ -798,12 +1112,11 @@ function marketitemsgui(player, title, items, page = 0, callback, backfunceval) 
         var str = replacestr(lang.get("market.group.item"), { "item.name": item.name, "item.count": itemnbt.parsednbtobj.Count, "item.money": item.money, "money.name": moneys.conf.name })
         if (item.image != null && item.image != "") {
             gui.addButton(str, item.image)
-        } else if (item.type == "item") {
-            gui.addButton(str, imports.FinalTextures.getTextures(itemnbt.parsednbtobj.Name))
         } else {
-            gui.addButton(str)
+            gui.addButton(str, imports.FinalTextures.getTextures(itemnbt.parsednbtobj.Name))
         }
     })
+
     if (page != 0) {
         gui.addButton(lang.get("gui.button.lastpage"), config.get("logo")["gui.lastpage"])
     }
@@ -819,14 +1132,16 @@ function marketitemsgui(player, title, items, page = 0, callback, backfunceval) 
         const lastButtonIndex = currentPageData.length + (page > 0 ? 1 : 0) + (endIndex < items.length ? 1 : 0);
         if (id === lastButtonIndex) {
             eval(backfunceval)
+            return
         }
-        log([id, lastButtonIndex, currentPageData.length, currentPageData.length + (page > 0 ? 1 : 0)])
         if (page > 0 && id === currentPageData.length) {
             // 上一页
             marketitemsgui(player, title, items, page - 1, callback, backfunceval)
+            return
         } else if (endIndex < items.length && id === currentPageData.length + (page > 0 ? 1 : 0)) {
             // 下一页
             marketitemsgui(player, title, items, page + 1, callback, backfunceval)
+            return
         } else {
             const selectedData = items[startIndex + id];
             callback(pl, selectedData, [
@@ -835,6 +1150,7 @@ function marketitemsgui(player, title, items, page = 0, callback, backfunceval) 
                 items,
                 page
             ])
+            return
         }
     })
 }
@@ -855,7 +1171,7 @@ const market = {
                 "itemdata.count": itemdata.count,
                 "itemdata.aux": itemdata.aux,
                 "item.money": item.money,
-                "avgmoney": (item.money / itemdata.count).toFixed(2),
+                "avgmoney": `${(item.money / itemdata.count).toFixed(2)}(${(item.money / itemdata.count)})`,
                 "money.name": moneys.conf.name,
                 "item.time": item.time,
                 "item.player": item.player
@@ -887,17 +1203,69 @@ const market = {
                         if (datas == null) {
                             market.buy_sell_item(pl, item, backargs)
                         } else {
-                            log()
+                            const count = datas[0] || itemdata.count
+                            let beforemoney
+                            if (count != itemdata.count) beforemoney = count * ((item.money / itemdata.count).toFixed(2))
+                            else beforemoney = item.money
+                            const totalCost = moneys.calculatePayment(beforemoney)
+                            if (moneys.get(pl) < totalCost) {
+                                pl.sendBetterModalForm(
+                                    replacestr(lang.get("market.buy_sell_item.title"), { "info2": info2, "item.name": item.name }),
+                                    replacestr(lang.get("market.buy_sell_item.buy.nomoney"), { "totalCost": totalCost, "pl.money": moneys.get(pl), "money.name": moneys.conf.name }),
+                                    lang.get("gui.back"), lang.get("gui.cancel"),
+                                    (pl, res) => {
+                                        if (res == true) {
+                                            market.buy_sell_item(pl, item, backargs)
+                                        } else pl.tell(info2 + lang.get("gui.exit"))
+                                    },
+                                    config.get("logo")["gui.confirm"], config.get("logo")["gui.back"]
+                                )
+                            } else {
+                                pl.sendBetterModalForm(
+                                    replacestr(lang.get("market.buy_sell_item.title"), { "info2": info2, "item.name": item.name }),
+                                    replacestr(lang.get("market.buy_sell_item.buy.confirm"), { "totalCost": totalCost, "money.name": moneys.conf.name }),
+                                    lang.get("gui.confirm"), lang.get("gui.back"),
+                                    (pl, res) => {
+                                        if (res == true) {
+                                            var md = market.data
+                                            var i = getIndexInArray(md, item)
+                                            if (count != itemdata.count) {
+                                                var itemd = md[i]
+                                                itemd.money -= totalCost
+                                                itemd.itemnbt = itemdata.getNbt().setByte("Count", itemdata.count - count).toSNBT()
+                                            } else {
+                                                md.splice(i, 1)
+                                            }
+                                            marketdatajson.set("data", md)
+                                            moneys.reduce(pl, totalCost)
+                                            pl.giveItem(itemdata)
+                                            addlog(pl, replacestr(lang.get("log.market.buy"), { "item.name": item.name, "count": count, "item.time": item.time, "item.player": item.player, "totalCost": totalCost }))
+                                        } else {
+                                            market.buy_sell_item(pl, item, backargs)
+                                        }
+                                    },
+                                    config.get("logo")["gui.confirm"], config.get("logo")["gui.back"]
+                                )
+                            }
                         }
                     })
                 } else {
+                    const gui = mc.newCustomForm()
+                    gui.setTitle(replacestr(lang.get("market.buy_sell_item.title"), { "info2": info2, "item.name": item.name }))
+                    var items = player.getInventory().getAllItems()
+                    var havecount = getSameItemCount(items, itemdata)
+                    if (havecount == 0) {
+                        pl.sendMessageForm(lang.get("market.buy_sell_item.noitem"))
+                    } else {
 
+                    }
                 }
             } else if (id == 1) {
                 marketitemsgui(pl, backargs[1], backargs[2], backargs[3], market.buy_sell_item, backargs[0])
             }
         })
     },
+
     /**
      * 主界面
      * @param {Player} player 玩家
@@ -916,7 +1284,7 @@ const market = {
             if (id === 0) {
                 market.buy_sell(pl)
             } else if (id === 1) {
-                market.ctrl(pl)
+                // market.ctrl(pl)
             }
         })
     },
@@ -926,7 +1294,7 @@ const market = {
      */
     buy_sell(player) {
         const gui = mc.newSimpleForm()
-        gui.setTitle(info + lang.get("market.buy_sell.maintitle"))
+        gui.setTitle(replacestr(lang.get("market.buy_sell.maintitle"), { "info": info2 }))
         gui.addButton(lang.get("market.buy_sell.button.list"), config.get("logo")["market.buy_sell.list"])
         gui.addButton(lang.get("market.buy_sell.button.search.normal"), config.get("logo")["market.buy_sell.search.normal"])
         gui.addButton(lang.get("market.buy_sell.button.search.better"), config.get("logo")["market.buy_sell.search.better"])
@@ -938,13 +1306,13 @@ const market = {
             }
             switch (id) {
                 case 0:
-                    market.list(pl)
+                    marketitemsgui(pl, lang.get("market.buy_sell.list.title"), market.data, 0, market.buy_sell_item, "market.buy_sell(pl)")
                     break;
                 case 1:
-                    market.search_normal(pl)
+                    // market.search_normal(pl)
                     break;
                 case 2:
-                    market.search_better(pl)
+                    // market.search_better(pl)
                     break;
             }
         })
@@ -966,21 +1334,79 @@ const market = {
         })
     }
 }
-market.loaddata()
-
-
-
-
+if (config.get('enable').market) {
+    const com = mc.newCommand(config.get("commands").market, lang.get("command.market.desc"), PermType.Any);
+    com.setEnum("type", ["buy_sell", "ctrl", "gui", "op", "reload"])
+    com.optional("args", ParamType.Enum, "type", "args", 1)
+    com.setCallback((_cmd, ori, out, res) => {
+        if (ori.type !== 0) {
+            out.error(lang.get("command.ori.typeerror"));
+            return;
+        }
+        const pl = ori.player
+        switch (res.args) {
+            case "buy_sell":
+                market.buy_sell(pl)
+                break;
+            case "ctrl":
+                // market.ctrl(pl)
+                break;
+            case "gui":
+                market.main(pl)
+                break;
+            case "op":
+                // market.op(pl)
+                break;
+            case "reload":
+                market.loaddata()
+                out.success(lang.get("command.market.reload.success"))
+                break;
+        }
+    })
+    com.overload([])
+    com.overload(["args"])
+    com.setup()
+}
+const cmd = mc.newCommand("pshop", lang.get("command.pshop.desc"), PermType.GameMasters)
+cmd.setEnum("types", ["reload", "gui", "version"])
+cmd.optional("args", ParamType.Enum, "types", "args", 1)
+cmd.setCallback((_cmd, ori, out, res) => {
+    if (ori.type !== 0) {
+        out.error(lang.get("command.ori.typeerror"));
+        return;
+    }
+    const pl = ori.player
+    switch (res.type) {
+        case "reload":
+            out.success(lang.get("command.pshop.reload.success"))
+            break;
+        case "gui":
+            market.main(pl)
+            break;
+        case "version":
+            out.success(lang.get("command.pshop.version", { "version": versions.join(".") }))
+            break;
+    }
+})
+cmd.overload([])
+cmd.overload(["type"])
+cmd.setup()
+mc.listen("onServerStarted", () => {
+    loadlangs()
+    consts.loaddata()
+    market.loaddata()
+    shop.loaddata()
+})
 mc.listen("onServerStarted", () => {
     log(`PShop 商店系统插件---加载成功,当前版本:${versions.join(".")}${fix} 作者: ${author}`);
     if (fix != "" && fix != " Release") logger.warn("你现在使用的版本为开发版,请勿用于生产环境!!!")
 })
 mc.regConsoleCmd("d", "debug", (args) => {
-    eval(args[0])
+    eval(args.join(""))
 })
 mc.regPlayerCmd("d", "debug", (player, args) => {
-    player.tell(JSON.stringify(eval(args[0])) || "canttojson")
-    player.tell(String(eval(args[0])) || "canttostr")
+    player.tell(JSON.stringify(eval(args[0].join(''))) || "canttojson")
+    player.tell(String(eval(args[0].join(''))) || "canttostr")
 })
 var var1, var2 = null
 mc.regPlayerCmd("dd", "debug", (player, args) => {

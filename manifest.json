@@ -8,6 +8,12 @@
     "dependencies": [
         {
             "name": "legacy-script-engine-quickjs"
+        },
+        {
+            "name": "GMLIB-LegacyRemoteCallApi"
+        },
+        {
+            "name": "GMLIB"
         }
     ]
 }
