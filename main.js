@@ -81,12 +81,20 @@ lang.inits({
     "market.buy_sell.search.normal.input": "搜索名称(可带[求购]/[出售]前缀)",
     "market.group.item": "{item.name} {item.count}个/{item.money}{money.name}",
     "market.buy_sell_item.title": "{info2}{item.name}",
-    "market.buy_sell_item.content.old": `商品数据如下:\n物品名称:{item.name}\n物品数量:{itemdata.count}\n物品数据值:{itemdata.aux}\n总价格:{item.money}{money.name}\n平均价格:{avgmoney}{money.name}/个\n上架时间{item.time}\n上架玩家:{item.player}`, "market.button.ctrl": "管理商品",
+    "market.buy_sell_item.content.old": `商品数据如下: \n物品名称:{item.name}\n物品数量:{itemdata.count}\n物品数据值:{itemdata.aux} \n总价格:{item.money}{money.name}\n平均价格:{avgmoney}{money.name}/个\n上架时间{item.time}\n上架玩家:{item.player}`,
+    "market.buy_sell_item.content": "",
+    "market.buy_sell_item.button.buy": "购买",
+    "market.buy_sell_item.button.sell": "出售",
+    "market.buy_sell_item.cantbypartial": "该物品不允许部分购买",
+    "market.buy_sell_item.count": "购买数量:{count}",
+    "market.buy_sell_item.slider.count": "请选择购买数量",
+    "market.sell.ok": "出售成功",
+    "market.button.ctrl": "管理商品",
     "market.button.ctrl.button.add": "上架商品",
     "market.button.crtl.button.edit": "编辑商品",
-    "market.money": "商品价格",
-    "market.buybypartial": "是否允许部分购买",
-    "market.switch.delete": "删除此商品",
+    "market.edit.input.money": "商品价格",
+    "market.edit.switch.buybypartial": "是否允许部分购买",
+    "market.edit.switch.delete": "下架此商品",
 })
 //释放配置文件
 const config = new JsonConfigFile(path + "config.json", JSON.stringify({
@@ -164,6 +172,8 @@ var initlogo = {
     "market.buy_sell.list": "",
     "market.buy_sell.search.normal": "",
     "market.buy_sell.search.better": "",
+    "market.buy_sell_item.buy": "",
+    "market.buy_sell_item.sell": "",
     "market.ctrl": "",
     "market.reduce": "",
 }
@@ -820,8 +830,10 @@ function marketitemsgui(player, title, items, page = 0, callback, backfunceval) 
         } else {
             const selectedData = items[startIndex + id];
             callback(pl, selectedData, [
-                `marketitemsgui(pl,${title},${items},${page},this,backfuncevals[1])`,
-                backfunceval
+                backfunceval,
+                title,
+                items,
+                page
             ])
         }
     })
@@ -862,9 +874,27 @@ const market = {
             }
             if (id == 0) {
                 if (item.type == "sell") {
-                    getI
+                    const gui = mc.newCustomForm()
+                    gui.setTitle(replacestr(lang.get("market.buy_sell_item.title"), { "info2": info2, "item.name": item.name }))
+                    if (item.bypartial != 1) {
+                        gui.addLabel(lang.get("market.buy_sell_item.cantbypartial"))
+                        gui.addLabel(replacestr(lang.get("market.buy_sell_item.count"), { "count": itemdata.count }))
+                    } else {
+                        if (itemdata.count == 1) gui.addLabel(replacestr(lang.get("market.buy_sell_item.count"), { "count": itemdata.count }))
+                        else gui.addSlider(lang.get("market.buy_sell_item.slider.count"), 1, itemdata.count, 1, itemdata.count)
+                    }
+                    pl.sendForm(gui, (pl, datas) => {
+                        if (datas == null) {
+                            market.buy_sell_item(pl, item, backargs)
+                        } else {
+                            log()
+                        }
+                    })
                 } else {
+
                 }
+            } else if (id == 1) {
+                marketitemsgui(pl, backargs[1], backargs[2], backargs[3], market.buy_sell_item, backargs[0])
             }
         })
     },
