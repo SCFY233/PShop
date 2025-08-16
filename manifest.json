@@ -5,7 +5,6 @@
     "author": "Planet工作室-星辰开发组-春风",
     "description": "商店插件",
     "version": "3.0.0",
-    "fix": " Beta 25.08-10 开发版",
     "dependencies": [
         {
             "name": "legacy-script-engine-quickjs"

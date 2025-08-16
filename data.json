@@ -1041,5 +1041,367 @@
                 "amplifier": 0
             }
         }
+    ],
+    "effects": [
+        {
+            "id": 1,
+            "name": "speed",
+            "desc": "potion.moveSpeed",
+            "color": {
+                "r": 51,
+                "g": 235,
+                "b": 255
+            }
+        },
+        {
+            "id": 2,
+            "name": "slowness",
+            "desc": "potion.moveSlowdown",
+            "color": {
+                "r": 139,
+                "g": 175,
+                "b": 224
+            }
+        },
+        {
+            "id": 3,
+            "name": "haste",
+            "desc": "potion.digSpeed",
+            "color": {
+                "r": 217,
+                "g": 192,
+                "b": 67
+            }
+        },
+        {
+            "id": 4,
+            "name": "mining_fatigue",
+            "desc": "potion.digSlowDown",
+            "color": {
+                "r": 74,
+                "g": 66,
+                "b": 23
+            }
+        },
+        {
+            "id": 5,
+            "name": "strength",
+            "desc": "potion.damageBoost",
+            "color": {
+                "r": 255,
+                "g": 199,
+                "b": 0
+            }
+        },
+        {
+            "id": 6,
+            "name": "instant_health",
+            "desc": "potion.heal",
+            "color": {
+                "r": 248,
+                "g": 36,
+                "b": 35
+            }
+        },
+        {
+            "id": 7,
+            "name": "instant_damage",
+            "desc": "potion.harm",
+            "color": {
+                "r": 169,
+                "g": 101,
+                "b": 106
+            }
+        },
+        {
+            "id": 8,
+            "name": "jump_boost",
+            "desc": "potion.jump",
+            "color": {
+                "r": 253,
+                "g": 255,
+                "b": 132
+            }
+        },
+        {
+            "id": 9,
+            "name": "nausea",
+            "desc": "potion.confusion",
+            "color": {
+                "r": 85,
+                "g": 29,
+                "b": 74
+            }
+        },
+        {
+            "id": 10,
+            "name": "regeneration",
+            "desc": "potion.regeneration",
+            "color": {
+                "r": 205,
+                "g": 92,
+                "b": 171
+            }
+        },
+        {
+            "id": 11,
+            "name": "resistance",
+            "desc": "potion.resistance",
+            "color": {
+                "r": 145,
+                "g": 70,
+                "b": 240
+            }
+        },
+        {
+            "id": 12,
+            "name": "fire_resistance",
+            "desc": "potion.fireResistance",
+            "color": {
+                "r": 255,
+                "g": 153,
+                "b": 0
+            }
+        },
+        {
+            "id": 13,
+            "name": "water_breathing",
+            "desc": "potion.waterBreathing",
+            "color": {
+                "r": 152,
+                "g": 218,
+                "b": 192
+            }
+        },
+        {
+            "id": 14,
+            "name": "invisibility",
+            "desc": "potion.invisibility",
+            "color": {
+                "r": 246,
+                "g": 246,
+                "b": 246
+            }
+        },
+        {
+            "id": 15,
+            "name": "blindness",
+            "desc": "potion.blindness",
+            "color": {
+                "r": 31,
+                "g": 31,
+                "b": 35
+            }
+        },
+        {
+            "id": 16,
+            "name": "night_vision",
+            "desc": "potion.nightVision",
+            "color": {
+                "r": 194,
+                "g": 255,
+                "b": 102
+            }
+        },
+        {
+            "id": 17,
+            "name": "hunger",
+            "desc": "potion.hunger",
+            "color": {
+                "r": 88,
+                "g": 118,
+                "b": 83
+            }
+        },
+        {
+            "id": 18,
+            "name": "weakness",
+            "desc": "potion.weakness",
+            "color": {
+                "r": 72,
+                "g": 77,
+                "b": 72
+            }
+        },
+        {
+            "id": 19,
+            "name": "poison",
+            "desc": "potion.poison",
+            "color": {
+                "r": 135,
+                "g": 163,
+                "b": 99
+            }
+        },
+        {
+            "id": 20,
+            "name": "wither",
+            "desc": "potion.wither",
+            "color": {
+                "r": 115,
+                "g": 97,
+                "b": 86
+            }
+        },
+        {
+            "id": 21,
+            "name": "health_boost",
+            "desc": "potion.healthBoost",
+            "color": {
+                "r": 248,
+                "g": 125,
+                "b": 35
+            }
+        },
+        {
+            "id": 22,
+            "name": "absorption",
+            "desc": "potion.absorption",
+            "color": {
+                "r": 37,
+                "g": 82,
+                "b": 165
+            }
+        },
+        {
+            "id": 23,
+            "name": "saturation",
+            "desc": "potion.saturation",
+            "color": {
+                "r": 248,
+                "g": 36,
+                "b": 35
+            }
+        },
+        {
+            "id": 24,
+            "name": "levitation",
+            "desc": "potion.levitation",
+            "color": {
+                "r": 206,
+                "g": 255,
+                "b": 255
+            }
+        },
+        {
+            "id": 25,
+            "name": "fatal_poison",
+            "desc": "potion.poison",
+            "color": {
+                "r": 78,
+                "g": 147,
+                "b": 49
+            }
+        },
+        {
+            "id": 26,
+            "name": "conduit_power",
+            "desc": "potion.conduitPower",
+            "color": {
+                "r": 29,
+                "g": 194,
+                "b": 209
+            }
+        },
+        {
+            "id": 27,
+            "name": "slow_falling",
+            "desc": "potion.slowFalling",
+            "color": {
+                "r": 243,
+                "g": 207,
+                "b": 185
+            }
+        },
+        {
+            "id": 28,
+            "name": "bad_omen",
+            "desc": "effect.badOmen",
+            "color": {
+                "r": 11,
+                "g": 97,
+                "b": 56
+            }
+        },
+        {
+            "id": 29,
+            "name": "village_hero",
+            "desc": "effect.villageHero",
+            "color": {
+                "r": 68,
+                "g": 255,
+                "b": 68
+            }
+        },
+        {
+            "id": 30,
+            "name": "darkness",
+            "desc": "effect.darkness",
+            "color": {
+                "r": 68,
+                "g": 255,
+                "b": 68
+            }
+        },
+        {
+            "id": 31,
+            "name": "trial_omen",
+            "desc": "effect.trial_omen",
+            "color": {
+                "r": 22,
+                "g": 166,
+                "b": 166
+            }
+        },
+        {
+            "id": 32,
+            "name": "wind_charged",
+            "desc": "effect.wind_charged",
+            "color": {
+                "r": 189,
+                "g": 201,
+                "b": 255
+            }
+        },
+        {
+            "id": 33,
+            "name": "weaving",
+            "desc": "effect.weaving",
+            "color": {
+                "r": 120,
+                "g": 105,
+                "b": 90
+            }
+        },
+        {
+            "id": 34,
+            "name": "oozing",
+            "desc": "effect.oozing",
+            "color": {
+                "r": 153,
+                "g": 255,
+                "b": 163
+            }
+        },
+        {
+            "id": 35,
+            "name": "infested",
+            "desc": "effect.infested",
+            "color": {
+                "r": 140,
+                "g": 155,
+                "b": 140
+            }
+        },
+        {
+            "id": 36,
+            "name": "raid_omen",
+            "desc": "effect.raid_omen",
+            "color": {
+                "r": 222,
+                "g": 64,
+                "b": 88
+            }
+        }
     ]
 }

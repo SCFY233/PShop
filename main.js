@@ -3,10 +3,9 @@
 ///<reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
 const path = "./plugins/Planet/PShop/";
 const workpath = "./plugins/PShop/";
-const manifest = new JsonConfigFile(workpath + "manifest.json")
-const versions = manifest.get("version")
-const fix = manifest.get("fix")
-const author = manifest.get("author");
+const versions = "3.0.0"
+const fix = " Beta 25.08-10 开发版"
+const author = "Planet工作室-星辰开发组-春风"
 //释放语言文件
 const lang = new JsonConfigFile(path + "lang.json", JSON.stringify({
     "money.error": "经济系统配置错误!",
@@ -48,11 +47,11 @@ LLSE_SimpleForm.prototype.addButtons =
     * @returns {LLSE_SimpleForm}
     */
     function (names, logos) {
-    for (let i = 0; i < names.length; i++) {
-        this.addButton(names[i], logos[i]);
-    }
+        for (let i = 0; i < names.length; i++) {
+            this.addButton(names[i], logos[i]);
+        }
         return this;
-}
+    }
 
 LLSE_SimpleForm.prototype.addLabels =
     /**
@@ -69,7 +68,6 @@ LLSE_SimpleForm.prototype.addLabels =
         this.setContent(str);
         return this;
     }
-
 LLSE_Player.prototype.sendBetterModalForm =
     /**
     * 发送更好的模式表单
@@ -139,11 +137,12 @@ lang.inits({
     "config.update.success": "检测到旧版配置文件,已经自动更新!",
     "gives.update.success.money": "检测到旧版给予(money)文件,已经自动更新!",
     "gives.update.success.item": "检测到旧版给予(item)文件,已经自动更新!",
-    "shop.buy.tip": "购买物品{item.name}\n物品标准类型名:{item.id}\n物品数据值(Aux):{item.aux}\n价格:{price}/个,(原价{original_price}/个)",
+    "shop.buy.tip": "购买物品{item.name}\n物品标准类型名:{item.id}\n物品数据值(Aux):{item.aux}\n价格:{money}/个,(原价{original_money}/个)",
     "shop.buy.title": "{info}购买物品:{item.name}",
     "log.shop.buy": "购买物品:{item.name} 物品id:{item.id} 数量:{quantity} 价格:{totalCost}",
     "log.shop.sell": "出售物品:{item.name} 物品id:{item.id} 数量:{quantity} 价格:{totalCost}",
     "log.market.buy": "购买商品:{item.name} 上架玩家:{item.player} 上架时间:{item.time} 数量:{count} 价格:{totalCost}",
+    "log.market.sell": "出售商品:{item.name} 上架玩家:{item.player} 上架时间:{item.time} 数量:{count} 价格:{totalCost}",
     "gui.cancel": "取消",
     "gui.back": "返回",
     "gui.confirm": "确定",
@@ -177,10 +176,16 @@ lang.inits({
     "market.buy_sell.button.search.better": "高级搜索",
     "market.group.item": "{item.name} {item.count}个/{item.money}{money.name}",
     "market.buy_sell_item.title": "{info2}{item.name}",
-    "market.buy_sell_item.content": `商品数据如下: \n物品名称:{item.name}\n物品标准类型名:{itemdata.type}\n物品数量:{itemdata.count}\n物品数据值:{itemdata.aux} \n总价格:{item.money}{money.name}\n平均价格:{avgmoney}{money.name}/个\n上架时间{item.time}\n上架玩家:{item.player}`,
+    "market.buy_sell_item.content": `商品数据如下: \n物品名称:{item.name}\n物品自定义名称{item.customname}\n物品标准类型名:{itemdata.type}\n物品数量:{itemdata.count}\n物品数据值:{itemdata.aux} \n总价格:{item.money}{money.name}\n平均价格:{avgmoney}{money.name}/个\n上架时间{item.time}\n上架玩家:{item.player}`,
+    "market.buy_sell_item.item.content": " 物品名称:{item.name}\n 物品自定义名称{item.customname}\n 物品标准类型名:{itemdata.type}\n 物品数量:{itemdata.count}\n 物品数据值:{itemdata.aux}",
+    "market.buy_sell_item.content.no_customname": "无",
+    "market.buy_sell_item.content.enchants": "附魔:{enchants}",
+    "market.buy_sell_item.content.potion": "药水效果:{potion.effect}\n持续时间:{potion.duration}",
+    "market.buy_sell_item.content.includeitems": "包含物品:{items}",
+    "market.buy_sell_item.slider.count": "选择数量",
     "market.buy_sell_item.buy.cantbypartial": "该物品不允许部分购买",
     "market.buy_sell_item.sell.cantbypartial": "该物品不允许部分出售",
-    "market.buy_sell_item.noitem": "你没有物品",
+    "market.buy_sell_item.noitem": "你没有足够的该物品",
     "market.buy_sell_item.sell.count": "出售数量:{havecount}/{count}",
     "market.buy_sell_item.sell.slider.count": "出售数量",
     "market.buy_sell_item.sell.confirm": "你确定要出售吗,你将获得{totalCost}{money.name}",
@@ -197,7 +202,7 @@ lang.inits({
     "market.buy_sell.search.normal.input": "搜索名称(可带[求购]/[出售]前缀)",
     "market.search.normal.noitem": "没有找到任何商品!",
     "market.search.normal.title": "{info}搜索: {keyword}",
-    "market.buy_sell_item.player.sell.success": "你成功求购了{item.name},你获得了玩家出售给你的物品",
+    "market.buy_sell_item.player.sell.success": "你成功收购了{item.name},你获得了玩家出售给你的物品",
     "market.buy_sell_item.player.buy.success": "你成功出售了{item.name},你获得了{totalCost}{money.name}",
     "market.search.better.maintitle": "{info}高级搜索",
     "market.search.betterinput": "请输入搜索关键词",
@@ -209,8 +214,8 @@ lang.inits({
     "market.search.bettersort.dropdown.nosort": "不排序",
     "market.search.bettersort.dropdown.up": "正序",
     "market.search.bettersort.dropdown.down": "降序",
-    "market.search.bettersort.dropdown.price.up": "价格正序",
-    "market.search.bettersort.dropdown.price.down": "价格降序",
+    "market.search.bettersort.dropdown.money.up": "价格正序",
+    "market.search.bettersort.dropdown.money.down": "价格降序",
     "market.search.betterbypartial.dropdown": "允许部分购买?",
     "market.search.betterbypartial.dropdown.all": "全部",
     "market.search.betterbypartial.dropdown.yes": "是",
@@ -218,13 +223,58 @@ lang.inits({
     "market.search.better.noitem": "没有找到任何商品!",
     "market.search.better.title": "{info}搜索: {keyword}",
     "market.button.ctrl": "管理商品",
-    "market.button.ctrl.button.add": "上架商品",
-    "market.button.crtl.button.edit": "编辑商品",
     "market.edit.input.money": "商品价格",
-    "market.edit.switch.buybypartial": "是否允许部分购买",
-    "market.edit.switch.delete": "下架此商品",
-}
-)
+    "market.ctrl.maintitle": "{info}管理商品",
+    "market.ctrl.button.add": "上架商品",
+    "market.add.notenough.money": "你没有足够的钱,需要花费:{totalCost}{money.name},你只有:{pl.money}{money.name}",
+    "market.add.maintitle": "{info}上架商品",
+    "market.add.button.byitemtype": "根据标准类型名上架",
+    "market.add.button.byhaveitem": "根据拥有物品上架",
+    "market.add.button.byhand": "上架手中物品",
+    "market.add.byitemtype.title": "{info}上架商品-标准类型名方式",
+    "market.add.byitemtype.input.type": "物品标准类型名",
+    "market.add.byitemtype.input.aux": "物品数据值(Aux)",
+    "market.add.byitemtype.input.count": "物品数量",
+    "market.add.byitemtype.switch.bypartial.sell": "允许部分出售,即玩家可以只出售部分物品,而不是全部",
+    "market.add.byitemtype.input.money": "商品价格",
+    "market.add.byitemtype.input.type.error": "物品标准类型名格式错误,请检查!",
+    "market.add.byitemtype.input.aux.error": "物品数据值(Aux)必须为整数!",
+    "market.add.byitemtype.input.count.error": "物品数量必须为正整数!",
+    "market.add.byitemtype.input.money.error": "商品价格必须为数量的正整数倍!",
+    "market.add.byhaveitem.title": "{info}上架商品-拥有物品方式",
+    "market.add.byhaveitem.dropdown.item": "选择物品",
+    "market.add.byhaveitem.switch.mode": "选择上架方式,关闭求购,打开出售",
+    "market.add.byhaveitem.switch.bypartial": "是否允许部分购买/出售,即玩家可以只购买/出售部分物品,而不是全部",
+    "market.add.byhaveitem.slider.count": "选择数量",
+    "market.add.byhaveitem.input.money": "输入价格",
+    "market.add.byhand.title": "{info}上架手中物品",
+    "market.add.byhand.mainhand": "主手",
+    "market.add.byhand.offhand": "副手",
+    "market.add.byhand.empty": "手中为空,请先手持物品!",
+    "market.add.byhand.switch.mode": "选择上架方式,关闭求购,打开出售",
+    "market.add.byhand.switch.bypartial": "是否允许部分购买/出售,即玩家可以只购买/出售部分物品,而不是全部",
+    "market.add.byhand.slider.count": "选择数量",
+    "market.add.byhand.input.money": "输入价格",
+    "market.add.item.prefix.buy": "[收购]",
+    "market.add.item.prefix.sell": "[出售]",
+    "market.ctrl.button.edit": "编辑商品",
+    "market.ctrl.button.del": "下架商品",
+    "market.add.success": "上架成功!",
+    "market.add.byitemtype.confirm.title": "{info}上架商品确认",
+    "market.add.byitemtype.confirm.desc": "你确定要使用标准类型名上架吗?标准类型名无法匹配附魔,内含有物品的物品!并且只能求购商品!",
+    "market.edit.title": "{info}编辑商品",
+    "market.edit.button.self": "编辑自己的商品",
+    "market.edit.button.all": "编辑所有商品",
+    "market.edit.noitem": "没有商品!",
+    "market.edit.switch.mode": "选择商品类型,关闭求购,打开出售",
+    "market.edit.switch.bypartial": "是否允许部分购买/出售,即玩家可以只购买/出售部分物品,而不是全部",
+    "market.edit.switch.delete": "删除此商品",
+    "market.edit.error.type": "你不能将收购商品转换为出售商品!",
+    "market.edit.notenough.money": "你的钱不够!需要{totalCost}{money.name},你只有{pl.money}{money.name}",
+    "market.edit.success": "编辑成功!",
+    "market.del.confirm": "你确定要删除吗，此操作不可撤销!",
+    "market.del.success": "删除成功!",
+})
 //释放配置文件
 const config = new JsonConfigFile(path + "config.json", JSON.stringify({
     money: {
@@ -279,10 +329,19 @@ mc.listen("onServerStarted", function () {
         logger.warn(lang.get("config.update.success"))
     }
 })
-config.delete("nbt")
+config.init("nbt", {
+    MatchBucketEntityCustomName: false,
+    MatchBucketEntityFallDistance: false,
+    MatchBucketEntityFire: true,
+    MatchBucketEntityStrength: true,
+    MatchBucketEntitySheared: true,
+    MatchRepairCost: false,
+})
 config.init("minPayment", 1)
-config.init("enablelang", ["zh_CN", "en_US"])
+config.init("enablelang", ["zh_CN"])
 config.init("defaultlang", "zh_CN")
+config.init("lang", "zh_CN")
+config.init("banitems", ["minecraft:bedrock"])
 var initlogo = {
     "gui.cancel": "",
     "gui.back": "",
@@ -291,17 +350,25 @@ var initlogo = {
     "shop.sell": "",
     "gui.lastpage": "",
     "gui.nextpage": "",
-    "market.add": "",
     "market.add.byitemtype": "",
-    "market.add.byitemnbt": "",
+    "market.add.byhaveitem": "",
     "market.buy_sell": "",
     "market.buy_sell.list": "",
     "market.buy_sell.search.normal": "",
     "market.buy_sell.search.better": "",
     "market.buy_sell_item.buy": "",
     "market.buy_sell_item.sell": "",
+    "market.add.byitemtype": "",
+    "market.add.byhaveitem": "",
+    "market.add.byhand": "",
     "market.ctrl": "",
-    "market.reduce": "",
+    "market.add": "",
+    "market.ctrl.edit": "",
+    "market.ctrl.del": "",
+    "market.add.byhand.mainhand": "",
+    "market.add.byhand.offhand": "",
+    "market.edit.button.self": "",
+    "market.edit.button.all": "",
 }
 config.init("logo", initlogo)
 if (!same(config.get("logo"), initlogo)) {
@@ -333,25 +400,31 @@ var constsdata = new JsonConfigFile(workpath + "data.json")
 if (constsdata.read() == "{}") {
     logger.error("数据文件为空,请检查文件是否损坏!")
 }
-const consts = {
-    enchants: {},
-    potions: {},
+let consts = {
+    enchants: [],
+    potions: [],
+    effects: [],
     loaddata() {
         this.enchants = constsdata.get("enchants") || []
         this.potions = constsdata.get("potions") || []
-        loadconstsmap()
+        this.effects = constsdata.get("effects") || []
     }
 }
 var enchs = {}
 var potions = {}
+var effects = {}
 function loadconstsmap() {
+    consts.loaddata()
     for (let i = 0; i < consts.enchants.length; i++) {
         enchs[consts.enchants[i].id] = consts.enchants[i]
     }
     for (let i = 0; i < consts.potions.length; i++) {
         potions[consts.potions[i].id] = consts.potions[i]
-
     }
+    for (let i = 0; i < consts.effects.length; i++) {
+        effects[consts.effects[i].id] = consts.effects[i]
+    }
+    consts.effects = [], consts.potions = [], consts.enchants = []
 }
 /**
  * 解析lang
@@ -361,7 +434,6 @@ function loadconstsmap() {
 function parseLangFile(text) {
     const lines = text.split('\n');
     const result = {};
-
     lines.forEach(line => {
         const trimmedLine = line.trim();
         if (trimmedLine === '' || trimmedLine.startsWith('#')) {
@@ -533,16 +605,7 @@ mc.listen("onServerStarted", () => {
         }
     }
 });
-const { PAPI } = require('./GMLIB-LegacyRemoteCallApi/lib/BEPlaceholderAPI-JS');
-const { Event } = require('./GMLIB-LegacyRemoteCallApi/lib/EventAPI-JS');
-const { Scoreboard } = require('./GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS');
-const { JsonConfig } = require('./GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS');
-const { StaticFloatingText } = require('./GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS');
-const { DynamicFloatingText } = require('./GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS');
-const { Minecraft } = require('./GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS');
-const { Recipes } = require('./GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS');
-const { Experiments } = require('./GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS');
-const { GMLIB } = require('./GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS');
+require('./GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS');
 //检测旧版本替换语言文件自动替换回来
 mc.listen("onServerStarted", function () {
     function a() {
@@ -729,8 +792,10 @@ function reductItembytype(player, itemtype, count) {
             if (items[i].type === itemtype) {
                 inv.removeItem(i, (remainingcount - items[i].count >= 0) ? items[i].count : remainingcount)
                 remainingcount -= items[i].count
-                player.refreshItems()
-                if (remainingcount <= 0) return true
+                if (remainingcount <= 0) {
+                    player.refreshItems()
+                    return true
+                }
             }
         }
     }
@@ -745,7 +810,7 @@ function parseItemNbt(nbt, otherdeletes = []) {
         var nbtobj = nbt instanceof NbtCompound ? NBTtoObject(nbt) : nbt;
         var nbtobjItems = []
         var chargedItem = ""
-        delete nbtobj.Damage;
+        var Slot = nbtobj.Slot || -1;
         delete nbtobj.WasPickedUp;
         delete nbtobj.Slot;
         !!nbtobj.Block && delete nbtobj.Block.version;
@@ -770,11 +835,13 @@ function parseItemNbt(nbt, otherdeletes = []) {
                 'wasJustBrewed', "Slot"
             ];
             Tags.forEach(tag => delete nbtobj.tag[tag]);
-            same(nbtobj.tag, {}) && delete nbtobj.tag;
             // 特殊处理Items和ChargedItem,Damage
             nbtobj.tag.Items != null && (nbtobjItems = nbtobj.tag.Items) && (delete nbtobj.tag.Items);
             nbtobj.tag && (chargedItem = nbtobj.tag.ChargedItem) && (delete nbtobj.tag.ChargedItem);
             (nbtobj.tag.Damage == 0) && delete nbtobj.tag.Damage;
+        }
+        if (nbtobj.tag == null) {
+            nbtobj.tag = {}
         }
         for (let i = 0; i < otherdeletes.length; i++) {
             delete nbtobj[otherdeletes[i]];
@@ -782,7 +849,8 @@ function parseItemNbt(nbt, otherdeletes = []) {
         return {
             parsednbtobj: nbtobj,
             nbtitems: nbtobjItems,
-            chargedItem: chargedItem
+            chargedItem: chargedItem,
+            Slot: Slot
         }
     } catch (e) { logger.error(e); }
 };
@@ -806,8 +874,22 @@ function parseItem(item, otherdeletes = []) {
         })
         if (pd.chargedItem != "") r.push(parseItem(pd.chargedItem))
         r.push(pd.parsednbtobj)
-        return r
+        return deleteNullArrInArr(r)
     } catch (e) { logger.error(e); }
+}
+/**
+ *
+ * @param {Array} arr
+ * @returns
+ */
+function deleteNullArrInArr(arr) {
+    for (let i = 0; i < arr.length; i++) {
+        if (same(arr[i], []) || same(arr[i], {}) || arr[i] == null) {
+            arr.splice(i, 1)
+            i--
+        }
+    }
+    return arr
 }
 /**
  * 使用物品snbt扣除物品
@@ -819,15 +901,37 @@ function reductItembysnbt(player, itemsnbt, count) {
     let reducedItemnbts = []
     var inv = player.getInventory()
     var items = inv.getAllItems()
+    var offhanditem = player.getOffHand()
     var remainingcount = count
     var canremovecount = getSameItemCount(items, mc.newItem(NBT.parseSNBT(itemsnbt)))
+    if (!offhanditem.isNull()) {
+        if (same(parseItem(offhanditem, ["Count"]), parseItem(itemsnbt, ["Count"]))) canremovecount += offhanditem.count
+    }
+    log([canremovecount, itemsnbt, count])
     if (canremovecount < count) { return false } else {
+        if (!offhanditem.isNull() && same(parseItem(offhanditem, ["Count"]), parseItem(itemsnbt, ["Count"]))) {
+            let delcount = (remainingcount - offhanditem.count >= 0) ? offhanditem.count : remainingcount
+            reducedItemnbts.push(offhanditem.getNbt().setByte("Count", delcount).toSNBT())
+            var aftercount = offhanditem.count - delcount
+            if (aftercount > 0) {
+                offhanditem.setNbtoffhanditem.getNbt().setByte("Count", aftercount)
+            } else {
+                offhanditem.setNull()
+            }
+            remainingcount -= offhanditem.count
+            player.refreshItems()
+        }
         for (var i = 0; i < items.length; i++) {
-            if (same(parseItem(items[i], ["Count"]), parseItem(itemsnbt, ["Count"]))) {
+            if (!items[i].isNull() && same(parseItem(items[i], ["Count"]), parseItem(itemsnbt, ["Count"]))) {
                 let delcount = (remainingcount - items[i].count >= 0) ? items[i].count : remainingcount
+                var aftercount = items[i].count - delcount
                 reducedItemnbts.push(items[i].getNbt().setByte("Count", delcount).toSNBT())
-                inv.removeItem(i, delcount)
                 remainingcount -= items[i].count
+                if (aftercount > 0) {
+                    items[i].setNbt(items[i].getNbt().setByte("Count", aftercount))
+                } else {
+                    items[i].setNull()
+                }
                 player.refreshItems()
                 if (remainingcount <= 0) break
             }
@@ -847,9 +951,13 @@ function getSameItemCount(items, item) {
         if (same(parseItem(items[i], ["Count"]), parseItem(item, ["Count"]))) {
             count += items[i].count;
         }
+        else if (JSON.stringify(parseItem(items[i], ["Count"])) == JSON.stringify(parseItem(item, ["Count"]))) {
+            count += items[i].count
+        }
     }
     return count;
 }
+
 /**
  * 
  * @param {Any} a 
@@ -926,25 +1034,123 @@ function Num2Roman(num) {
     const romanMap = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
     return (num <= 10 && num >= 1) ? romanMap[num] : num
 }
+function duration2str(duration) {
+    let seconds = duration / 20;
+    const minutes = Math.floor(seconds / 60);
+    seconds %= 60;
+    if (duration == 0) return ""
+    return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+}
 /**
  * 获取物品信息
  * @param {Item} item 
  * @param {String} langcode 
  */
-function getItemInfo(item, langcode) {
-    var pd = parseItemNbt(item.getNbt())
+function getItemInfo(item, langcode = config.get("defaultlang")) {
+    let result = {}
+    var pd = item instanceof LLSE_Item ? parseItemNbt(item.getNbt()) : parseItemNbt(item)
+    var item = item instanceof LLSE_Item ? item : mc.newItem(NBT.parseSNBT(JSON.stringify(item)))
     if (pd.parsednbtobj.Name == undefined || pd.parsednbtobj.Name == "") return
     var id = pd.parsednbtobj.Name
-    var items = []
+    var otheritems = []
+    var Slot = pd.Slot
     if (pd.nbtitems != undefined && pd.nbtitems != null) {
-        for (let i = 0; i < pd.nbtitems; i++) {
-            items.push(getItemInfo(pd.nbtitems[i], langcode))
+        for (let i = 0; i < pd.nbtitems.length; i++) {
+            const item = pd.nbtitems[i]
+            otheritems.push(getItemInfo(item, langcode))
         }
     }
-    return potions[item.aux]
-    return [id, item.getCategoryName(), item.getCustomName(), item.getItemLockMode(), item.getTranslateName(langcode), item.getMaxCount()].join("|")
+    result.includeitems = !same(otheritems, []) ? otheritems : null
+    var potioninfo = {}
+    if (id.includes("potion")) {
+        if (id == "minecraft:potion") {
+            potioninfo.desc = gamelang[langcode][potions[pd.parsednbtobj.Damage].desc.Regular] || id
+        } else if (id == "minecraft:splash_potion") {
+            potioninfo.desc = gamelang[langcode][potions[pd.parsednbtobj.Damage].desc.Splash] || id
+        } else if (id == "minecraft:lingering_potion") {
+            potioninfo.desc = gamelang[langcode][potions[pd.parsednbtobj.Damage].desc.Lingering] || id
+        }
+        potioninfo.effectname = gamelang[langcode][potions[pd.parsednbtobj.Damage].effect.desc] || " "
+        potioninfo.effectduration = duration2str(potions[pd.parsednbtobj.Damage].effect.duration) || "0:00"
+    }
+    var enchantinfo = []
+    if (Object.keys(pd.parsednbtobj).includes("tag") && Object.keys(pd.parsednbtobj.tag).includes("ench")) {
+        for (let i = 0; i < pd.parsednbtobj.tag.ench.length; i++) {
+            enchantinfo.push(gamelang[langcode][enchs[pd.parsednbtobj.tag.ench[i].id].desc] + " " + Num2Roman(pd.parsednbtobj.tag.ench[i].lvl))
+        }
+    }
+    var customname = pd.parsednbtobj.tag && pd.parsednbtobj.tag.display ? pd.parsednbtobj.tag.display.Name : "" || ""
+    return { "name": item.getTranslateName(langcode), "id": id, "customname": customname || "", "enchantinfo": enchantinfo, "potioninfo": potioninfo, "includeitems": otheritems, "Slot": Slot }
 }
-
+/**
+ * 获取物品描述
+ * @param {Item} item 
+ * @param {String} langcode 
+*/
+function getItemInfoStr(item, langcode, index) {
+    let result = ""
+    const iteminfo = item instanceof LLSE_Item ? getItemInfo(item, langcode) : item
+    var item = (item instanceof LLSE_Item) ? item : mc.newItem(NBT.parseSNBT(JSON.stringify(item)))
+    if (index != -1) result += `[${index}]`
+    result += replacestr(lang.get("market.buy_sell_item.item.content"), {
+        "item.name": iteminfo.name,
+        "itemdata.type": iteminfo.id,
+        "item.customname": iteminfo.customname == "" ? lang.get("market.buy_sell_item.content.no_customname") : iteminfo.customname,
+        "itemdata.count": item.count,
+        "itemdata.aux": item.aux,
+    })
+    let enchants = iteminfo.enchantinfo
+    if (!same(iteminfo.enchantinfo, [])) {
+        enchants = iteminfo.enchantinfo.join("|")
+        result += ("\n " + replacestr(lang.get("market.buy_sell_item.content.enchants"), { "enchants": enchants }))
+    }
+    if (iteminfo.potioninfo.effectname != null) {
+        result += ("\n " + replacestr(lang.get("market.buy_sell_item.content.potion"), { "potion.effect": iteminfo.potioninfo.effectname, "potion.duration": iteminfo.potioninfo.effectduration }))
+    }
+    return result
+}
+/**
+ * 获取商品信息
+ * @param {Object} item 
+ * @param {Strinb} itemnbt 
+ * @param {String} langcode 
+ */
+function getItemContent(item, langcode = config.get("defaultlang")) {
+    let result = ""
+    let itemdata = mc.newItem(NBT.parseSNBT(item.itemnbt))
+    let iteminfo = getItemInfo(itemdata, langcode)
+    result += replacestr(lang.get("market.buy_sell_item.content"), {
+        "item.name": item.name,
+        "itemdata.type": itemdata.type,
+        "item.customname": iteminfo.customname == "" ? lang.get("market.buy_sell_item.content.no_customname") : iteminfo.customname,
+        "itemdata.count": itemdata.count,
+        "itemdata.aux": itemdata.aux,
+        "item.money": item.money,
+        "avgmoney": `${(item.money / itemdata.count).toFixed(2)}(${item.money / itemdata.count})`,
+        "money.name": moneys.conf.name,
+        "item.time": item.time,
+        "item.player": item.player,
+    })
+    if (!same(iteminfo.enchantinfo, [])) {
+        enchants = iteminfo.enchantinfo.join("|")
+        result += ("\n" + replacestr(lang.get("market.buy_sell_item.content.enchant"), { "enchants": enchants }))
+    }
+    if (iteminfo.potioninfo.effectname != null) {
+        result += ("\n" + replacestr(lang.get("market.buy_sell_item.content.potion"), { "potion.effect": iteminfo.potioninfo.effectname, "potion.duration": iteminfo.potioninfo.effectduration }))
+    }
+    if (!same(iteminfo.includeitems, [])) {
+        for (let i = 0; i < iteminfo.includeitems.length; i++) {
+            result += ("\n" + getItemInfoStr(iteminfo.includeitems[i], langcode, iteminfo.includeitems[i].Slot))
+        }
+    }
+    return result
+}
+function test() {
+    const md = market.data
+    md[0].itemnbt = (mc.getPlayer("ColdestCarp5592").getHand().getNbt().toSNBT())
+    marketdatajson.set("data", md)
+    market.loaddata()
+}
 /**
  * 替换字符串
  * @param {String} str 字符串
@@ -1051,12 +1257,16 @@ const shop = {
             var _data = data
             const itemdata = data.data[0];
             const gui = mc.newCustomForm();
-            const price = config.get("VIPdiscount") && imports.PVip.getplvipstatus(player.realName) ? itemdata.money * config.get("discount") : itemdata.money;
+            const money = config.get("VIPdiscount") && imports.PVip.getplvipstatus(player.realName) ? itemdata.money * config.get("discount") : itemdata.money;
             gui.setTitle(replacestr(lang.get("shop.buy.title"), { info: info, "item.name": data.name, "item.money": itemdata.money }));
-            gui.addLabel(replacestr(lang.get("shop.buy.tip"), { "item.name": data.name, "price": price, "item.id": itemdata.id, "item.aux": itemdata.aux, "original_price": itemdata.money }));
+            gui.addLabel(replacestr(lang.get("shop.buy.tip"), { "item.name": data.name, "money": money, "item.id": itemdata.id, "item.aux": itemdata.aux, "original_money": itemdata.money }));
             gui.addInput(lang.get("shop.input.buycount"));
             player.sendForm(gui, (pl, data) => {
-                if (data == null || data[1] == "") {
+                if (data == null) {
+                    pl.tell(info + lang.get("gui.exit"));
+                    return
+                }
+                if (data[1] == "") {
                     var path1 = path.replace(/\./g, ' ').replace(/\[/g, ' [').trim().split(/\s+/);
                     var path2 = path1.slice(0, path1.length - 1)
                     if (path2.at(-1) == "data") path2.pop()
@@ -1070,7 +1280,7 @@ const shop = {
                     });
                     return
                 }
-                const totalCost = price * quantity;
+                const totalCost = money * quantity;
                 if (moneys.get(pl) < totalCost) {
                     pl.sendMessageForm(info, replacestr(lang.get("shop.buy.no"), { "info": info, "pl.money": moneys.get(pl) }), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => {
                         shop.buy(type, pl, path, backpages)
@@ -1100,7 +1310,11 @@ const shop = {
             const itemCount = player.getInventory().getAllItems().reduce((acc, item) => item.type === itemdata.id && item.aux === itemdata.aux ? acc + item.count : acc, 0);
             gui.addInput(replacestr(lang.get("shop.input.sellcount"), { itemCount: itemCount }))
             player.sendForm(gui, (pl, data) => {
-                if (data == null || data[1] == "") {
+                if (data == null) {
+                    lang.tell(info + lang.get("gui.exit"));
+                    return
+                }
+                if (data[1] == "") {
                     var path1 = path.replace(/\./g, ' ').replace(/\[/g, ' [').trim().split(/\s+/);
                     var path2 = path1.slice(0, path1.length - 1)
                     if (path2.at(-1) == "data") path2.pop()
@@ -1202,7 +1416,6 @@ function marketitemsgui(player, title, items, page = 0, callback, backfunceval) 
             gui.addButton(str)
         }
     })
-
     if (page != 0) {
         gui.addButton(lang.get("gui.button.lastpage"), config.get("logo")["gui.lastpage"])
     }
@@ -1212,7 +1425,7 @@ function marketitemsgui(player, title, items, page = 0, callback, backfunceval) 
     gui.addButton("gui.back", config.get("logo")["gui.back"])
     player.sendForm(gui, (pl, id) => {
         if (id == null) {
-            eval(backfunceval)
+            pl.tell(info2 + lang.get("gui.exit"));
             return;
         }
         const lastButtonIndex = currentPageData.length + (page > 0 ? 1 : 0) + (endIndex < items.length ? 1 : 0);
@@ -1296,7 +1509,6 @@ const market = {
                     })
             if (id == null) {
                 marketitemsgui(pl, backargs[1], clearNonexistentDataAndAddnew(0, backargs[2]), backargs[3], market.buy_sell_item, backargs[0]); return
-                return
             }
             if (id == 0) {
                 if (item.type == "sell") {
@@ -1307,11 +1519,11 @@ const market = {
                         gui.addLabel(replacestr(lang.get("market.buy_sell_item.buy.count"), { "count": itemdata.count }))
                     } else {
                         if (itemdata.count == 1) gui.addLabel(replacestr(lang.get("market.buy_sell_item.buy.count"), { "count": itemdata.count }))
-                        else gui.addSlider(lang.get("market.buy_sell_item.slider.count"), 1, itemdata.count, 1, itemdata.count)
+                        else gui.addSlider(lang.get("market.buy_sell_item.slider.count"), 0, itemdata.count, 1, itemdata.count)
                     }
                     pl.sendForm(gui, (pl, datas) => {
                         if (getIndexInArray(market.data, item) == -1) pl.sendMessageForm(info2, lang.get("market.buy_sell_item.no"), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { marketitemsgui(pl, backargs[1], clearNonexistentDataAndAddnew(0, backargs[2]), backargs[3], market.buy_sell_item, backargs[0]); return })
-                        if (datas == null) {
+                        if (datas == null || datas[0] == 0) {
                             market.buy_sell_item(pl, item, backargs)
                         } else {
                             const count = datas[0] || itemdata.count
@@ -1343,19 +1555,25 @@ const market = {
                                             var i = getIndexInArray(md, item)
                                             if (count != itemdata.count) {
                                                 var itemd = md[i]
-                                                itemd.money -= totalCost
+                                                if (itemd.money - totalCost <= 0) {
+                                                    itemd.money = 1
+                                                } else itemd.money -= totalCost
                                                 itemd.itemnbt = itemdata.getNbt().setByte("Count", itemdata.count - count).toSNBT()
+                                                md[i].content = getItemContent(md[i], config.get("lang"))
                                             } else {
                                                 md.splice(i, 1)
                                             }
                                             marketdatajson.set("data", md)
+                                            market.loaddata()
                                             let plns = mc.getOnlinePlayers().map(p => p.realName)
                                             if (plns.includes(item.player)) {
                                                 const player = mc.getPlayer(item.player)
                                                 player.tell(replacestr(lang.get("market.buy_sell_item.player.buy.success"), { "item.name": item.name, "totalCost": totalCost, "money.name": moneys.conf.name }))
                                                 moneys.add(player, totalCost)
                                             } else setgives(item.player, 0, { "name": item.name, "money": totalCost })
-                                            pl.giveItem(itemdata)
+                                            moneys.reduce(pl, totalCost)
+                                            pl.giveItem(itemdata, count)
+                                            pl.refreshItems()
                                             pl.sendMessageForm(info2, lang.get("market.buy_sell_item.buy.success"), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { marketitemsgui(pl, backargs[1], clearNonexistentDataAndAddnew(0, backargs[2]), backargs[3], market.buy_sell_item, backargs[0]); return }, (pl) => pl.tell(info2 + lang.get("gui.exit")))
                                             addlog(pl, replacestr(lang.get("log.market.buy"), { "item.name": item.name, "count": count, "item.time": item.time, "item.player": item.player, "totalCost": totalCost }))
                                         } else {
@@ -1372,7 +1590,7 @@ const market = {
                     gui.setTitle(replacestr(lang.get("market.buy_sell_item.title"), { "info2": info2, "item.name": item.name }))
                     var items = player.getInventory().getAllItems()
                     var havecount = getSameItemCount(items, itemdata)
-                    if (havecount == 0) {
+                    if (havecount <= itemdata.count) {
                         pl.sendMessageForm(
                             replacestr(lang.get("market.buy_sell_item.title"), { "info2": info2, "item.name": item.name }),
                             lang.get("market.buy_sell_item.noitem"),
@@ -1380,67 +1598,74 @@ const market = {
                                 market.buy_sell_item(pl, item, backargs)
                             }, (pl) => {
                                 market.buy_sell_item(pl, item, backargs)
-
                             })
                     } else {
                         function sel() {
                             let sellcount
                             if (item.bypartial != 1) {
                                 sellcount = itemdata.count
+                                then()
                             } else {
                                 const gui = mc.newCustomForm()
                                 gui.setTitle(replacestr(lang.get("market.buy_sell_item.title"), { "info2": info2, "item.name": item.name }))
-                                    .addSlider(lang.get("market.buy_sell_item.slider.count"), 1, havecount, 1, havecount)
+                                gui.addSlider(lang.get("market.buy_sell_item.slider.count"), 0, itemdata.count, 1, itemdata.count)
                                 pl.sendForm(gui, (pl, datas) => {
                                     if (getIndexInArray(market.data, item) == -1) { pl.sendMessageForm(info2, lang.get("market.buy_sell_item.no"), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => marketitemsgui(pl, backargs[1], clearNonexistentDataAndAddnew(0, backargs[2]), backargs[3], market.buy_sell_item, backargs[0])); return }
-                                    if (datas == null || datas[0] == null) {
+                                    if (datas == null || datas[0] == null || datas[0] == 0) {
                                         market.buy_sell_item(pl, item, backargs)
                                     } else if (datas[0]) {
                                         sellcount = Number(datas[0])
+                                        then()
                                     }
                                 })
                             }
-                            const totalcosts = moneys.calculatePayment((item.money / itemdata.count) * sellcount)
-                            pl.sendBetterModalForm(replacestr(lang.get("market.buy_sell_item.title"), { "info2": info2, "item.name": item.name }),
-                                replacestr(lang.get("market.buy_sell_item.sell.confirm"), { "totalCost": totalcosts, "money.name": moneys.conf.name }) + (item.bypartial == 1 ? "" : "\n" + lang.get("market.buy_sell_item.sell.cantbypartial")),
-                                lang.get("gui.confirm"), lang.get("gui.cancel"),
-                                (pl, res) => {
-                                    if (res) {
-                                        if (getIndexInArray(market.data, item) == -1) pl.sendMessageForm(info2, lang.get("market.buy_sell_item.no"), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { marketitemsgui(pl, backargs[1], clearNonexistentDataAndAddnew(0, backargs[2]), backargs[3], market.buy_sell_item, backargs[0]); return })
-                                        const reduceditems = reductItembysnbt(pl, item.itemnbt, sellcount)
-                                        if (reduceditems != false) {
-                                            let plns = mc.getOnlinePlayers().map(p => p.realName)
-                                            if (plns.includes(item.player)) {
-                                                const player = mc.getPlayer(item.player)
-                                                player.tell(replacestr(lang.get("market.buy_sell_item.player.sell.success"), { "item.name": item.name }))
-                                                let its = []
-                                                for (let i = 0; i < reduceditems.length; i++)  its.push(mc.newItem(NBT.parseSNBT(reduceditems[i])))
-                                                player.giveItems(its, [])
-                                            } else setgives(item.player, 1, reduceditems)
-                                            const md = market.data
-                                            const i = getIndexInArray(md, item)
-                                            if (md[i].money == item.money) {
-                                                md.splice(i, 1)
+                            function then() {
+                                const totalcosts = sellcount == itemdata.count ? item.money : moneys.calculatePayment((item.money / itemdata.count) * sellcount)
+                                pl.sendBetterModalForm(replacestr(lang.get("market.buy_sell_item.title"), { "info2": info2, "item.name": item.name }),
+                                    replacestr(lang.get("market.buy_sell_item.sell.confirm"), { "totalCost": totalcosts, "money.name": moneys.conf.name }) + (item.bypartial == 1 ? "" : "\n" + lang.get("market.buy_sell_item.sell.cantbypartial")),
+                                    lang.get("gui.confirm"), lang.get("gui.cancel"),
+                                    (pl, res) => {
+                                        if (res) {
+                                            if (getIndexInArray(market.data, item) == -1) pl.sendMessageForm(info2, lang.get("market.buy_sell_item.no"), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { marketitemsgui(pl, backargs[1], clearNonexistentDataAndAddnew(0, backargs[2]), backargs[3], market.buy_sell_item, backargs[0]); return })
+                                            const reduceditems = reductItembysnbt(pl, item.itemnbt, sellcount)
+                                            if (reduceditems != false) {
+                                                let plns = mc.getOnlinePlayers().map(p => p.realName)
+                                                if (plns.includes(item.player)) {
+                                                    const player = mc.getPlayer(item.player)
+                                                    player.tell(replacestr(lang.get("market.buy_sell_item.player.sell.success"), { "item.name": item.name }))
+                                                    let its = []
+                                                    for (let i = 0; i < reduceditems.length; i++)  its.push(mc.newItem(NBT.parseSNBT(reduceditems[i])))
+                                                    player.giveItems(its, [])
+                                                } else setgives(item.player, 1, reduceditems)
+                                                const md = market.data
+                                                const i = getIndexInArray(md, item)
+                                                if (totalcosts == item.money) {
+                                                    md.splice(i, 1)
+                                                } else {
+                                                    md[i].money -= totalcosts
+                                                    md[i].itemnbt = itemdata.getNbt().setByte("Count", itemdata.count - sellcount).toSNBT()
+                                                    md[i].content = getItemContent(md[i], config.get("lang"))
+                                                }
+                                                marketdatajson.set("data", md)
+                                                market.loaddata()
+                                                moneys.add(pl, totalcosts)
+                                                addlog(pl, replacestr(lang.get("log.market.sell"), {
+                                                    "item.name": item.name, "count": sellcount, "item.time": item.time, "item.player": item.player, "totalCost": totalcosts, "money.name": moneys.conf.name
+                                                }))
+                                                pl.sendMessageForm(info2, lang.get("market.buy_sell_item.sell.success"), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { marketitemsgui(pl, backargs[1], clearNonexistentDataAndAddnew(0, backargs[2]), backargs[3], market.buy_sell_item, backargs[0]); return }, (pl) => pl.tell(info2 + lang.get("gui.exit")))
                                             } else {
-                                                md[i].money -= totalcosts
-                                                md[i].itemnbt = itemdata.getNbt().setByte("Count", itemdata.count - sellcount).toSNBT()
+                                                pl.tell(lang.get("item.try.reduce.fail"))
+                                                logger.error(lang.get("item.try.reduce.fail"))
                                             }
-                                            marketdatajson.set("data", md)
-                                            moneys.add(pl, totalcosts)
-                                            addlog(pl, replacestr(lang.get("log.market.sell"), { "item.name": item.name, "count": sellcount, "item.time": item.time, "item.player": item.player, "totalCost": totalcosts, "money.name": moneys.conf.name }))
-                                            pl.sendMessageForm(info2, lang.get("market.buy_sell_item.sell.success"), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { marketitemsgui(pl, backargs[1], clearNonexistentDataAndAddnew(0, backargs[2]), backargs[3], market.buy_sell_item, backargs[0]); return }, (pl) => pl.tell(info2 + lang.get("gui.exit")))
                                         } else {
-                                            pl.tell(lang.get("item.try.reduce.fail"))
-                                            logger.error(lang.get("item.try.reduce.fail"))
+                                            if (item.bypartial != 1) {
+                                                market.buy_sell_item(pl, item, backargs)
+                                            } else {
+                                                sel()
+                                            }
                                         }
-                                    } else {
-                                        if (item.bypartial != 1) {
-                                            market.buy_sell_item(pl, item, backargs)
-                                        } else {
-                                            sel()
-                                        }
-                                    }
-                                }, config.get("logo")["gui.confirm"], config.get("logo")["gui.cancel"])
+                                    }, config.get("logo")["gui.confirm"], config.get("logo")["gui.cancel"])
+                            }
                         }
                         sel()
                     }
@@ -1463,13 +1688,13 @@ const market = {
         gui.addButton(lang.get("gui.cancel"), config.get("logo")["gui.cancel"])
         player.sendForm(gui, (pl, id) => {
             if (id == null || id === 2) {
-                pl.tell(info + lang.get("gui.exit"));
+                pl.tell(info2 + lang.get("gui.exit"));
                 return;
             }
             if (id === 0) {
                 market.buy_sell(pl)
             } else if (id === 1) {
-                // market.ctrl(pl)
+                market.ctrl(pl)
             }
         })
     },
@@ -1485,7 +1710,11 @@ const market = {
         gui.addButton(lang.get("market.buy_sell.button.search.better"), config.get("logo")["market.buy_sell.search.better"])
         gui.addButton(lang.get("gui.cancel"), config.get("logo")["gui.cancel"])
         player.sendForm(gui, (pl, id) => {
-            if (id == null || id === 3) {
+            if (id == null) {
+                pl.tell(info2 + lang.get("gui.exit"));
+                return;
+            }
+            if (id === 3) {
                 market.main(pl)
                 return;
             }
@@ -1511,7 +1740,11 @@ const market = {
         gui.setTitle(replacestr(lang.get("market.search.normal.maintitle"), { "info": info2 }))
         gui.addInput(lang.get("market.buy_sell.search.normal.input"))
         player.sendForm(gui, (pl, datas) => {
-            if (datas == null || datas[0] == "") {
+            if (datas == null) {
+                pl.tell(info2 + lang.get("gui.exit"))
+                return;
+            }
+            if (datas[0] == "") {
                 market.buy_sell(pl)
                 return;
             }
@@ -1544,8 +1777,8 @@ const market = {
             lang.get("market.search.bettersort.dropdown.nosort"),
             lang.get("market.search.bettersort.dropdown.up"),
             lang.get("market.search.bettersort.dropdown.down"),
-            lang.get("market.search.bettersort.dropdown.price.up"),
-            lang.get("market.search.bettersort.dropdown.price.down")
+            lang.get("market.search.bettersort.dropdown.money.up"),
+            lang.get("market.search.bettersort.dropdown.money.down")
         ], 0)
         //是否允许部分购买?
         gui.addDropdown(lang.get("market.search.betterbypartial.dropdown"), [
@@ -1554,7 +1787,11 @@ const market = {
             lang.get("market.search.betterbypartial.dropdown.no")
         ], 0)
         player.sendForm(gui, (pl, datas) => {
-            if (datas == null || datas[0] == "") {
+            if (datas == null) {
+                pl.tell(info2 + lang.get("gui.exit"))
+                return;
+            }
+            if (datas[0] == "") {
                 market.buy_sell(pl)
                 return
             }
@@ -1608,12 +1845,404 @@ const market = {
                 marketitemsgui(pl, replacestr(replacestr(lang.get("market.search.better.title"), { "info": info2, "keyword": datas[0] }), { "count": items.length }), items, 0, market.buy_sell_item, "market.search_better(pl)")
             }
         })
+    },
+    ctrl(player) {
+        const gui = mc.newSimpleForm()
+        gui.setTitle(replacestr(lang.get("market.ctrl.maintitle"), { "info": info2 }))
+        gui.addButton(lang.get("market.ctrl.button.add"), config.get("logo")["market.add"])
+        gui.addButton(lang.get("market.ctrl.button.edit"), config.get("logo")["market.ctrl.edit"])
+        gui.addButton(lang.get("gui.back"), config.get("logo")["gui.back"])
+        player.sendForm(gui, (pl, id) => {
+            if (id == null) {
+                pl.tell(info2 + lang.get("gui.exit"));
+                return;
+            }
+            if (id === 2) {
+                market.main(pl)
+            } else switch (id) {
+                case 0:
+                    market.additem(pl)
+                    break;
+                case 1:
+                    market.edit(pl)
+                    break;
+            }
+        })
+    },
+    additem(player) {
+        const gui = mc.newSimpleForm()
+        gui.setTitle(replacestr(lang.get("market.add.maintitle"), { "info": info2 }))
+        gui.addButton(lang.get("market.add.button.byitemtype"), config.get("logo")["market.add.byitemtype"])
+        gui.addButton(lang.get("market.add.button.byhaveitem"), config.get("logo")["market.add.byhaveitem"])
+        gui.addButton(lang.get("market.add.button.byhand"), config.get("logo")["market.add.byhand"])
+        gui.addButton(lang.get("gui.cancel"), config.get("logo")["gui.cancel"])
+        player.sendForm(gui, (pl, id) => {
+            if (id == null) {
+                pl.tell(info2 + lang.get("gui.exit"));
+                return;
+            }
+            if (id === 3) {
+                market.ctrl(pl)
+            } else if (id === 0) {
+                market.additembytype(pl)
+            } else if (id == 1) {
+                market.additembyhaveitem(pl)
+            } else if (id == 2) {
+                market.additembyhand(pl)
+            }
+        })
+    },
+    additembytype(player) {
+        player.sendBetterModalForm(
+            replacestr(lang.get("market.add.byitemtype.confirm.title"), { info: info2 }),
+            lang.get("market.add.byitemtype.confirm.desc"),
+            lang.get("gui.confirm"),
+            lang.get("gui.cancel"),
+            (pl, res) => {
+                if (res) {
+                    const gui = mc.newCustomForm()
+                    gui.setTitle(replacestr(lang.get("market.add.byitemtype.title"), { "info": info2 }))
+                    gui.addInput(lang.get("market.add.byitemtype.input.type"))
+                    gui.addInput(lang.get("market.add.byitemtype.input.aux"))
+                    gui.addInput(lang.get("market.add.byitemtype.input.count"))
+                    gui.addSwitch(lang.get("market.add.byitemtype.switch.bypartial.sell"), true)
+                    gui.addInput(lang.get("market.add.byitemtype.input.money"))
+                    pl.sendForm(gui, (pl, datas) => {
+                        if (datas == null || (datas[0] == "" && datas[1] == "" && datas[2] == "" && datas[4] == "")) {
+                            market.ctrl(pl)
+                            return;
+                        } else {
+                            function sendMessage(msg) {
+                                pl.sendMessageForm(info2, msg, lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { market.additem(pl) }, (pl) => market.ctrl(pl))
+                            }
+                            if (!/^[a-zA-Z0-9_]+:[a-zA-Z0-9_]+$/.test(datas[0])) {
+                                sendMessage(lang.get("market.add.byitemtype.input.type.error"))
+                                return;
+                            }
+                            if (isNaN(Number(datas[1])) || !Number.isInteger(Number(datas[1]))) {
+                                sendMessage(lang.get("market.add.byitemtype.input.aux.error"))
+                                return;
+                            }
+                            if (isNaN(Number(datas[2])) || !isPositiveInteger(Number(datas[2]))) {
+                                sendMessage(lang.get("market.add.byitemtype.input.count.error"))
+                                return;
+                            }
+                            if (isNaN(Number(datas[4])) || !isPositiveInteger(Number(datas[4]))) {
+                                sendMessage(lang.get("market.add.byitemtype.input.money.error"))
+                                return;
+                            }
+                            const item = mc.newItem(datas[0], Number(datas[2]))
+                            item.setAux(Number(datas[1]))
+                            if (item.isNull()) {
+                                pl.sendMessageForm(info2, lang.get("market.add.byitemtype.input.type.error"), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { market.additem(pl) })
+                                return;
+                            }
+                            const itemnbt = item.getNbt().toSNBT()
+                            const bypartial = Number(datas[3])
+                            const money = Number(datas[4])
+                            var d = {
+                                name: lang.get("market.add.item.prefix.buy") + item.getTranslateName(config.get("lang")),
+                                itemnbt: itemnbt,
+                                player: pl.realName,
+                                bypartial: bypartial,
+                                money: money,
+                                type: "buy",
+                                time: system.getTimeStr()
+                            }
+                            d.content = getItemContent(d)
+                            pl.sendBetterModalForm(info2, d.content, lang.get("gui.confirm"), lang.get("gui.cancel"), (pl, res) => {
+                                if (res) {
+                                    if (moneys.get(pl) < money) pl.sendMessageForm(info2, replacestr(lang.get("market.add.notenough.money"), { "totalCost": money, "pl.money": moneys.get(pl), "money.name": moneys.conf.name }), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { market.additem(pl) })
+                                    else if (moneys.reduce(pl, money)) {
+                                        var md = market.data
+                                        md.push(d)
+                                        marketdatajson.set("data", md)
+                                        market.loaddata()
+                                        pl.sendMessageForm(info2, lang.get("market.add.success"), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { market.ctrl(pl) })
+                                    }
+                                } else market.additem(pl)
+                            }, config.get("logo")["gui.confirm"], config.get("logo")["gui.cancel"])
+                        }
+                    })
+                } else {
+                    market.additem(pl)
+                }
+            }, config.get("logo")["gui.confirm"], config.get("logo")["gui.back"]
+        )
+    },
+    additembyhaveitem(player) {
+        const gui = mc.newCustomForm()
+        const pli = player.getInventory()
+        const haveitems = pli.getAllItems()
+        const items = haveitems.filter(item => !item.isNull())
+        gui.setTitle(replacestr(lang.get("market.add.byhaveitem.title"), { "info": info2 }))
+        gui.addDropdown(lang.get("market.add.byhaveitem.dropdown.item"), items.map(item => item.getTranslateName(config.get("lang"))), 0)
+        player.sendForm(gui, (pl, datas) => {
+            if (datas == null) {
+                market.ctrl(pl)
+                return;
+            } else {
+                const item = items[datas[0]]
+                const gui = mc.newCustomForm()
+                gui.setTitle(replacestr(lang.get("market.add.byhaveitem.title"), { "info": info2 }))
+                gui.addSwitch(lang.get("market.add.byhaveitem.switch.mode"), true)
+                gui.addSwitch(lang.get("market.add.byhaveitem.switch.bypartial"), true)
+                gui.addSlider(lang.get("market.add.byhaveitem.slider.count"), 0, item.count, 1, item.count)
+                gui.addInput(lang.get("market.add.byhaveitem.input.money"))
+                pl.sendForm(gui, (pl, datas1) => {
+                    if (datas1 == null || datas1[3] == "" || datas1[2] == 0) {
+                        market.ctrl(pl)
+                        return;
+                    } else {
+                        const count = datas1[2]
+                        const itemnbt = item.getNbt().setByte("Count", count).toSNBT()
+                        const bypartial = datas1[1]
+                        const mode = datas1[0]
+                        const money = Number(datas1[3])
+                        var d = {
+                            name: (mode ? lang.get("market.add.item.prefix.sell") : lang.get("market.add.item.prefix.buy")) + item.getTranslateName(config.get("lang")),
+                            itemnbt: itemnbt,
+                            player: pl.realName,
+                            bypartial: bypartial,
+                            money: money,
+                            type: mode ? "sell" : "buy",
+                            time: system.getTimeStr()
+                        }
+                        d.content = getItemContent(d, config.get("lang"))
+                        pl.sendBetterModalForm(info2, d.content, lang.get("gui.confirm"), lang.get("gui.cancel"), (pl, res) => {
+                            if (res) {
+                                function then() {
+                                    var md = market.data
+                                    md.push(d)
+                                    marketdatajson.set("data", md)
+                                    market.loaddata()
+                                    pl.sendMessageForm(info2, lang.get("market.add.success"), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { market.ctrl(pl) })
+                                }
+                                if (mode == false) {
+                                    if (moneys.get(pl) < money) pl.sendMessageForm(info2, replacestr(lang.get("market.add.notenough.money"), { "totalCost": money, "pl.money": moneys.get(pl), "money.name": moneys.conf.name }), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { market.additem(pl) })
+                                    else if (moneys.reduce(pl, money))
+                                        then()
+                                    else market.additem(pl)
+                                } else if (mode == true) {
+                                    const red = reductItembysnbt(pl, itemnbt, count)
+                                    if (red != false && red.length != 0)
+                                        then()
+                                    else market.additem(pl)
+                                }
+                            } else market.additem(pl)
+                        }, config.get("logo")["gui.confirm"], config.get("logo")["gui.cancel"])
+                    }
+                })
+            }
+        })
+    },
+    additembyhand(player) {
+        const gui = mc.newSimpleForm()
+        gui.setTitle(replacestr(lang.get("market.add.byhand.title"), { "info": info2 }))
+        gui.addButton(lang.get("market.add.byhand.mainhand"), config.get("logo")["market.add.byhand.mainhand"])
+        gui.addButton(lang.get("market.add.byhand.offhand"), config.get("logo")["market.add.byhand.offhand"])
+        gui.addButton(lang.get("gui.cancel"), config.get("logo")["gui.cancel"])
+        player.sendForm(gui, (pl, id) => {
+            if (id == null) {
+                pl.tell(info2 + lang.get("gui.exit"))
+                return;
+            }
+            if (id === 2) {
+                market.ctrl(pl)
+            } else {
+                let item
+                if (id == 0) {
+                    item = pl.getHand()
+                } else item = pl.getOffHand()
+                if (item.isNull()) {
+                    pl.sendMessage(lang.get("market.add.byhand.empty"))
+                    market.additem(pl)
+                    return;
+                } else {
+                    const gui = mc.newCustomForm()
+                    gui.setTitle(replacestr(lang.get("market.add.byhand.title"), { "info": info2 }))
+                    gui.addSwitch(lang.get("market.add.byhand.switch.mode"), true)
+                    gui.addSwitch(lang.get("market.add.byhand.switch.bypartial"), true)
+                    gui.addSlider(lang.get("market.add.byhand.slider.count"), 0, item.count, 1, item.count)
+                    gui.addInput(lang.get("market.add.byhand.input.money"))
+                    pl.sendForm(gui, (pl, datas) => {
+                        if (datas == null || datas[2] == 0 || datas[3] == "" || datas[3] == null) {
+                            market.ctrl(pl)
+                            return;
+                        } else {
+                            const count = datas[2]
+                            const itemnbt = item.getNbt().setByte("Count", count).toSNBT()
+                            const bypartial = datas[1]
+                            const mode = datas[0]
+                            const money = Number(datas[3])
+                            var d = {
+                                name: (mode ? lang.get("market.add.item.prefix.sell") : lang.get("market.add.item.prefix.buy")) + item.getTranslateName(config.get("lang")),
+                                itemnbt: itemnbt,
+                                player: pl.realName,
+                                bypartial: bypartial,
+                                money: money,
+                                type: mode ? "sell" : "buy",
+                                time: system.getTimeStr()
+                            }
+                            d.content = getItemContent(d, config.get("lang"))
+                            pl.sendBetterModalForm(info2, d.content, lang.get("gui.confirm"), lang.get("gui.cancel"), (pl, res) => {
+                                if (res) {
+                                    function then() {
+                                        var md = market.data
+                                        md.push(d)
+                                        marketdatajson.set("data", md)
+                                        market.loaddata()
+                                        pl.sendMessageForm(info2, lang.get("market.add.success"), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { market.ctrl(pl) })
+                                    }
+                                    if (mode == false) {
+                                        if (moneys.get(pl) < money) pl.sendMessageForm(info2, replacestr(lang.get("market.add.notenough.money"), { "totalCost": money, "pl.money": moneys.get(pl), "money.name": moneys.conf.name }), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { market.additem(pl) })
+                                        else if (moneys.reduce(pl, money))
+                                            then()
+                                    } else if (mode == true) {
+                                        const red = reductItembysnbt(pl, itemnbt, count)
+                                        if (red != false && red.length != 0)
+                                            then()
+                                        else market.additem(pl)
+                                    }
+                                } else market.additem(pl)
+                            }, config.get("logo")["gui.confirm"], config.get("logo")["gui.cancel"])
+                        }
+                    })
+                }
+            }
+        })
+    },
+    edit(player) {
+        if (player.isOP()) {
+            const gui = mc.newSimpleForm()
+            gui.setTitle(replacestr(lang.get("market.edit.title"), { "info": info2 }))
+            gui.addButtons([
+                lang.get("market.edit.button.self"),
+                lang.get("market.edit.button.all"),
+                lang.get("gui.cancel")
+            ], [
+                config.get("logo")["market.edit.button.self"],
+                config.get("logo")["market.edit.button.all"],
+                config.get("logo")["gui.cancel"]
+            ])
+            player.sendForm(gui, (pl, id) => {
+                if (id == null) {
+                    pl.tell(info2 + lang.get("gui.exit"))
+                    return;
+                }
+                var items = []
+                if (id === 2) {
+                    market.ctrl(pl)
+                    return;
+                } else if (id === 0) {
+                    items = market.data.filter(item => item.player == pl.realName)
+                } else if (id === 1) {
+                    items = market.data
+                }
+                market.edititem(pl, items)
+            })
+        }
+    },
+    edititem(player, items) {
+        if (items.length == 0) {
+            player.sendMessageForm(info2 + lang.get("market.edit.title"), lang.get("market.edit.noitem"), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { market.ctrl(pl) })
+        } else {
+            marketitemsgui(player, replacestr(lang.get("market.edit.title"), { "info": info2 }), items, 0, market.edit_item, "market.edit(pl)")
+        }
+    },
+    edit_item(pl, item, backargs) {
+        const gui = mc.newCustomForm()
+        gui.setTitle(replacestr(lang.get("market.edit.title"), { "info": info2 }))
+        gui.addSwitch(lang.get("market.edit.switch.mode"), item.type == "sell")
+        gui.addSwitch(lang.get("market.edit.switch.bypartial"), item.bypartial)
+        gui.addInput(lang.get("market.edit.input.money"), "", String(item.money))
+        gui.addSwitch(lang.get("market.edit.switch.delete"), false)
+        pl.sendForm(gui, (pl, datas) => {
+            if (datas == null) {
+                marketitemsgui(pl, backargs[1], backargs[2], backargs[3], market.edit_item, backargs[4])
+                return;
+            } else {
+                const mode = datas[0]
+                const bypartial = datas[1]
+                const money = Number(datas[2])
+                const deleteitem = datas[3]
+                if (deleteitem) {
+                    market.delitem(pl, item)
+                    return;
+                } else {
+                    var d = JSON.parse(JSON.stringify(item))
+                    item.name = (mode ? lang.get("market.add.item.prefix.sell") : lang.get("market.add.item.prefix.buy")) + mc.newItem(NBT.parseSNBT(item.itemnbt)).getTranslateName(config.get("lang"))
+                    item.type = mode ? "sell" : "buy"
+                    item.bypartial = bypartial
+                    item.money = money
+                    item.content = getItemContent(item, config.get("lang"))
+                    pl.sendBetterModalForm(info2, item.content, lang.get("gui.confirm"), lang.get("gui.cancel"), (pl, res) => {
+                        if (res) {
+                            function then() {
+                                var md = market.data
+                                md.push(item)
+                                marketdatajson.set("data", md)
+                                market.loaddata()
+                                pl.sendMessageForm(info2, lang.get("market.edit.success"), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { market.edit(pl) })
+                            }
+                            var dmoney = item.money - d.money
+                            if (item.type == d.type) {
+                                if (item.money != d.money) {
+                                    if (dmoney > 0) {
+                                        if (dmoney > moneys.get(pl)) {
+                                            pl.sendMessageForm(info2, replacestr(lang.get("market.edit.notenough.money"), { "totalCost": dmoney, "pl.money": moneys.get(pl), "money.name": moneys.conf.name }), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { market.edit(pl) })
+                                            return;
+                                        } else if (moneys.reduce(pl, dmoney))
+                                            then()
+                                        else market.edit(pl)
+                                    } else if (dmoney < 0) {
+                                        moneys.add(pl, Math.abs(dmoney))
+                                        then()
+                                    }
+                                } else {
+                                    then()
+                                }
+                            } else {
+                                if (item.type == "sell") {
+                                    pl.sendMessageForm(info2, lang.get("market.edit.error.type"), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { market.edit(pl) })
+                                    return;
+                                } else {
+                                    if (moneys.get(pl) < item.money) {
+                                        pl.sendMessageForm(info2, replacestr(lang.get("market.edit.notenough.money"), { "totalCost": item.money, "pl.money": moneys.get(pl), "money.name": moneys.conf.name }), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { market.edit(pl) })
+                                        return;
+                                    } else {
+                                        pl.giveItem(mc.newItem(NBT.parseSNBT(item.itemnbt)))
+                                        pl.refreshItems()
+                                        moneys.reduce(pl, item.money)
+                                        then()
+                                    }
+                                }
+                            }
+                        } else market.edit(pl)
+                    }, config.get("logo")["gui.confirm"], config.get("logo")["gui.cancel"])
+                }
+            }
+        })
+    },
+    delitem(player, item) {
+        player.sendBetterModalForm(info2, lang.get("market.del.confirm"), lang.get("gui.confirm"), lang.get("gui.cancel"), (pl, res) => {
+            if (res) {
+                if (item.type == "sell") {
+                    pl.giveItem(mc.newItem(NBT.parseSNBT(item.itemnbt)))
+                    pl.refreshItems()
+                } else moneys.add(pl, item.money)
+                var md = market.data
+                md.splice(getIndexInArray(market.data, item), 1)
+                marketdatajson.set("data", md)
+                market.loaddata()
+                player.sendMessageForm(info2, lang.get("market.del.success"), lang.get("gui.back"), config.get("logo")["gui.back"], (pl) => { market.edit(pl) })
+            } else market.edit(pl)
+        }, config.get("logo")["gui.confirm"], config.get("logo")["gui.cancel"])
     }
-    
 }
 if (config.get('enable').market) {
     const com = mc.newCommand(config.get("commands").market, lang.get("command.market.desc"), PermType.Any);
-    com.setEnum("type", ["buy_sell", "ctrl", "gui", "op", "reload"])
+    com.setEnum("type", ["buy_sell", "buy_sell_list", "buy_sell_search_normal", "buy_sell_search_better", "ctrl", "add", "edit", "del", "gui", "reload"])
     com.optional("args", ParamType.Enum, "type", "args", 1)
     com.setCallback((_cmd, ori, out, res) => {
         if (ori.type !== 0) {
@@ -1625,19 +2254,36 @@ if (config.get('enable').market) {
             case "buy_sell":
                 market.buy_sell(pl)
                 break;
+            case "buy_sell_list":
+                marketitemsgui(pl, replacestr(lang.get("market.buy_sell.list.title"), { "info": info2 }), market.data, 0, market.buy_sell_item, "market.buy_sell(pl)")
+                break;
+            case "buy_sell_search_normal":
+                market.buy_sell_search_normal(pl)
+                break;
+            case "buy_sell_search_better":
+                market.buy_sell_search_better(pl)
+                break;
+            case "add":
+                market.additem(pl)
+                break;
+            case "edit":
+                market.edit(pl)
+                break;
+            case "del":
+                market.del(pl)
             case "ctrl":
-                // market.ctrl(pl)
+                market.ctrl(pl)
                 break;
             case "gui":
                 market.main(pl)
-                break;
-            case "op":
-                // market.op(pl)
                 break;
             case "reload":
                 market.loaddata()
                 out.success(lang.get("command.market.reload.success"))
                 break;
+            default:
+                market.main(pl)
+                break
         }
     })
     com.overload([])
@@ -1675,28 +2321,31 @@ cmd.overload(["types"])
 cmd.setup()
 mc.listen("onServerStarted", () => {
     loadlangs()
-    consts.loaddata()
+    loadconstsmap()
     market.loaddata()
     shop.loaddata()
 })
 mc.listen("onJoin", (pl) => {
-    if ((gives.get(pl.realName).money.length != 0) && (gives.get(pl.realName).money != null)) {
-        for (let i = 0; i < gives.get(pl.realName).money.length; i++) {
-            moneys.add(pl, gives.get(pl.realName).money[i].money)
-            var gd = gives.get(pl.realName)
-            pl.tell(replacestr(lang.get("market.buy_sell_item.player.buy.success"), { "money.name": moneys.conf.name, "totalCost": gives.get(pl.realName).money[i].money, "item.name": gives.get(pl.realName).money[i].name }))
-            gd.money.splice(i, 1)
-            gives.set(pl.realName, gd)
+    if (gives.get(pl.realName) != pl.realName) {
+        if ((gives.get(pl.realName).money.length != 0) && (gives.get(pl.realName).money != null)) {
+            for (let i = 0; i < gives.get(pl.realName).money.length; i++) {
+                moneys.add(pl, gives.get(pl.realName).money[i].money)
+                var gd = gives.get(pl.realName)
+                pl.tell(replacestr(lang.get("market.buy_sell_item.player.buy.success"), { "money.name": moneys.conf.name, "totalCost": gives.get(pl.realName).money[i].money, "item.name": gives.get(pl.realName).money[i].name }))
+                gd.money.splice(i, 1)
+                gives.set(pl.realName, gd)
+            }
         }
-    }
-    if ((gives.get(pl.realName).item.length != 0) && (gives.get(pl.realName).item != null)) {
-        for (let i = 0; i < gives.get(pl.realName).item.length; i++) {
-            var item = mc.newItem(NBT.parseSNBT(gives.get(pl.realName).item[i]))
-            pl.giveItem(item)
-            var gd = gives.get(pl.realName)
-            pl.tell(replacestr(lang.get("market.buy_sell_item.player.sell.success"), { "item.name": item.name }))
-            gd.item.splice(i, 1)
-            gives.set(pl.realName, gd)
+        if ((gives.get(pl.realName).item.length != 0) && (gives.get(pl.realName).item != null)) {
+            for (let i = 0; i < gives.get(pl.realName).item.length; i++) {
+                var item = mc.newItem(NBT.parseSNBT(gives.get(pl.realName).item[i]))
+                pl.giveItem(item)
+                pl.refreshItems()
+                var gd = gives.get(pl.realName)
+                pl.tell(replacestr(lang.get("market.buy_sell_item.player.sell.success"), { "item.name": item.name }))
+                gd.item.splice(i, 1)
+                gives.set(pl.realName, gd)
+            }
         }
     }
 })
