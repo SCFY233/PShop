@@ -2353,17 +2353,17 @@ mc.listen("onServerStarted", () => {
     log(`PShop 商店系统插件---加载成功,当前版本:${versions}${fix} 作者: ${author}`);
     if (fix != "" && fix != " Release") logger.warn("你现在使用的版本为开发版,请勿用于生产环境!!!")
 })
-mc.regConsoleCmd("d", "debug", (args) => {
-    eval(args.join(""))
-})
-mc.regPlayerCmd("d", "debug", (player, args) => {
-    player.tell(JSON.stringify(eval(args.join(''))) || "canttojson")
-    player.tell(String(eval(args.join(''))) || "canttostr")
-})
-var var1, var2 = null
-mc.regPlayerCmd("dd", "debug", (player, args) => {
-    var1 = eval(args[0])
-})
-mc.regPlayerCmd("ddd", "debug", (player, args) => {
-    var2 = eval(args[0])
-})
+// mc.regConsoleCmd("d", "debug", (args) => {
+//     eval(args.join(""))
+// })
+// mc.regPlayerCmd("d", "debug", (player, args) => {
+//     player.tell(JSON.stringify(eval(args.join(''))) || "canttojson")
+//     player.tell(String(eval(args.join(''))) || "canttostr")
+// })
+// var var1, var2 = null
+// mc.regPlayerCmd("dd", "debug", (player, args) => {
+//     var1 = eval(args[0])
+// })
+// mc.regPlayerCmd("ddd", "debug", (player, args) => {
+//     var2 = eval(args[0])
+// })
