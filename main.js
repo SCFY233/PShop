@@ -4,7 +4,7 @@
 const path = "./plugins/Planet/PShop/";
 const workpath = "./plugins/PShop/";
 const versions = "3.0.0"
-const fix = " Beta 25.08-10 开发版"
+const fix = " Beta 25.08-16 开发版"
 const author = "Planet工作室-星辰开发组-春风"
 //释放语言文件
 const lang = new JsonConfigFile(path + "lang.json", JSON.stringify({
