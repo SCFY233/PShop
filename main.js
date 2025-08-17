@@ -2148,6 +2148,9 @@ const market = {
                 }
                 market.edititem(pl, items)
             })
+        } else {
+            var items = market.data.filter(item => item.player == player.realName)
+            market.edititem(player, items)
         }
     },
     edititem(player, items) {
