@@ -1,7 +1,7 @@
 {
     "plugin": "3.0.0",
     "data": 1,
-    "url": "http://gitee.com/SCFY233/PShop/releases/tag/v3.0.0",
+    "url": "http://gitee.com/SCFY233/PShop/releases/tag/v3.0.0-Release",
     "notice": {
         "zh_CN": "PShop重构完成,文档将在两天内补全,欢迎使用!!!\ndata.json来自 啥也不会的子沐呀 对此感谢\n暂无导出函数"
     }
