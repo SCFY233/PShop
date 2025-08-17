@@ -4,7 +4,7 @@
 const path = "./plugins/Planet/PShop/";
 const workpath = "./plugins/PShop/";
 const versions = "3.0.0"
-const fix = " Beta 25.08-16 开发版"
+const fix = " Release"
 const author = "Planet工作室-星辰开发组-春风"
 //释放语言文件
 const lang = new JsonConfigFile(path + "lang.json", JSON.stringify({
@@ -352,7 +352,7 @@ config.init("enablelang", ["zh_CN"])
 config.init("defaultlang", "zh_CN")
 config.init("lang", "zh_CN")
 config.init("banitems", ["minecraft:bedrock"])
-config.init("update_url", "http://gitee.com/SCFY233/PShop/raw/main/version.json")
+config.init("update_url", "http://gitee.com/SCFY233/PShop/raw/main/update/version.json")
 var initlogo = {
     "gui.cancel": "",
     "gui.back": "",
@@ -2377,16 +2377,17 @@ function CompareVersion(version1, version2) {
 }
 mc.listen("onServerStarted", () => {
     if (config.get("update_url") != "") {
-        network.httpGet(config.get("update_url"), (s, r) => {
+        network.httpGet(config.get("update_url"), (s, re) => {
+            var r = JSON.parse(re)
             if (s != 200) logger.error(lang.get("log.update.error"))
             else {
                 if (CompareVersion(versions, r.plugin) == -1) {
                     logger.warn(replacestr(lang.get("network.update.newversion"), { "name": "Shop", "version": r.plugin }))
-                    logger.info(replacestr(lang.get("network.update.notice"), { "notice": r.notice[config.get("lang")] || r.notice["zh_CN"] }))
+                    logger.info(replacestr(lang.get("network.update.notice"), { "notice": (r.notice[config.get("lang")] || r.notice["zh_CN"]) || "-" }))
                     logger.info(replacestr(lang.get("network.update.download"), { "url": r.url }))
                 }
-                if (consts.version <= r.data) {
-                    logger.warn(replacestr(lang.get("network.update.newversion"), { "name": "Shop", "version": r.plugin }))
+                if (consts.version < r.data) {
+                    logger.warn(replacestr(lang.get("network.update.newversion"), { "name": "data", "version": r.data }))
                     logger.info(replacestr(lang.get("network.update.download"), { "url": r.url }))
                 }
             }
