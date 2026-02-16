@@ -1,0 +1,16 @@
+{
+  "name": "pshop",
+  "version": "3.1.0",
+  "description": "商店插件",
+  "main": "main.js",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://gitee.com/SCFY233/PShop.git"
+  },
+  "keywords": [
+    "pshop"
+  ],
+  "author": "SCFY233",
+  "license": "GPL-3.0"
+}
