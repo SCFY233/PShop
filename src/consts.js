@@ -1,11 +1,15 @@
-import { parseLangFile } from "./lib/lib.js"
-import { generateTexturePaths } from "./lib/texture_path_generator.js";
 import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { TexturePathParser } from './lib/extractTextures.js';
+import { parseProperties } from './lib/lib.js';
+export const BDSPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 export const pluginpath = "./plugins/Planet/PShop/";
 export const workpath = "./plugins/PShop/";
 export const versions = "2.0.0"
 export const fix = " Release"
 export const author = "Planet工作室-星辰开发组-春风"
+export const server_properties = parseProperties(fs.readFileSync(BDSPath + "/server.properties", "utf8"))
 //释放配置文件
 export const config = new JsonConfigFile(pluginpath + "config.json", JSON.stringify({
     version: versions,
@@ -38,7 +42,9 @@ export const config = new JsonConfigFile(pluginpath + "config.json", JSON.string
         log: true,
     },
     logo: {
-
+    },
+    textures_path: {
+        default: "textures/blocks/missing_tile"
     },
     nbt: {
         MatchBucketEntityCustomName: false,
@@ -69,6 +75,7 @@ export function loadlang() {
     lang = JSON.parse(langdata.read())
 }
 lang.get = (key) => { return lang[key] || key }
+
 const constsdata = new JsonConfigFile(workpath + "data.json")
 if (constsdata.read() == "{}") {
     logger.error("数据文件为空,请检查文件是否损坏!")
@@ -111,23 +118,16 @@ export const prefix = {
     shop: config.get("prefix").shop || "[PShop-商店]",
     market: config.get("prefix").market || "[PShop-市场]",
 }
-export const gamelang = {}
-function loadgamelang(langcode) {
-    gamelang[langcode] = parseLangFile(File.readFrom("./resource_packs/vanilla/texts/" + langcode + ".lang"))
-}
-export function loadgamelangs() {
-    let enablelangs = config.get("enablelang")
-    for (let i = 0; i < enablelangs.length; i++) {
-        loadgamelang(enablelangs[i])
-    }
-}
-loadgamelangs()
-
-export const texture_paths = generateTexturePaths({
-    bdsPath: path.join(process.cwd()),
-    outputPath
+export const Texture_Extractor = new TexturePathParser({
+    bdsPath: BDSPath,
+    worldName: server_properties['level-name'],
+    outputPath: path.join(BDSPath, "/plugins/PShop/temp/textures.json")
 })
-
-texture_paths.get = function (name) {
-    return texture_paths[name] || config.get("texture_default")
+function vanilla_texture_paths() { return JSON.parse(fs.readFileSync(path.join(BDSPath, "/plugins/PShop/vanilla_texture.json"), "utf8")) }
+export let texture_paths = {
+    get: (type, aux) => { return texture_paths.data[type]?.[aux] ?? texture_paths.data[type]?.[0] ?? config.get("texture_path")?.default; }
 }
+export function loadTexture() {
+    texture_paths.data = { ...Texture_Extractor.run(), ...vanilla_texture_paths() }
+}
+loadTexture()

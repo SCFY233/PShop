@@ -80,7 +80,7 @@ export const getDateForLogging = () => {
  * @param {Player} pl 
  * @param {String} msg 
  */
-export function alog(pl, msg) {
+export function wlog(pl, msg) {
     try {
         const formattedDate = getDateForLogging();
         const logFilePath = `./logs/PShop/${formattedDate.split(' ')[0]}.log`;
@@ -102,7 +102,23 @@ export function ReplaceStr(str, replaceobj) {
     }
     return str
 }
+export const [warn, error] = [logger.warn, logger.error]
 
+export function parseProperties(text) {
+    const lines = text.split('\n');
+    const result = {};
+    lines.forEach(line => {
+        const trimmedLine = line.trim();
+        if (trimmedLine === '' || trimmedLine.startsWith('#')) {
+            return;
+        }
+        // 使用正则表达式分割键值对,以第一个等号为分隔符
+        const [key, ...valueParts] = trimmedLine.split('=');
+        const value = valueParts.join('=');
+        result[key.trim()] = value.trim();
+    });
+    return result;
+}
 
 
 

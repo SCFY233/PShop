@@ -1,4 +1,4 @@
-import { CompareVersion, ReplaceStr } from "./lib/lib.js"
+import { CompareVersion, ReplaceStr, warn } from "./lib/lib.js"
 import { author, versions, fix, config, lang, consts } from "./consts.js"
 /**
  * 启动检查更新
@@ -8,16 +8,16 @@ export function checkUpdate() {
     if (config.get("update_url") != "") {
         return network.httpGet(config.get("update_url"), (s, re) => {
             const r = JSON.parse(re)
-            if (s != 200) logger.error(lang.get("log.update.error"))
+            if (s != 200) logger.error(ReplaceStr(lang.get("log.update.error"), { "code": s, "result": re }))
             else {
                 if (CompareVersion(versions, r.plugin) == -1) {
-                    logger.warn(ReplaceStr(lang.get("network.update.newversion"), { "name": "Shop", "version": r.plugin }))
-                    logger.info(ReplaceStr(lang.get("network.update.notice"), { "notice": (r.notice[config.get("lang")] || r.notice["zh_CN"]) || "-" }))
-                    logger.info(ReplaceStr(lang.get("network.update.download"), { "url": r.url }))
+                    warn(ReplaceStr(lang.get("network.update.newversion"), { "name": "Shop", "version": r.plugin }))
+                    log(ReplaceStr(lang.get("network.update.notice"), { "notice": (r.notice[config.get("lang")] || r.notice["zh_CN"]) || "-" }))
+                    log(ReplaceStr(lang.get("network.update.download"), { "url": r.url }))
                 }
                 if (consts.version < r.data) {
-                    logger.warn(ReplaceStr(lang.get("network.update.newversion"), { "name": "data", "version": r.data }))
-                    logger.info(ReplaceStr(lang.get("network.update.download"), { "url": r.url }))
+                    warn(ReplaceStr(lang.get("network.update.newversion"), { "name": "data", "version": r.data }))
+                    log(ReplaceStr(lang.get("network.update.download"), { "url": r.url }))
                 }
             }
         })
