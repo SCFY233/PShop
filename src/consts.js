@@ -2,22 +2,25 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { TexturePathParser } from './lib/extractTextures.js';
-import { parseProperties } from './lib/lib.js';
-export const BDSPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+import { parseProperties, addgiveItems, addgiveMoneys, setgiveReduceMoneys } from './lib/lib.js';
+import * as GMLIBAPI from "../../GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.js"
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export const BDSPath = path.join(__dirname, "..", "..", "..");
 export const pluginpath = "./plugins/Planet/PShop/";
 export const workpath = "./plugins/PShop/";
-export const versions = "2.0.0"
+export const versions = "3.2.0"
 export const fix = " Release"
 export const author = "Planet工作室-星辰开发组-春风"
+export default GMLIBAPI
+
+
 export const server_properties = parseProperties(fs.readFileSync(BDSPath + "/server.properties", "utf8"))
 //释放配置文件
 export const config = new JsonConfigFile(pluginpath + "config.json", JSON.stringify({
     version: versions,
-    money: {
-        type: "llmoney",
-        name: "money",
-        score: "money"
-    },
     commands: {
         shop: {
             cmd: "shop",
@@ -48,10 +51,6 @@ export const config = new JsonConfigFile(pluginpath + "config.json", JSON.string
     },
     nbt: {
         MatchBucketEntityCustomName: false,
-        MatchBucketEntityFallDistance: false,
-        MatchBucketEntityFire: true,
-        MatchBucketEntityStrength: true,
-        MatchBucketEntitySheared: true,
         MatchRepairCost: false,
     },
     itemtranslate: {
@@ -62,20 +61,62 @@ export const config = new JsonConfigFile(pluginpath + "config.json", JSON.string
     update_url: "http://gitee.com/SCFY233/PShop/raw/main/update/version.json"
 }));
 if (config.get("version") == null) {
-    logger.warn
+    logger.warn("检测到旧版本配置文件,请您备份并重启服务器进行升级,插件正在自动卸载...")
 }
 const langdata = new JsonConfigFile(pluginpath + "lang.json", JSON.stringify({
-    error: {
-
-    }
+    'update.NewVersion': "检测到{name}的新版本:{version}",
+    'update.Notice': "更新公告:{notice}",
+    'update.Download': "下载链接:{url}",
+    'import.warn.PVip': "未检测到PVip插件,将无法使用VIP相关功能!",
 }))
 export let lang = {}
 export function loadlang() {
     langdata.reload()
     lang = JSON.parse(langdata.read())
+    lang.get = (key) => lang[key] || key
 }
-lang.get = (key) => { return lang[key] || key }
-
+//释放商店和市场文件
+export const shopdatajson = new JsonConfigFile(pluginpath + "shopdata.json", JSON.stringify({
+    Buy: [
+        {
+            name: "示例",
+            type: "group",
+            image: "",
+            data: [
+                {
+                    name: "示例(苹果)",
+                    type: "item",
+                    image: "",
+                    data: [{
+                        id: "minecraft:apple",
+                        aux: 0,
+                        money: 10,
+                    }]
+                }
+            ]
+        }
+    ],
+    Sell: [
+        {
+            name: "示例",
+            type: "group",
+            image: "",
+            data: [
+                {
+                    name: "示例(苹果)",
+                    type: "item",
+                    image: "",
+                    data: [{
+                        id: "minecraft:apple",
+                        aux: 0,
+                        money: 10,
+                    }]
+                }
+            ]
+        }
+    ]
+}));
+export const marketdatajson = new JsonConfigFile(pluginpath + "marketdata.json", JSON.stringify({ data: [] }));
 const constsdata = new JsonConfigFile(workpath + "data.json")
 if (constsdata.read() == "{}") {
     logger.error("数据文件为空,请检查文件是否损坏!")
@@ -112,7 +153,6 @@ export function loadconstsmap() {
         console.error("加载常量数据时出错: ", error);
     }
 }
-loadconstsmap();
 //前缀
 export const prefix = {
     shop: config.get("prefix").shop || "[PShop-商店]",
@@ -130,4 +170,62 @@ export let texture_paths = {
 export function loadTexture() {
     texture_paths.data = { ...Texture_Extractor.run(), ...vanilla_texture_paths() }
 }
-loadTexture()
+
+
+export const imports = {
+    PVip: {
+        status: false,
+        /**获取玩家VIP状态
+         * @param {Player} player
+         * @returns {boolean}
+         */
+        getVIPStatus: (player) => false,
+    },
+    GMLIB: {
+        status: false,
+    },
+    SMoney: {
+        status: false,
+    }
+}
+mc.listen("onServerStarted", () => {
+    const plugins = ll.listPlugins()
+    if (plugins.includes("PVip")) {
+        imports.PVip.status = true
+        imports.PVip.getVIPStatus = ll.imports("PVip", "get_status")
+    } else logger.warn(lang.get("import.warn.PVip"))
+    if (plugins.includes("GMLIB-LegacyRemoteCallApi"))
+        imports.GMLIB.status = true
+    if (plugins.includes("SMoney"))
+        imports.SMoney.status = true
+})
+
+
+const givesdata = new JsonConfigFile(pluginpath + "gives.json", JSON.stringify({
+    version: versions,
+}))
+if (givesdata.version == null) {
+    let old = JSON.parse(givesdata.read())
+    let ks = Object.keys(old)
+    for (let k of ks) {
+        if (typeof k != "number" && k != "version") {
+            addgiveItems(data.name2xuid(k), old[k].item, '')
+            addgiveMoneys(data.name2xuid(k), old[k].money, '')
+            setgiveReduceMoneys(data.name2xuid(k), [])
+            givesdata.delete(k)
+        }
+    }
+}
+
+export function loaddatas() {
+    console.time('加载数据');
+    const startMem = process.memoryUsage();
+    logger.warn('正在构建所需要的表...');
+    loadlang()
+    loadconstsmap();
+    loadTexture();
+    const endMem = process.memoryUsage();
+    logger.warn('完成!使用内存: ' + ((endMem.heapUsed - startMem.heapUsed) / 1024 / 1024).toFixed(2) + ' MB');
+    console.timeEnd('加载数据');
+}
+loaddatas()

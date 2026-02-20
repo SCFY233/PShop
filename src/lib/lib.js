@@ -1,27 +1,9 @@
 // LiteLoader-AIDS automatic generated
 /// <reference path="c:/ll3/dev/dts/helperlib/src/index.d.ts" />
 ///<reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
+import { addSMoney, reduceSMoney, getSMoney, transferSMoney } from "../../../SMoney/main.js";
+import { lang } from "../consts.js"
 //通用函数
-/**
- * 解析lang
- * @param {String} text 
- * @returns 
- */
-export function parseLangFile(text) {
-    const lines = text.split('\n');
-    const result = {};
-    lines.forEach(line => {
-        const trimmedLine = line.trim();
-        if (trimmedLine === '' || trimmedLine.startsWith('#')) {
-            return;
-        }
-        // 使用正则表达式分割键值对,以第一个等号为分隔符
-        const [key, ...valueParts] = trimmedLine.split('=');
-        const value = valueParts.join('=');
-        result[key.trim()] = value.trim();
-    });
-    return result;
-}
 /**
  * 判断两个值是否完全相同
  * @param {Any} a 
@@ -30,7 +12,7 @@ export function parseLangFile(text) {
  */
 export function same(a, b) {
     try {
-        if (a === b) return true;
+        if (a == b) return true;
         if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
         if (Array.isArray(a) && Array.isArray(b)) {
             if (a.length !== b.length) return false;
@@ -66,7 +48,7 @@ export function CompareVersion(version1, version2) {
     }
     return 0
 }
-export const getDateForLogging = () => {
+export function getDateForLogging() {
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -103,7 +85,11 @@ export function ReplaceStr(str, replaceobj) {
     return str
 }
 export const [warn, error] = [logger.warn, logger.error]
-
+/**
+ * 解析 Properties 文件内容
+ * @param {string} text - Properties 文件内容
+ * @returns {Object} 解析后的键值对对象
+ */
 export function parseProperties(text) {
     const lines = text.split('\n');
     const result = {};
@@ -112,13 +98,149 @@ export function parseProperties(text) {
         if (trimmedLine === '' || trimmedLine.startsWith('#')) {
             return;
         }
-        // 使用正则表达式分割键值对,以第一个等号为分隔符
         const [key, ...valueParts] = trimmedLine.split('=');
         const value = valueParts.join('=');
         result[key.trim()] = value.trim();
     });
     return result;
 }
+export function Num2Roman(num) {
+    const romanMap = ['0', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', "XIV", 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'];
+    return (num <= 10 && num >= 1) ? romanMap[num] : num
+}
+export function duration2str(duration) {
+    if (typeof duration !== 'number') {
+        throw new Error(`Invalid duration: ${duration}. Expected a numeric value.`);
+    }
+    if (duration === 0) return "";
+    let seconds = duration / 20;
+    const minutes = Math.floor(seconds / 60);
+    seconds %= 60;
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+}
+export const moneys = {
+    /**
+     * 加钱
+     * @param {String} xuid 玩家xuid字符串
+     * @param {Number} value 值
+     * @returns {Boolean} 是否成功
+     */
+    add: (player, value) => addSMoney(player.xuid, value),
+    /**
+     * 减钱
+     * @param {String} xuid 玩家xuid字符串
+     * @param {Number} value 值
+     * @returns {Boolean} 是否成功
+     */
+    reduce: (player, value) => reduceSMoney(player.xuid, -value),
+    /**
+     * 获取钱数
+     * @param {String} xuid 玩家xuid字符串
+     * @returns {Number} 该玩家当前拥有的钱数
+     */
+    get: (player) => getSMoney(player.xuid),
+    /**
+     * 转账
+     * @param {String} from 转出玩家xuid字符串
+     * @param {String} to 转入玩家xuid字符串
+     * @param {Number} value 转账金额
+     * @returns {Boolean} 是否成功
+     */
+    transfer: (from, to, value) => transferSMoney(from.xuid, to.xuid, value)
+}
+//检测正整数函数
+export function isPositiveInteger(number) {
+    return Number.isInteger(number) && number > 0;
+}
+//gives相关函数
+export function addgiveItem(plxuid, item, note) {
+    let gives = givesdata.get(plxuid) || []
+    gives.push({
+        item: item,
+        note: note
+    })
+    givesdata.set(plxuid, gives)
+}
+export function addgiveMoney(plxuid, money, note) {
+    let gives = givesdata.get(plxuid) || []
+    gives.push({
+        money: money,
+        note: note
+    })
+    givesdata.set(plxuid, gives)
+}
+export function addgiveReduceMoney(plxuid, money, note) {
+    let gives = givesdata.get(plxuid) || []
+    gives.push({
+        reducetmoney: money,
+        note: note
+    })
+    givesdata.set(plxuid, gives)
+}
+export function addgiveItems(plxuid, items, note) {
+    items.forEach(item => addgiveItem(plxuid, item, note))
+}
+export function addgiveMoneys(plxuid, moneys, note) {
+    moneys.forEach(money => addgiveMoney(plxuid, money, note))
+}
+export function addgiveReduceMoneys(plxuid, moneys, note) {
+    moneys.forEach(money => addgiveReduceMoney(plxuid, money, note))
+}
+export function setgiveItems(plxuid, items) {
+    let gives = givesdata.get(plxuid)
+    gives.item = items
+    givesdata.set(plxuid, gives)
+}
+export function setgiveMoneys(plxuid, moneys) {
+    let gives = givesdata.get(plxuid)
+    gives.money = moneys
+    givesdata.set(plxuid, gives)
+}
+export function setgiveReduceMoneys(plxuid, moneys) {
+    let gives = givesdata.get(plxuid)
+    gives.reducemoney = moneys
+    givesdata.set(plxuid, gives)
+}
+export function getgives(plxuid) {
+    let gives = givesdata.get(plxuid)
+    return gives
+}
+mc.listen("onJoin", (pl) => {
+    const gdata = getgives(pl.xuid)
+    if (gdata == null) {
+        setgiveItems(pl.xuid, [])
+        setgiveMoneys(pl.xuid, [])
+        setgiveReduceMoneys(pl.xuid, [])
+        return
+    }
+    if (gdata.item == null) {
+        setgiveItems(pl.xuid, [])
+        return
+    }
+    if (gdata.money == null) {
+        setgiveMoneys(pl.xuid, [])
+        return
+    }
+    if (gdata.reducemoney == null) {
+        setgiveReduceMoneys(pl.xuid, [])
+        return
+    }
+    gdata.item.forEach(itemsnbt => {
+        pl.giveItem(mc.newItem(NBT.parseSNBT(itemsnbt.item)))
+        itemsnbt.note && pl.sendLang("give.item.note", { note: itemsnbt.note })
+    })
+    gdata.money.forEach(money => {
+        moneys.add(pl.xuid, money.money)
+        money.note && pl.sendLang("give.money.note", { note: money.note })
+    })
+    gdata.reducemoney.forEach(money => {
+        moneys.reduce(pl.xuid, money.money)
+        money.note && pl.sendLang("give.reducemoney.note", { note: money.note })
+    })
+})
+
+
 
 
 
