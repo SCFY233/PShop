@@ -2,10 +2,10 @@
 /// <reference path="c:/ll3/dev/dts/helperlib/src/index.d.ts" />
 ///<reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
 import { addSMoney, reduceSMoney, getSMoney, transferSMoney } from "../../../SMoney/main.js";
-import { lang } from "../consts.js"
+import { parseItemNbt } from "./nbt.js"
 //通用函数
 /**
- * 判断两个值是否完全相同
+ * 判断两个值是否类似（支持不同顺序但内容相同的数组）
  * @param {Any} a 
  * @param {Any} b 
  * @returns {Boolean}
@@ -14,20 +14,19 @@ export function same(a, b) {
     try {
         if (a == b) return true;
         if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
+        if (Object.keys(a).length !== Object.keys(b).length) return false;
         if (Array.isArray(a) && Array.isArray(b)) {
-            if (a.length !== b.length) return false;
-            for (let i = 0; i < a.length; i++) {
-                if (!same(a[i], b[i])) return false;
+            const setA = new Set(a);
+            for (const item of b) {
+                if (!setA.has(item)) return false;
+            }
+            return true;
+        } else {
+            for (const key in a) {
+                if (!same(a[key], b[key])) return false;
             }
             return true;
         }
-        const keysA = Object.keys(a);
-        const keysB = Object.keys(b);
-        if (keysA.length !== keysB.length) return false;
-        for (let key of keysA) {
-            if (!keysB.includes(key) || !same(a[key], b[key])) return false;
-        }
-        return true;
     } catch (e) {
         logger.error(`Error at Function Same: ${e}`);
         return false;
@@ -84,6 +83,7 @@ export function ReplaceStr(str, replaceobj) {
     }
     return str
 }
+//log方便函数
 export const [warn, error] = [logger.warn, logger.error]
 /**
  * 解析 Properties 文件内容
@@ -106,7 +106,7 @@ export function parseProperties(text) {
 }
 export function Num2Roman(num) {
     const romanMap = ['0', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', "XIV", 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'];
-    return (num <= 10 && num >= 1) ? romanMap[num] : num
+    return (num <= 20 && num >= 1) ? romanMap[num] : num
 }
 export function duration2str(duration) {
     if (typeof duration !== 'number') {
@@ -239,79 +239,157 @@ mc.listen("onJoin", (pl) => {
         money.note && pl.sendLang("give.reducemoney.note", { note: money.note })
     })
 })
-
-
-
-
-
-JsonConfigFile.prototype.inits =
-    /**
-     * 初始化配置项(方便函数)
-     * @param {Object} obj 
-     */
-    function (obj) {
-        let results = []
-        for (let i = 0; i < Object.keys(obj).length; i++) {
-            results[i] = this.init(Object.keys(obj)[i], obj[Object.keys(obj)[i]]);
-        }
-        return results
+/**
+ * 获取可以被扣除的物品数量
+ * @param {Player} player 
+ * @param {String|NbtCompound} item 
+ * @param {Number} aux 
+ */
+export function getCanReductItemCount(player, item, aux, auxStrict) {
+    let its = player.getInventory().getAllItems()
+    let count = 0
+    if (typeof item === "string") {
+        count = its.filter(i => i.type == item && (!auxStrict || i.aux == aux)).reduce((pre, cur) => pre + cur.count, 0)
+    } else if (item instanceof NbtCompound) {
+        const example = mc.newItem(item)
+        const examplenbt = parseItemNbt(item)
+        if (auxStrict) count = its.filter(i => i.type == example.type && i.aux == example.aux && same(parseItemNbt(i.getNbt()), examplenbt)).reduce((pre, cur) => pre + cur.count, 0)
+        else count = its.filter(i => i.type == example.type && same(parseItemNbt(i.getNbt()), examplenbt)).reduce((pre, cur) => pre + cur.count, 0)
     }
-JsonConfigFile.prototype.deletes =
-    /**
-    * 删除配置(方便函数)
-    * @param {String} names 
-    */
-    (names) => { names.forEach(name => this.delete(name)); return this }
+    return count
+}
+/**
+ * 使用物品标准类型名扣除物品
+ * @param {Player} player 
+ * @param {String} itemtype 
+ * @param {Number} aux 
+ * @param {Number} count 
+ * @param {Boolean} strictAux 
+ * @returns {Boolean} 是否成功扣除物品
+ */
+export function reductItembytype(player, itemtype, aux, count, strictAux) {
+    try {
+        var inv = player.getInventory();
+        var items = inv.getAllItems();
+        var remainingCount = count;
+        var canReductCount = getCanReductItemCount(player, itemtype, aux, strictAux);
+        if (canReductCount < count) {
+            return false;
+        }
+        for (var i = 0; i < items.length && remainingCount > 0; i++) {
+            var item = items[i];
+            if (item.type === itemtype && (!strictAux || item.aux === aux)) {
+                var removeCount = Math.min(item.count, remainingCount);
+                inv.removeItem(i, removeCount);
+                remainingCount -= removeCount;
+            }
+        }
+        player.refreshItems();
+        return true;
+    } catch (e) {
+        logger.error(`Error at reductItembytype: ${e}`);
+        return false;
+    }
+}
 
+export function reductItembyNbt(player, itemsnbt, count, strictAux) {
+    try {
+        var inv = player.getInventory();
+        var items = inv.getAllItems();
+        var remainingCount = count;
+        const example = mc.newItem(NBT.parseSNBT(itemsnbt));
+        const examplenbt = parseItemNbt(NBT.parseSNBT(itemsnbt));
+        var canReductCount = getCanReductItemCount(player, NBT.parseSNBT(itemsnbt), null, strictAux);
+        if (canReductCount < count) {
+            return false;
+        }
+        for (var i = 0; i < items.length && remainingCount > 0; i++) {
+            var item = items[i];
+            if (item.type === example.type && (!strictAux || item.aux === example.aux) && same(parseItemNbt(item.getNbt()), examplenbt)) {
+                var removeCount = Math.min(item.count, remainingCount);
+                inv.removeItem(i, removeCount);
+                remainingCount -= removeCount;
+            }
+        }
+        player.refreshItems();
+        return true;
+    } catch (e) {
+        logger.error(`Error at reductItembyNbt: ${e}`);
+        return false;
+    }
+}
+/**
+ * 查找元素在数组位置(粗略查找)
+ * @param {Array} arr 
+ * @param {Any} item 
+ */
+export function getSameItemIndexInArray(arr, item) {
+    const len = arr.length;
+    for (let i = 0; i < len; i++) {
+        if (same(arr[i], item)) return i;
+    }
+    return -1;
+}
 
+/**
+ * 初始化配置项(方便函数)
+ * @param {Object} obj 
+ */
+JsonConfigFile.prototype.inits = function (obj) {
+    let results = []
+    for (let i = 0; i < Object.keys(obj).length; i++) {
+        results[i] = this.init(Object.keys(obj)[i], obj[Object.keys(obj)[i]]);
+    }
+    return results
+}
+/**
+* 删除配置(方便函数)
+* @param {String} names 
+*/
+JsonConfigFile.prototype.deletes = (names) => { names.forEach(name => this.delete(name)); return this }
 
 //SimpleForm
-LLSE_SimpleForm.prototype.addButtons =
-    /**
-    * 添加按钮(方便函数)
-    * @param {Array<String>} names 
-    * @param {Array<String>} logos 
-    * @returns {LLSE_SimpleForm}
-    */
-    (names, logos) => { names.forEach((name, index) => this.addButton(name, logos[index])); return this }
-LLSE_SimpleForm.prototype.addLabels =
-    /**
-    * 添加文本(方便函数)
-    * @param {Array<String} texts 
-    * @returns {LLSE_SimpleForm}
-    */
-    (texts) => { texts.forEach(text => this.addLabel(text)); return this }
+/**
+* 添加按钮(方便函数)
+* @param {Array<String>} names 
+* @param {Array<String>} logos 
+* @returns {LLSE_SimpleForm}
+*/
+LLSE_SimpleForm.prototype.addButtons = (names, logos) => { names.forEach((name, index) => this.addButton(name, logos[index])); return this }
+/**
+* 添加文本(方便函数)
+* @param {Array<String} texts 
+* @returns {LLSE_SimpleForm}
+*/
+LLSE_SimpleForm.prototype.addLabels = (texts) => { texts.forEach(text => this.addLabel(text)); return this }
 
 //Player
-LLSE_Player.prototype.sendBetterModalForm =
-    /**
-    * 发送更好的模式表单
-    * @param {String} title 
-    * @param {String} content 
-    * @param {String} confirmButton 
-    * @param {String} cancelButton 
-    * @param {String} confirmButtonImage 
-    * @param {String} cancelButtonImage 
-    * @param {Function} callback 
-    */
-    function (title, content, confirmButton, cancelButton, confirmButtonImage, cancelButtonImage, callback) {
+/**
+* 发送更好的模式表单
+* @param {String} title 
+* @param {String} content 
+* @param {String} confirmButton 
+* @param {String} cancelButton 
+* @param {String} confirmButtonImage 
+* @param {String} cancelButtonImage 
+* @param {Function} callback 
+*/
+LLSE_Player.prototype.sendBetterModalForm = function (title, content, confirmButton, cancelButton, confirmButtonImage, cancelButtonImage, callback) {
         var gui = mc.newSimpleForm().setTitle(title).setContent(content).addButtons([confirmButton, cancelButton], [confirmButtonImage, cancelButtonImage])
         this.sendForm(gui, function (player, id) {
             if (id == null) return callback(player, id); else return callback(player, !id);
         })
-    };
-LLSE_Player.prototype.sendMessageForm =
-    /**
-    * 发送一个消息框表单
-    * @param {String} title 
-    * @param {Array<String>||String} contents 
-    * @param {String} buttonName 
-    * @param {String} buttonImage 
-    * @param {Function} callback 
-    */
-    function (title, contents, buttonName, buttonImage, callback) {
-        var gui = mc.newSimpleForm()
-        gui.setTitle(title)
+};
+/**
+* 发送一个消息框表单
+* @param {String} title 
+* @param {String[]|String} contents 
+* @param {String} buttonName 
+* @param {String} buttonImage 
+* @param {Function} callback 
+*/
+LLSE_Player.prototype.sendMessageForm = function (title, contents, buttonName, buttonImage, callback) {
+    var gui = mc.newSimpleForm().setTitle(title)
         if (contents instanceof Array) {
             gui.addLabels(contents)
         } else gui.setContent(contents)
