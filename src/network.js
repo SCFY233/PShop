@@ -1,5 +1,5 @@
 import { CompareVersion, ReplaceStr, warn } from "./lib/lib.js"
-import { author, versions, fix, config, lang, consts } from "./consts.js"
+import { versions, config, lang, consts } from "./consts.js"
 /**
  * 启动检查更新
  * @returns {boolean}
@@ -23,8 +23,4 @@ export function checkUpdate() {
         })
     }
 }
-mc.listen("onServerStarted", () => {
-    checkUpdate()
-    log(`PShop 商店系统插件---加载成功,当前版本:${versions}${fix} 作者: ${author}`);
-    if (fix != "" && fix != " Release") logger.warn("你现在使用的版本为开发版,请勿用于生产环境!!!")
-})
+

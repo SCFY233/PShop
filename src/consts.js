@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { TexturePathParser } from './lib/extractTextures.js';
-import { parseProperties, addgiveItems, addgiveMoneys, setgiveReduceMoneys } from './lib/lib.js';
+import { parseProperties, addgiveItems, addgiveMoneys, setgiveReduceMoneys, _moneys, wlog, ReplaceStr, CompareVersion } from './lib/lib.js';
 import * as GMLIBAPI from "../../GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.js"
 
 const __filename = fileURLToPath(import.meta.url);
@@ -31,10 +31,6 @@ export const config = new JsonConfigFile(pluginpath + "config.json", JSON.string
             desc: "PShop-市场"
         }
     },
-    vip: {
-        enable: false,
-        discount: 0.8
-    },
     prefix: {
         shop: "[PShop-商店]",
         market: "[PShop-市场]"
@@ -44,8 +40,11 @@ export const config = new JsonConfigFile(pluginpath + "config.json", JSON.string
         market: true,
         log: true,
     },
-    logo: {
+    icon: {
+        default: ""
     },
+    item_per_page: 6,
+    shop_ignore_aux_default: false,
     textures_path: {
         default: "textures/blocks/missing_tile"
     },
@@ -53,27 +52,26 @@ export const config = new JsonConfigFile(pluginpath + "config.json", JSON.string
         MatchBucketEntityCustomName: false,
         MatchRepairCost: false,
     },
-    itemtranslate: {
-        default: "zh_CN",
-        enable: ["zh_CN", "en_US"]
-    },
+    itemtranslateCode: "zh_CN",
     banitems: ["minecraft:bedrock"],
-    update_url: "http://gitee.com/SCFY233/PShop/raw/main/update/version.json"
+    update_url: "https://gitee.com/SCFY233/PShop/raw/main/update/version.json"
 }));
-if (config.get("version") == null) {
-    logger.warn("检测到旧版本配置文件,请您备份并重启服务器进行升级,插件正在自动卸载...")
+config.getIcon = function (name) {
+    return config.get("icon")[name] || config.get("icon").default
+}
+if (config.get("version") == null || CompareVersion(config.get("version"), versions) == -1) {
+    logger.warn("检测到旧版本配置文件,请您手动更新!\n请您备份并使用ll reload PShop命令重新加载插件\n然后参照默认配置文件进行修改\n然后再次ll reload PShop重载插件\n建议完全修改完后重启服务器")
 }
 const langdata = new JsonConfigFile(pluginpath + "lang.json", JSON.stringify({
     'update.NewVersion': "检测到{name}的新版本:{version}",
     'update.Notice': "更新公告:{notice}",
     'update.Download': "下载链接:{url}",
-    'import.warn.PVip': "未检测到PVip插件,将无法使用VIP相关功能!",
 }))
-export let lang = {}
+export const lang = {}
 export function loadlang() {
     langdata.reload()
-    lang = JSON.parse(langdata.read())
-    lang.get = (key) => lang[key] || key
+    lang.data = JSON.parse(langdata.read())
+    lang.get = (key) => lang.data[key]?.replaceAll("{perfix.shop}", prefix.shop).replaceAll("{perfix.market}", prefix.market) || key
 }
 //释放商店和市场文件
 export const shopdatajson = new JsonConfigFile(pluginpath + "shopdata.json", JSON.stringify({
@@ -116,8 +114,25 @@ export const shopdatajson = new JsonConfigFile(pluginpath + "shopdata.json", JSO
         }
     ]
 }));
+export const shopdata = {
+    Buy: [],
+    Sell: [],
+}
+export function loadShopData() {
+    shopdatajson.reload()
+    let d = JSON.parse(shopdatajson.read())
+    shopdata.Buy = d.Buy || []
+    shopdata.Sell = d.Sell || []
+    return d
+}
 export const marketdatajson = new JsonConfigFile(pluginpath + "marketdata.json", JSON.stringify({ data: [] }));
-const constsdata = new JsonConfigFile(workpath + "data.json")
+export let marketdata = []
+export function loadMarketData() {
+    marketdatajson.reload()
+    marketdata = JSON.parse(marketdatajson.read())
+    return marketdata
+}
+export const constsdata = new JsonConfigFile(workpath + "data.json")
 if (constsdata.read() == "{}") {
     logger.error("数据文件为空,请检查文件是否损坏!")
 }
@@ -173,14 +188,6 @@ export function loadTexture() {
 
 
 export const imports = {
-    PVip: {
-        status: false,
-        /**获取玩家VIP状态
-         * @param {Player} player
-         * @returns {boolean}
-         */
-        getVIPStatus: (player) => false,
-    },
     GMLIB: {
         status: false,
     },
@@ -190,42 +197,55 @@ export const imports = {
 }
 mc.listen("onServerStarted", () => {
     const plugins = ll.listPlugins()
-    if (plugins.includes("PVip")) {
-        imports.PVip.status = true
-        imports.PVip.getVIPStatus = ll.imports("PVip", "get_status")
-    } else logger.warn(lang.get("import.warn.PVip"))
     if (plugins.includes("GMLIB-LegacyRemoteCallApi"))
         imports.GMLIB.status = true
     if (plugins.includes("SMoney"))
         imports.SMoney.status = true
 })
-
-
-const givesdata = new JsonConfigFile(pluginpath + "gives.json", JSON.stringify({
+export const givesdata = new JsonConfigFile(pluginpath + "gives.json", JSON.stringify({
     version: versions,
 }))
-if (givesdata.version == null) {
+if (givesdata.get("version") == null) {
     let old = JSON.parse(givesdata.read())
     let ks = Object.keys(old)
     for (let k of ks) {
         if (typeof k != "number" && k != "version") {
-            addgiveItems(data.name2xuid(k), old[k].item, '')
-            addgiveMoneys(data.name2xuid(k), old[k].money, '')
+            addgiveItems(data.name2xuid(k), [old[k].item], [''])
+            addgiveMoneys(data.name2xuid(k), [old[k].money], [''])
             setgiveReduceMoneys(data.name2xuid(k), [])
             givesdata.delete(k)
         }
     }
 }
-
+export const moneys = !config.get("enable").log ? _moneys : {
+    add: (player, value) => {
+        wlog(ReplaceStr(lang.get("log.addmoney"), { player, value }))
+        return _moneys.add(player, value)
+    },
+    reduce: (player, value) => {
+        wlog(ReplaceStr(lang.get("log.reducemoney"), { player, value }))
+        return _moneys.reduce(player, value)
+    },
+    get: (player) => {
+        wlog(ReplaceStr(lang.get("log.getmoney"), { player }))
+        return _moneys.get(player)
+    },
+    transfer: (from, to, value) => {
+        wlog(ReplaceStr(lang.get("log.transfermoney"), { from, to, value }))
+        return _moneys.transfer(from, to, value)
+    }
+}
 export function loaddatas() {
-    console.time('加载数据');
+    console.time('加载数据用时');
     const startMem = process.memoryUsage();
     logger.warn('正在构建所需要的表...');
     loadlang()
     loadconstsmap();
     loadTexture();
+    loadShopData();
+    loadMarketData();
     const endMem = process.memoryUsage();
     logger.warn('完成!使用内存: ' + ((endMem.heapUsed - startMem.heapUsed) / 1024 / 1024).toFixed(2) + ' MB');
-    console.timeEnd('加载数据');
+    console.timeEnd('加载数据用时');
 }
 loaddatas()
