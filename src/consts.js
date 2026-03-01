@@ -3,7 +3,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { TexturePathParser } from './lib/extractTextures.js';
 import { parseProperties, addgiveItems, addgiveMoneys, setgiveReduceMoneys, _moneys, wlog, ReplaceStr, CompareVersion, getGameLang } from './lib/lib.js';
-
+import { getSMoneyConfig } from '../../SMoney/main.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -13,7 +13,7 @@ export const workpath = "./plugins/PShop/";
 export const versions = "3.2.0"
 export const fix = " Release"
 export const author = "Planet工作室-星辰开发组-春风"
-
+export const moneyname = getSMoneyConfig().moneyname ?? "金币"
 
 export const server_properties = parseProperties(fs.readFileSync(BDSPath + "/server.properties", "utf8"))
 //释放配置文件
@@ -70,6 +70,33 @@ const langdata = new JsonConfigFile(pluginpath + "lang.json", JSON.stringify({
     'update.NewVersion': "检测到{name}的新版本:{version}",
     'update.Notice': "更新公告:{notice}",
     'update.Download': "下载链接:{url}",
+    "gui.shop.main.title": "{perfix.shop}系统商店-主菜单",
+    "gui.shop.main.content": "来干点什么?",
+    "gui.shop.main.button.buy": "购买",
+    "gui.shop.main.button.sell": "出售",
+    "gui.back": "返回",
+    "gui.shop.buy.group.title": "{perfix.shop}系统商店-购买{item.name}",
+    "gui.shop.buy.group.content": "要买点什么?",
+    "gui.shop.buy.item.title": "{perfix.shop}系统商店-购买{item.name}",
+    "gui.shop.buy.item.content": "该商品信息如下:\n名称: {item.name}\n标准类型名:{item.type}\n特殊值:{item.aux}\n价格:{item.money}/个.",
+    "gui.item.content.ench": "附魔信息:{enchs}.",
+    "gui.item.content.ench.step": "\n|",
+    "gui.item.content.potion": "药水信息{potions}.",
+    "gui.item.content.items": "含有物品:",
+    "gui.item.content.items.step": "\n=",
+    "gui.shop.buy.item.count": "购买数量:",
+    "gui.tip.count": "数量输入正整数a.a",
+    "gui.shop.buy.item.submit": "确定",
+    "gui.tip.mustPositiveInteger": "数量必须为正整数!!!",
+    "gui.shop.buy.item.confirm.title": "{perfix.shop}系统商店-购买{item.name}",
+    "gui.shop.buy.item.confirm.content": "你确定要购买吗?请最后检查信息:\n{content}\n购买数量:{item.count}\n花费:{totalCost}.",
+    "gui.comfirm": "继续",
+    "gui.cancel": "取消",
+    "gui.tip": "提示",
+    "gui.tip.nomoney": "你没钱啦!花费:{totalCost}{money.name},但是你只有{pl.money}{money.name}!",
+    "gui.tip.noroom": "你背包没空间装不下啦eme...",
+    "gui.shop.buy.item.success.title": "{perfix.shop}系统商店",
+    "gui.shop.buy.item.success.content": "购买成功!!!!!\n点击返回继续购买,点击取消退出界面."
 }))
 export const lang = {}
 export function loadlang() {
@@ -190,7 +217,7 @@ export const Texture_Extractor = new TexturePathParser({
 })
 export function vanilla_texture_paths() { return JSON.parse(fs.readFileSync(path.join(BDSPath, "/plugins/PShop/vanilla_texture.json"), "utf8")) }
 export const texture_paths = {
-    get: (type, aux) => texture_paths.data[type]?.[aux] ?? texture_paths.data[type]?.[0] ?? config.get("texture_path")?.default
+    get: (type, aux) => texture_paths.data?.[type]?.[aux] ?? texture_paths.data?.[type]?.[0] ?? config.get("texture_path")?.default
 }
 export function loadTexture() {
     texture_paths.data = { ...Texture_Extractor.run(), ...vanilla_texture_paths() }
@@ -232,24 +259,7 @@ if (givesdata.get("version") == null) {
         }
     }
 }
-export const moneys = !config.get("enable").log ? _moneys : {
-    add: (player, value) => {
-        wlog(ReplaceStr(lang.get("log.addmoney"), { player, value }))
-        return _moneys.add(player, value)
-    },
-    reduce: (player, value) => {
-        wlog(ReplaceStr(lang.get("log.reducemoney"), { player, value }))
-        return _moneys.reduce(player, value)
-    },
-    get: (player) => {
-        wlog(ReplaceStr(lang.get("log.getmoney"), { player }))
-        return _moneys.get(player)
-    },
-    transfer: (from, to, value) => {
-        wlog(ReplaceStr(lang.get("log.transfermoney"), { from, to, value }))
-        return _moneys.transfer(from, to, value)
-    }
-}
+export const moneys = _moneys
 export function loaddatas() {
     console.time('加载数据用时');
     const startMem = process.memoryUsage();

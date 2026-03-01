@@ -3,7 +3,8 @@
 ///<reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
 import { addSMoney, reduceSMoney, getSMoney, transferSMoney } from "../../../SMoney/main.js";
 import { parseItem } from "./nbt.js"
-import { config, lang, givesdata, moneys, enchs, potions, effects, gamelang } from "../consts.js"
+import { config, givesdata, moneys, enchs, potions, gamelang } from "../consts.js"
+import fs from 'fs'
 import * as GMLIB from "../../../GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.js"
 //通用函数
 /**
@@ -66,9 +67,9 @@ export function getDateForLogging() {
 export function wlog(pl, msg) {
     try {
         const formattedDate = getDateForLogging();
-        const logFilePath = `./logs/PShop/${formattedDate.split(' ')[0]}.log`;
-        const logfile = new File(logFilePath, file.AppendMode);
-        logfile.writeSync(`${formattedDate} ${pl.realName} ${msg}\n`);
+        const logFilePath = `./logs/PShop.log`;
+        File.writeTo("./logs/PShop.log", "")
+        return fs.appendFileSync(logFilePath, `${formattedDate} ${pl.realName} ${msg}\n`);
     } catch (e) {
         logger.error(`Error at Add Log: ${e}`);
     }
@@ -136,13 +137,13 @@ export const _moneys =
          * @param {Number} value 值
          * @returns {Boolean} 是否成功
          */
-    reduce: (player, value) => reduceSMoney(player.xuid, -value) ? true : error(`Failed to reduce money for ${player.realName} (xuid: ${player.xuid})`),
+    reduce: (player, value) => reduceSMoney(player.xuid, value) ? true : error(`Failed to reduce money for ${player.realName} (xuid: ${player.xuid})`),
         /**
          * 获取钱数
          * @param {Player} player 玩家对象
          * @returns {Number} 该玩家当前拥有的钱数
          */
-    get: (player) => getSMoney(player.xuid) ? getSMoney(player.xuid) : error(`Failed to get money for ${player.realName} (xuid: ${player.xuid})`),
+    get: (player) => getSMoney(player.xuid),
         /**
          * 转账
          * @param {Player} from 转出玩家对象
@@ -376,10 +377,8 @@ export function getItemInfo(item) {
         for (let i = 0; i < parsed_data.Items.length; i++) {
             let item = parsed_data.Items[i]
             result.items[item.Slot] = getItemInfo(item)
-            result.items.maxSlot = item.Slot
         }
     }
-
     return result
 }
 export function getEnchInfo(parsed_data) {
@@ -397,6 +396,13 @@ export function getEnchInfo(parsed_data) {
         })
     return enc
 }
+export function getEnchText(ench) {
+    return ench.translated + " " + ench.lvlRoman
+}
+export function getEnchContent(enchs) {
+    const en = enchs.forEach(e => str += (lang.get("gui.item.content.ench.step") + getEnchText(e)))
+    return ReplaceStr(lang.get("gui.item.content.ench"), { enchs: en })
+}
 export function getPotionInfo(parsed_data) {
     const id = parsed_data.obj.Name
     if (id.includes("potion")) {
@@ -406,7 +412,13 @@ export function getPotionInfo(parsed_data) {
         return potioninfo
     } else return null
 }
+export function getItemContent(item, key) {
+    const info = getItemInfo(item)
+    const replace = {
 
+    }
+    return ReplaceStr(gamelang.get(key), replace)
+}
 /**
  * 解析lang
  * @param {String} text 
@@ -446,7 +458,7 @@ JsonConfigFile.prototype.inits = function (obj) {
 * 删除配置(方便函数)
 * @param {String} names 
 */
-JsonConfigFile.prototype.deletes = (names) => { names.forEach(name => this.delete(name)); return this }
+JsonConfigFile.prototype.deletes = function (names) { names.forEach(name => this.delete(name)); return this }
 
 
 LLSE_Player.prototype.giveItems = function (items, counts) {

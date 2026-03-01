@@ -9,13 +9,18 @@ import { config, lang } from "../consts.js"
 * @param {Array<String>} logos 
 * @returns {LLSE_SimpleForm}
 */
-LLSE_SimpleForm.prototype.addButtons = (names, logos) => { names.forEach((name, index) => this.addButton(name, logos[index])); return this }
+LLSE_SimpleForm.prototype.addButtons = function (names, logos) {
+    names.forEach((name, index) => this.addButton(name, logos[index]));
+    return this;
+};
 /**
 * 添加文本(方便函数)
 * @param {Array<String} texts 
 * @returns {LLSE_SimpleForm}
 */
-LLSE_SimpleForm.prototype.addLabels = (texts) => { texts.forEach(text => this.addLabel(text)); return this }
+LLSE_SimpleForm.prototype.addLabels = function (texts) {
+    texts.forEach(text => this.addLabel(text)); return this
+}
 
 //Player
 /**
@@ -29,7 +34,8 @@ LLSE_SimpleForm.prototype.addLabels = (texts) => { texts.forEach(text => this.ad
 * @param {Function} callback 
 */
 LLSE_Player.prototype.sendBetterModalForm = function (title, content, confirmButton, cancelButton, confirmButtonImage, cancelButtonImage, callback) {
-    var gui = mc.newSimpleForm().setTitle(title).setContent(content).addButtons([confirmButton, cancelButton], [confirmButtonImage, cancelButtonImage])
+    var gui = mc.newSimpleForm().setTitle(title).setContent(content)
+    gui.addButtons([confirmButton, cancelButton], [confirmButtonImage, cancelButtonImage])
     this.sendForm(gui, function (player, id) {
         if (id == null) return callback(player, id); else return callback(player, !id);
     })
@@ -100,6 +106,7 @@ export class PageForm {
         }
         return player.sendForm(gui, (player, id) => {
             const index = id ? start + id : id;
+            if (id == null) return
             if (id == items.length && page > 1) {
                 return this.send(player, page - 1, lastbuttons, lastbuttonfunction)
             } else if (id == items.length + 1 && page < this.maxPage) {

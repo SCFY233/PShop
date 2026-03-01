@@ -12,4 +12,4 @@ mc.listen("onServerStarted", () => {
     if (fix != "" && fix != " Release") logger.warn("你现在使用的版本为开发版,请勿用于生产环境!!!")
 })
 // shop.buyItem(pl, shopdata.Buy[0], function () { }
-mc.listen("onJump", (pl) => getItemInfo(pl.getHand()).items.forEach((item, index) => log(index + " " + item)))
+// mc.listen("onJump", (pl) => shop.buyGroup(pl, shopdata.Buy, function () { }))
