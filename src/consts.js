@@ -2,8 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { TexturePathParser } from './lib/extractTextures.js';
-import { parseProperties, addgiveItems, addgiveMoneys, setgiveReduceMoneys, _moneys, wlog, ReplaceStr, CompareVersion } from './lib/lib.js';
-import * as GMLIBAPI from "../../GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.js"
+import { parseProperties, addgiveItems, addgiveMoneys, setgiveReduceMoneys, _moneys, wlog, ReplaceStr, CompareVersion, getGameLang } from './lib/lib.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,7 +13,6 @@ export const workpath = "./plugins/PShop/";
 export const versions = "3.2.0"
 export const fix = " Release"
 export const author = "Planet工作室-星辰开发组-春风"
-export default GMLIBAPI
 
 
 export const server_properties = parseProperties(fs.readFileSync(BDSPath + "/server.properties", "utf8"))
@@ -41,7 +39,7 @@ export const config = new JsonConfigFile(pluginpath + "config.json", JSON.string
         log: true,
     },
     icon: {
-        default: ""
+        default: "textures/blocks/missing_tile"
     },
     item_per_page: 6,
     shop_ignore_aux_default: false,
@@ -52,10 +50,16 @@ export const config = new JsonConfigFile(pluginpath + "config.json", JSON.string
         MatchBucketEntityCustomName: false,
         MatchRepairCost: false,
     },
+    gamelang: "zh_CN",
     itemtranslateCode: "zh_CN",
     banitems: ["minecraft:bedrock"],
     update_url: "https://gitee.com/SCFY233/PShop/raw/main/update/version.json"
 }));
+/**
+ * 获取图标
+ * @param {String} name 
+ * @returns {String} 
+ */
 config.getIcon = function (name) {
     return config.get("icon")[name] || config.get("icon").default
 }
@@ -71,6 +75,11 @@ export const lang = {}
 export function loadlang() {
     langdata.reload()
     lang.data = JSON.parse(langdata.read())
+    /**
+     * 获取文本
+     * @param {String} key 
+     * @returns {String} 
+     */
     lang.get = (key) => lang.data[key]?.replaceAll("{perfix.shop}", prefix.shop).replaceAll("{perfix.market}", prefix.market) || key
 }
 //释放商店和市场文件
@@ -164,6 +173,7 @@ export function loadconstsmap() {
             effects[effect.id] = effect;
         }
         consts.effects = [], consts.potions = [], consts.enchants = []
+        console.info("加载常量数据...")
     } catch (error) {
         console.error("加载常量数据时出错: ", error);
     }
@@ -178,14 +188,19 @@ export const Texture_Extractor = new TexturePathParser({
     worldName: server_properties['level-name'],
     outputPath: path.join(BDSPath, "/plugins/PShop/temp/textures.json")
 })
-function vanilla_texture_paths() { return JSON.parse(fs.readFileSync(path.join(BDSPath, "/plugins/PShop/vanilla_texture.json"), "utf8")) }
-export let texture_paths = {
-    get: (type, aux) => { return texture_paths.data[type]?.[aux] ?? texture_paths.data[type]?.[0] ?? config.get("texture_path")?.default; }
+export function vanilla_texture_paths() { return JSON.parse(fs.readFileSync(path.join(BDSPath, "/plugins/PShop/vanilla_texture.json"), "utf8")) }
+export const texture_paths = {
+    get: (type, aux) => texture_paths.data[type]?.[aux] ?? texture_paths.data[type]?.[0] ?? config.get("texture_path")?.default
 }
 export function loadTexture() {
     texture_paths.data = { ...Texture_Extractor.run(), ...vanilla_texture_paths() }
 }
-
+export const gamelang = {
+    get: (key) => gamelang?.data?.[key] ?? key
+}
+export function loadGameLang() {
+    gamelang.data = getGameLang(config.get("gamelang") || "zh_CN")
+}
 
 export const imports = {
     GMLIB: {
@@ -240,6 +255,7 @@ export function loaddatas() {
     const startMem = process.memoryUsage();
     logger.warn('正在构建所需要的表...');
     loadlang()
+    loadGameLang()
     loadconstsmap();
     loadTexture();
     loadShopData();

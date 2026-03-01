@@ -1,17 +1,18 @@
 import { config } from '../consts.js'
 /**
  * 解析物品NBT
- * @param {NbtCompound} nbt 物品NBT
+ * @param {NbtCompound|Object} nbt 物品NBT
  * @param {Array<string>} otherdeletes 需要额外删除的NBT标签
- * @returns {Object|null} 物品信息，解析失败返回null
+ * @returns {Object} 物品信息
  */
 export function parseItemNbt(nbt, otherdeletes = []) {
     try {
         if (nbt == null) return null;
-        const nbtobj = nbt instanceof NbtCompound ? NBTtoObject(nbt) : { ...nbt };
+        const nbtobj = nbt instanceof NbtCompound ? NBTtoObject(nbt) : nbt;
+        let Slot = nbtobj?.Slot
         const nbtConfig = config.get("nbt");
         delete nbtobj.WasPickedUp;
-        delete nbtobj.Damage;
+        delete nbtobj.Slot
         if (nbtobj.Block) {
             delete nbtobj.Block.version;
         }
@@ -38,17 +39,18 @@ export function parseItemNbt(nbt, otherdeletes = []) {
                 'wasJustBrewed', 'Slot', 'Invulnerable',
             ];
             entityTags.forEach(tag => delete nbtobj.tag[tag]);
-            const nbtobjItems = nbtobj.tag.Items || [];
-            const chargedItem = nbtobj.tag.ChargedItem || "";
+            const nbtobjItems = nbtobj.tag.Items ?? [];
+            const chargedItem = nbtobj.tag.ChargedItem;
             delete nbtobj.tag.Items;
             delete nbtobj.tag.ChargedItem;
-            if (nbtobj.tag.Damage === 0) {
-                delete nbtobj.tag.Damage;
+            if (nbtobj.tag?.Damage === null) {
+                nbtobj.tag.Damage = 0
             }
             return {
                 parsednbtobj: nbtobj,
-                nbtItems: nbtobjItems,
+                nbtItems: nbtobjItems ?? [],
                 chargedItem,
+                Slot: Slot
             };
         }
         if (!nbtobj.tag) {
@@ -59,13 +61,30 @@ export function parseItemNbt(nbt, otherdeletes = []) {
         }
         return {
             parsednbtobj: nbtobj,
-            NBTItems: [],
+            nbtItems: [],
             chargedItem: null,
+            Slot: null
         };
     } catch (e) {
-        logger.error(`[parseItemNbt] 解析NBT失败: ${e.message}`);
-        return null;
+        logger.error(`[parseItemNbt] 解析ItemNBT失败: ${e.message}`);
+        return {
+            parsednbtobj: {},
+            nbtItems: [],
+            chargedItem: null,
+            Slot: null
+        };
     }
+}
+/**
+ * 解析数组物品NBT
+ * @param {NbtCompound[]} nbts
+ * @param {String[]} otherdeletes
+ * @param {Array} otherdeletes
+ */
+export function parseItemNBTs(nbts, otherdeletes) {
+    const result = []
+    nbts.forEach((nbt) => result.push(parseItemNbt(nbt, otherdeletes)))
+    return result
 }
 /**
  * 解析物品SNBT
@@ -73,6 +92,12 @@ export function parseItemNbt(nbt, otherdeletes = []) {
  * @returns {Object|null} 物品信息，解析失败返回null
  */
 export const parseItemSNBT = (snbt) => parseItemNbt(NBT.parseSNBT(snbt))
+/** */
+export function parseItemSNBTs(snbts) {
+    const result = []
+    result.push(parseItemSNBT(snbts))
+    return result
+}
 /**
  * 将NBT对象转换为JavaScript对象
  * @param {NbtCompound | NbtList} nbt NBT对象
@@ -117,4 +142,26 @@ export function NBTtoObject(nbt) {
         logger.error(`[NBTtoObject] 转换NBT对象失败: ${e.message}`);
         return null;
     }
+}
+/**
+ * parse物品
+ * @param {LLSE_Item|NbtCompound} item 
+ * @returns {Object}
+ */
+export function parseItem(item) {
+    let itemnbt
+    if (item?.obj) itemnbt = item.obj
+    else itemnbt = item instanceof LLSE_Item ? item.getNbt() : item
+    const pd = parseItemNbt(itemnbt)
+    return {
+        obj: pd.parsednbtobj,
+        Items: parseItems(pd.nbtItems),
+        chargedItem: pd.chargedItem ? parseItem(pd.chargedItem) : null,
+        Slot: pd.Slot
+    }
+}
+export function parseItems(items) {
+    const r = []
+    items.forEach(item => r.push(parseItem(item)))
+    return r
 }

@@ -2,8 +2,9 @@
 /// <reference path="c:/ll3/dev/dts/helperlib/src/index.d.ts" />
 ///<reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
 import { addSMoney, reduceSMoney, getSMoney, transferSMoney } from "../../../SMoney/main.js";
-import { parseItemNbt } from "./nbt.js"
-import { config, lang, givesdata, moneys } from "../consts.js"
+import { parseItem } from "./nbt.js"
+import { config, lang, givesdata, moneys, enchs, potions, effects, gamelang } from "../consts.js"
+import * as GMLIB from "../../../GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.js"
 //通用函数
 /**
  * 判断两个值是否类似（支持不同顺序但内容相同的数组）
@@ -231,6 +232,25 @@ mc.listen("onJoin", (pl) => {
     }
 })
 /**
+ * 获取可以添加的物品数量
+ * @param {Player} player 
+ * @param {String|NbtCompound} item 
+ * @param {Number} aux 
+ */
+export function getCanPutItemCount(player, item, aux, auxStrict) {
+    let its = player.getInventory().getAllItems()
+    let count = 0
+    if (typeof item === "string") {
+        its.filter(i => i.isNull() || (i.type == item && (!auxStrict || i.aux == aux))).forEach(i => count += i.isNull() ? 64 : (64 - i.count))
+    } else if (item instanceof NbtCompound) {
+        const example = mc.newItem(item)
+        const examplenbt = parseItem(item)
+        if (auxStrict) its.filter(i => i.isNull() || (i.type == example.type && i.aux == example.aux && same(parseItem(i), examplenbt))).forEach(i => count += i.isNull() ? 64 : (64 - i.count))
+    }
+    return count
+}
+
+/**
  * 获取可以被扣除的物品数量
  * @param {Player} player 
  * @param {String|NbtCompound} item 
@@ -243,9 +263,9 @@ export function getCanReductItemCount(player, item, aux, auxStrict) {
         count = its.filter(i => i.type == item && (!auxStrict || i.aux == aux)).reduce((pre, cur) => pre + cur.count, 0)
     } else if (item instanceof NbtCompound) {
         const example = mc.newItem(item)
-        const examplenbt = parseItemNbt(item)
-        if (auxStrict) count = its.filter(i => i.type == example.type && i.aux == example.aux && same(parseItemNbt(i.getNbt()), examplenbt)).reduce((pre, cur) => pre + cur.count, 0)
-        else count = its.filter(i => i.type == example.type && same(parseItemNbt(i.getNbt()), examplenbt)).reduce((pre, cur) => pre + cur.count, 0)
+        const examplenbt = parseItem(item)
+        if (auxStrict) count = its.filter(i => i.type == example.type && i.aux == example.aux && same(parseItem(i), examplenbt)).reduce((pre, cur) => pre + cur.count, 0)
+        else count = its.filter(i => i.type == example.type && same(parseItem(i), examplenbt)).reduce((pre, cur) => pre + cur.count, 0)
     }
     return count
 }
@@ -289,14 +309,14 @@ export function reductItembyNbt(player, itemsnbt, count, strictAux) {
         var items = inv.getAllItems();
         var remainingCount = count;
         const example = mc.newItem(NBT.parseSNBT(itemsnbt));
-        const examplenbt = parseItemNbt(NBT.parseSNBT(itemsnbt));
+        const examplenbt = parseItem(mc.newItem(NBT.parseSNBT(itemsnbt)));
         var canReductCount = getCanReductItemCount(player, NBT.parseSNBT(itemsnbt), null, strictAux);
         if (canReductCount < count) {
             return false;
         }
         for (var i = 0; i < items.length && remainingCount > 0; i++) {
             var item = items[i];
-            if (item.type === example.type && (!strictAux || item.aux === example.aux) && same(parseItemNbt(item.getNbt()), examplenbt)) {
+            if (item.type === example.type && (!strictAux || item.aux === example.aux) && same(parseItem(item), examplenbt)) {
                 var removeCount = Math.min(item.count, remainingCount);
                 inv.removeItem(i, removeCount);
                 remainingCount -= removeCount;
@@ -321,6 +341,96 @@ export function getSameItemIndexInArray(arr, item) {
     }
     return -1;
 }
+/**
+ * 获取物品信息
+ * @param {Item|Object} item 
+ */
+export function getItemInfo(item) {
+    const result = {
+        items: [],
+    }
+    if (item instanceof LLSE_Item) {
+        result.type = item.type
+        result.name = item.getTranslateName(config.get("itemtranslateCode") ?? "zh_CN") ?? item.name
+        result.count = item.count
+        result.aux = item.aux
+        result.lore = item.lore ?? []
+        result.damage = item.damage
+    } else {
+        result.type = item.obj.Name
+        result.name = mc.newItem(item.obj.Name, 1).getTranslateName(config.get("itemtranslateCode") ?? "zh_CN") ?? mc.newItem(item.obj.Name, 1).name
+        result.count = item.obj.Count ?? 1
+        result.aux = item.obj?.Damage ?? 0
+        result.lore = item.obj?.tag?.Lore ?? []
+        result.damage = item.obj?.tag?.Damage ?? 0
+    }
+    const parsed_data = parseItem(item)
+    if (parsed_data?.chargedItem) {
+        result.chargedItem = getItemInfo(parsed_data.chargedItem)
+    } else result.chargedItem = null
+    result.enchinfo = getEnchInfo(parsed_data)
+    result.potioninfo = getPotionInfo(parsed_data)
+    result.CustomName = parsed_data?.obj?.tag?.display?.CustomName ?? " "
+    if ((parsed_data.Items ?? []).length > 0) {
+        result.items.maxSlot = 0
+        for (let i = 0; i < parsed_data.Items.length; i++) {
+            let item = parsed_data.Items[i]
+            result.items[item.Slot] = getItemInfo(item)
+            result.items.maxSlot = item.Slot
+        }
+    }
+
+    return result
+}
+export function getEnchInfo(parsed_data) {
+    const enc = []
+    const enchsarr = parsed_data?.obj?.tag?.ench ?? []
+    if (enchsarr.length > 0)
+        enchsarr.forEach(ench => {
+            enc.push({
+                id: Number(ench.id),
+                langkey: enchs[ench.id].desc,
+                translated: gamelang.get(enchs[ench.id].desc),
+                lvl: Number(ench.lvl),
+                lvlRoman: Num2Roman(Number(ench.lvl))
+            })
+        })
+    return enc
+}
+export function getPotionInfo(parsed_data) {
+    const id = parsed_data.obj.Name
+    if (id.includes("potion")) {
+        const potioninfo = {}
+        potioninfo.effectname = gamelang.get(potions[parsed_data.obj?.Damage]?.effect?.desc) || "???"
+        potioninfo.effectduration = duration2str(potions[parsed_data.obj?.Damage]?.effect?.duration) || "0:00"
+        return potioninfo
+    } else return null
+}
+
+/**
+ * 解析lang
+ * @param {String} text 
+ * @returns 
+ */
+export function parseLangFile(text) {
+    const lines = text.split('\n');
+    const result = {};
+    lines.forEach(line => {
+        const trimmedLine = line.trim();
+        if (trimmedLine === '' || trimmedLine.startsWith('#')) {
+            return;
+        }
+        // 使用正则表达式分割键值对,以第一个等号为分隔符
+        const [key, ...valueParts] = trimmedLine.split('=');
+        const value = valueParts.join('=');
+        result[key.trim()] = value.trim();
+    });
+    return result;
+}
+export function getGameLang(langcode) {
+    return parseLangFile(File.readFrom("./resource_packs/vanilla/texts/" + langcode + ".lang"))
+}
+
 /**
  * 初始化配置项(方便函数)
  * @param {Object} obj 
