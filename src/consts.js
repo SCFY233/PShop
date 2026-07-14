@@ -53,7 +53,7 @@ export const config = new JsonConfigFile(pluginpath + "config.json", JSON.string
     gamelang: "zh_CN",
     itemtranslateCode: "zh_CN",
     banitems: ["minecraft:bedrock"],
-    update_url: "https://gitee.com/SCFY233/PShop/raw/main/update/version.json"
+    update_url: "https://raw.giteeusercontent.com/SCFY233/PShop/raw/main/update/version.json"
 }));
 /**
  * 获取图标
