@@ -4,12 +4,13 @@
 import { author, versions, fix, shopdata } from "./src/consts.js"
 import { getItemInfo } from "./src/lib/lib.js"
 import { shop } from "./src/shop.js"
+import { } from "./src/lib/sign.js"
 import { } from "./src/market.js"
 import { checkUpdate } from "./src/network.js"
 mc.listen("onServerStarted", () => {
     checkUpdate()
     log(`PShop 商店系统插件---加载成功,当前版本:${versions}${fix} 作者: ${author}`);
-    if (fix != "" && fix != " Release") logger.warn("你现在使用的版本为开发版,请勿用于生产环境!!!")
+    if (!["", " Release"].includes(fix)) logger.warn("你现在使用的版本为开发版,请勿用于生产环境!!!")
 })
 // shop.buyItem(pl, shopdata.Buy[0], function () { }
 // mc.listen("onJump", (pl) => shop.buyGroup(pl, shopdata.Buy, function () { }))

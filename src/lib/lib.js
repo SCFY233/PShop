@@ -3,7 +3,7 @@
 ///<reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
 import { addSMoney, reduceSMoney, getSMoney, transferSMoney } from "../../../SMoney/main.js";
 import { parseItem } from "./nbt.js"
-import { config, givesdata, moneys, enchs, potions, gamelang } from "../consts.js"
+import { config, givesdata, enchs, potions, gamelang } from "../consts.js"
 import fs from 'fs'
 import * as GMLIB from "../../../GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.js"
 //通用函数
@@ -122,7 +122,7 @@ export function duration2str(duration) {
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 }
 //迫不得已
-export const _moneys =
+export const moneys =
 {
         /**
          * 加钱

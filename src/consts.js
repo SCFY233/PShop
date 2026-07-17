@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { TexturePathParser } from './lib/extractTextures.js';
-import { parseProperties, addgiveItems, addgiveMoneys, setgiveReduceMoneys, _moneys, wlog, ReplaceStr, CompareVersion, getGameLang } from './lib/lib.js';
+import { parseProperties, addgiveItems, addgiveMoneys, setgiveReduceMoneys, wlog, ReplaceStr, CompareVersion, getGameLang } from './lib/lib.js';
 import { getSMoneyConfig } from '../../SMoney/main.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -53,7 +53,7 @@ export const config = new JsonConfigFile(pluginpath + "config.json", JSON.string
     gamelang: "zh_CN",
     itemtranslateCode: "zh_CN",
     banitems: ["minecraft:bedrock"],
-    update_url: "https://raw.giteeusercontent.com/SCFY233/PShop/raw/main/update/version.json"
+    update_url: "http://update.mcmap.top/?name=PShop"
 }));
 /**
  * 获取图标
@@ -259,7 +259,6 @@ if (givesdata.get("version") == null) {
         }
     }
 }
-export const moneys = _moneys
 export function loaddatas() {
     console.time('加载数据用时');
     const startMem = process.memoryUsage();
