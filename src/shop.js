@@ -2,112 +2,97 @@
 /// <reference path="c:/ll3/dev/dts/helperlib/src/index.d.ts" />
 ///<reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
 import { getSMoney } from "../../SMoney/main.js"
-import { config, lang, moneyname, texture_paths } from "./consts.js"
+import { config, lang, moneyname, texture_paths, shopdata } from "./consts.js"
 import { PageForm } from "./lib/form.js"
-import { moneys, isPositiveInteger, ReplaceStr, getItemInfo, getCanPutItemCount, getEnchContent } from "./lib/lib.js"
+import { moneys, isPositiveInteger, ReplaceStr, getItemInfo, getCanPutItemCount, getEnchContent, newItemWithAux, getItemContent } from "./lib/lib.js"
 export const shop = {
     /**
      * 主表单
      * @param {Player} player 
      * @param {Function} backfunction 
      */
-    main: function (player, backfunction) {
-        const gui = mc.newSimpleForm().setTitle(lang.get("gui.shop.main.title")).setContent(lang.get("gui.shop.main.content"))
-        gui.addButtons([lang.get("gui.shop.main.button.buy"), lang.get("gui.shop.main.button.sell"), lang.get("gui.back")], [config.getIcon("shop.buy"), config.getIcon("shop.sell"), config.get("gui.back")])
+    main(player, backfunction) {
+        const gui = mc.newSimpleForm().setTitle(lang.get("form.shop.main.title")).setContent(lang.get("form.shop.main.content"))
+        gui.addButtons([lang.get("form.shop.main.button.buy"), lang.get("form.shop.main.button.sell"), lang.get("form.back")], [config.getIcon("shop:buy"), config.getIcon("shop:sell"), config.getIcon("form:back")])
         player.sendForm(gui, function (player, id) {
             if (id == 0) {
-                shop.buy(player)
+                shop.buy(player, shop.main)
             } else if (id == 1) {
                 shop.sell(player)
             } else if (id == 2) {
-                backfunction(player)
+                backfunction ? backfunction(player) : void 0 
             }
         })
     },
     getIcon(data) {
-        if (!data.image) {
-            return texture_paths.get(data.data?.[0].id, data.data?.[0].aux)
+        if (!data.image || (data.image == "" && data.type == "item")) {
+            if (data.data[0]?.snbt == true) {
+                const tmpItem = mc.newItem(NBT.parseSNBT(data.data[0]?.snbtstr))
+                return texture_paths.get(tmpItem.type, tmpItem.aux)
+            } else if (data.data[0]?.id) {
+                return texture_paths.get(data.data[0]?.id, data.data[0]?.aux)
+            }
+            else return config.get("texture_path")?.default
         } else return data?.image
     },
-    /**
-     * 购买表单
-     * @param {Player} player 
-     * @param {Function} backfunction 
-     */
-    buyGroup: function (player, sdata, backfunction) {
-        let buyList 
-        if (Array.isArray(sdata)) buyList = sdata
-        else buyList = sdata.data
-        const list = []
-        buyList.forEach(item => list.push({ text: item.name, image: shop.getIcon(item) }))
-        const form = new PageForm(ReplaceStr(lang.get("gui.shop.buy.group.title"), { "item.name": sdata.name }), lang.get("gui.shop.buy.group.content"), list, function (pl, id) {
-            const item = buyList[id]
-            shop.buyItem(pl, item, (pl) => shop.buyGroup(pl, sdata, backfunction))
-        })
-        form.sendTo(player, [{ text: lang.get("gui.back"), image: config.getIcon("gui.back") }], (pl) => backfunction(pl))
+    buy(player, backfunction) {
+        return shop.group(player, shopdata.Buy, shop.buyItem, { name: "", actionkey: "form.action.buy" }, backfunction)
     },
-    /**
-     * 购买物品菜单
-     * @param {Player} player 
-     * @param {Object} item 
-     * @param {Function} backfunction 
-     * @param {Object} defaultinput 
-     * @returns 
-     */
-    buyItem: function (player, item, backfunction, defaultinput) {
-        if (item.type == "group") return shop.buyGroup(player, item, backfunction)
-        const itemdata = item.data[0]
-        if (item.type == "item") {
-            const exampleitem = mc.newItem(itemdata.id, 1)
-            const gui = mc.newCustomForm()
-                .setTitle(ReplaceStr(lang.get("gui.shop.buy.item.title"), { "item.name": item.name }))
-            const info = getItemInfo(exampleitem)
-            gui.addLabel(ReplaceStr(lang.get("gui.shop.buy.item.content"), {
-                "item.name": info.name, "item.money": itemdata.money, "item.type": info.type,
-                "item.aux": info.aux, "pl.money": moneys.get(player)
-            }))
-            if (info.enchinfo.length > 0) {
-                gui.addLabel(getEnchContent(info.enchinfo))
+    group(player, sdata, callback, options = { name: "", actionkey: "form.action.do" }, backfunction) {
+        const items = []
+        sdata.forEach(element => {
+            items.push({ name: element.name, image: shop.getIcon(element) })
+        });
+        const gui = new PageForm(ReplaceStr(lang.get("form.shop.group.title"), { "name": options.name ?? "" }),
+            ReplaceStr(lang.get("form.shop.group.content"), { "action": lang.get(options.actionkey) }),
+            items, function (player, index) {
+                return callback(player, sdata[index], index, sdata, options, backfunction)
             }
-            //无忽略Aux配置
-            exampleitem.setAux(itemdata.aux)
-            const canputcount = getCanPutItemCount(player, exampleitem.getNbt(), itemdata.aux, true)
-            gui.addInput(ReplaceStr(lang.get("gui.shop.buy.item.count"), {
-                "canputcount": canputcount
+        )
+        gui.sendTo(player, [{ name: lang.get("form.back"), image: config.getIcon("form:back") }], (player) => backfunction(player))
+    },
+    buyItem(player, idata, _index, sdata, options, backfunction) {
+        if (idata.type == "group") return shop.group(player, idata.data, shop.buyItem, { name: idata.name, actionkey: "form.action.buy" }, () => {
+            shop.group(player, sdata, shop.buyItem, options, backfunction)
+        })
+        else {
+            const data = idata.data[0]
+            const tmpItem = data.snbt != true ? newItemWithAux(data.id, 1, data.aux) : mc.newItem(NBT.parseSNBT(data.snbtstr))
+            const content = getItemContent(tmpItem, "form.item.content", {}, "")
+            const icontent = ReplaceStr(lang.get("form.item.content.shop"), {
+                "iname": idata.name,
+                "price": data.money,
+                "item": "\n" + content
             })
-                , "", defaultinput?.count || "", lang.get("gui.tip.count"))
-            gui.setSubmitButton(lang.get("gui.shop.buy.item.submit"))
-            player.sendForm(gui, (pl, datas) => {
-                if (datas == null) return
-                if (datas?.[1] == "" || datas?.[1] == null) return backfunction(pl)
-                const count = Number(datas[1])
-                if (!isPositiveInteger(count)) return pl.sendMessageForm(lang.get("gui.tip"), ReplaceStr(lang.get("gui.tip.mustPositiveInteger"), { input: datas?.[1] }), lang.get("gui.back"), config.getIcon('gui.back'), (pl, r) => {
-                    if (r == 0) return shop.buyItem(pl, item, backfunction, { count: datas?.[1] || "" })
-                })
-                const totalCost = Number(itemdata.money) * count
-                const plmoney = moneys.get(pl)
-                if (plmoney < totalCost) return pl.sendMessageForm(lang.get("gui.tip"), ReplaceStr(lang.get("gui.tip.nomoney"), {
-                    totalCost: totalCost, 'pl.money': plmoney, 'money.name': moneyname
-                }), lang.get("gui.back"), config.getIcon('gui.back'), (pl, r) => {
-                    if (r == 0) return shop.buyItem(pl, item, backfunction, { count: datas?.[1] || "" })
-                })
-                if (canputcount < count) return pl.sendMessageForm(lang.get("gui.tip"), ReplaceStr(lang.get("gui.tip.noroom"), { count, canput }))
-                pl.sendBetterModalForm(lang.get("gui.shop.buy.item.confirm.title"), ReplaceStr(lang.get("gui.shop.buy.item.confirm.content"), {
-                    
-                }), lang.get("gui.comfirm"), lang.get("gui.cancel"), config.getIcon('gui.comfirm'), config.getIcon('gui.cancel'), (pl, result) => {
-                    if (result != null) {
-                        if (result) {
-                            let cmd
-                            if (moneys.reduce(pl, totalCost)) cmd = mc.runcmdEx(`give "${pl.realName}" ${itemdata.id} ${count} ${itemdata.aux}`)
-                            if (cmd.success)
-                                pl.sendBetterModalForm(lang.get("gui.shop.buy.item.success.title"), `${lang.get("gui.shop.buy.item.success.content")}\n${cmd.output}`, lang.get("gui.back"), lang.get("gui.cancel"), config.getIcon("gui.back"), config.getIcon("gui.cancel"), function (pl, res) {
-                                if (res) {
-                                    shop.buyItem(pl, item, backfunction)
-                                }
-                            })
-                        } else shop.buyItem(pl, item, backfunction, defaultinput)
-                    }
-                })
+            const gui = mc.newCustomForm()
+            gui.setTitle(ReplaceStr(lang.get("form.shop.buy.item.title"), { name: idata.name }))
+            gui.addLabel(icontent)
+            gui.addDivider()
+            const maxcount = Math.ceil(moneys.get(player) / data.money)
+            gui.addInput(ReplaceStr(lang.get("form.shop.buy.item.count"), {
+                plmoney: moneys.get(player),
+                moneyname: moneyname,
+                count: maxcount
+            }), "", options.input ?? "", lang.get("form.tip.item.count"))
+            player.sendForm(gui, (pl, data) => {
+                if (data == null) return
+                if (data[2] == "") return backfunction(pl)
+                const plcount = Number(data[2])
+                if (!isPositiveInteger(plcount) || plcount > maxcount) pl.sendMessageForm(ReplaceStr(lang.get("form.shop.buy.item.title"), { name: idata.name }),
+                    ReplaceStr(!isPositiveInteger(plcount) ? lang.get("form.shop.buy.item.count.type") : lang.get("form.shop.buy.item.count.max"), { input: data[2], maxcount }),
+                    lang.get("form.back"), config.getIcon("form:back"), (pl, id) => {
+                        if (id == null) return
+                        return shop.buyItem(pl, idata, _index, sdata, Object.assign(options, { input: data[2] }), backfunction)
+                    })
+                else {
+                    const totalCost = plcount * data.money
+                    pl.sendMessageForm(ReplaceStr(lang.get("form.shop.buy.item.title"), { name: idata.name }),
+                        ReplaceStr(lang.get("form.shop.buy.item.confirm"), { totalCost, moneyname: moneyname, }),
+                        lang.get("form.back"), config.getIcon("form:back"), (pl, id) => {
+                            if (id == null) return
+                            return shop.buyItem(pl, idata, _index, sdata, Object.assign(options, { input: data[2] }), backfunction)
+                        })
+                }
             })
         }
     }

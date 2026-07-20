@@ -1,4 +1,5 @@
 import { config } from '../consts.js'
+import { warn, error } from './lib.js'
 /**
  * 解析物品NBT
  * @param {NbtCompound|Object} nbt 物品NBT
@@ -9,7 +10,7 @@ export function parseItemNbt(nbt, otherdeletes = []) {
     try {
         if (nbt == null) return null;
         const nbtobj = nbt instanceof NbtCompound ? NBTtoObject(nbt) : nbt;
-        let Slot = nbtobj?.Slot
+        let Slot = nbtobj.Slot ?? null
         const nbtConfig = config.get("nbt");
         delete nbtobj.WasPickedUp;
         delete nbtobj.Slot
@@ -63,7 +64,7 @@ export function parseItemNbt(nbt, otherdeletes = []) {
             parsednbtobj: nbtobj,
             nbtItems: [],
             chargedItem: null,
-            Slot: null
+            Slot: Slot
         };
     } catch (e) {
         logger.error(`[parseItemNbt] 解析ItemNBT失败: ${e.message}`);
@@ -94,9 +95,7 @@ export function parseItemNBTs(nbts, otherdeletes) {
 export const parseItemSNBT = (snbt) => parseItemNbt(NBT.parseSNBT(snbt))
 /** */
 export function parseItemSNBTs(snbts) {
-    const result = []
-    result.push(parseItemSNBT(snbts))
-    return result
+    return snbts.map(parseItemSNBT)
 }
 /**
  * 将NBT对象转换为JavaScript对象
@@ -157,11 +156,9 @@ export function parseItem(item) {
         obj: pd.parsednbtobj,
         Items: parseItems(pd.nbtItems),
         chargedItem: pd.chargedItem ? parseItem(pd.chargedItem) : null,
-        Slot: pd.Slot
+        Slot: item.Slot ?? pd.Slot ?? null
     }
 }
 export function parseItems(items) {
-    const r = []
-    items.forEach(item => r.push(parseItem(item)))
-    return r
+    return items.map(parseItem)
 }

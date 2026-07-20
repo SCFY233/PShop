@@ -3,7 +3,7 @@
 ///<reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
 import { addSMoney, reduceSMoney, getSMoney, transferSMoney } from "../../../SMoney/main.js";
 import { parseItem } from "./nbt.js"
-import { config, givesdata, enchs, potions, gamelang } from "../consts.js"
+import { config, givesdata, enchs, potions, gamelang, lang, prefix } from "../consts.js"
 import fs from 'fs'
 import * as GMLIB from "../../../GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.js"
 //通用函数
@@ -356,7 +356,7 @@ export function getItemInfo(item) {
         result.count = item.count
         result.aux = item.aux
         result.lore = item.lore ?? []
-        result.damage = item.damage
+        result.damage = item.damage ?? 0
     } else {
         result.type = item.obj.Name
         result.name = mc.newItem(item.obj.Name, 1).getTranslateName(config.get("itemtranslateCode") ?? "zh_CN") ?? mc.newItem(item.obj.Name, 1).name
@@ -366,14 +366,16 @@ export function getItemInfo(item) {
         result.damage = item.obj?.tag?.Damage ?? 0
     }
     const parsed_data = parseItem(item)
+    if (item.chargedItem) parsed_data.chargedItem = item.chargedItem
+    if (item.Items) parsed_data.Items = item.Items
     if (parsed_data?.chargedItem) {
         result.chargedItem = getItemInfo(parsed_data.chargedItem)
     } else result.chargedItem = null
     result.enchinfo = getEnchInfo(parsed_data)
     result.potioninfo = getPotionInfo(parsed_data)
-    result.CustomName = parsed_data?.obj?.tag?.display?.CustomName ?? " "
+    result.CustomName = parsed_data?.obj?.tag?.display?.CustomName ?? parsed_data?.obj?.tag?.display?.Name ?? null
+    result.loreinfo = getLoreInfo(result.lore)
     if ((parsed_data.Items ?? []).length > 0) {
-        result.items.maxSlot = 0
         for (let i = 0; i < parsed_data.Items.length; i++) {
             let item = parsed_data.Items[i]
             result.items[item.Slot] = getItemInfo(item)
@@ -399,9 +401,12 @@ export function getEnchInfo(parsed_data) {
 export function getEnchText(ench) {
     return ench.translated + " " + ench.lvlRoman
 }
-export function getEnchContent(enchs) {
-    const en = enchs.forEach(e => str += (lang.get("gui.item.content.ench.step") + getEnchText(e)))
-    return ReplaceStr(lang.get("gui.item.content.ench"), { enchs: en })
+export function getEnchContent(enchs, prefix = "") {
+    let str = lang.get("prefix.ench")
+    if (enchs.length == 0) return
+    enchs.forEach(e => str += (lang.get("form.item.ench.step") + getEnchText(e)))
+    str += "{prefix.end}"
+    return ReplaceStr(lang.get("form.item.ench"), { enchs: str, prefix })
 }
 export function getPotionInfo(parsed_data) {
     const id = parsed_data.obj.Name
@@ -412,12 +417,52 @@ export function getPotionInfo(parsed_data) {
         return potioninfo
     } else return null
 }
-export function getItemContent(item, key) {
-    const info = getItemInfo(item)
-    const replace = {
-
+export function getPotionContent(potion, prefix = "") {
+    if (potion == null) return
+    log(lang.get("prefix.potion") + ReplaceStr(lang.get("form.item.potion"), { "potion": lang.get("prefix.potion") + potion.effectname + " " + potion.effectduration, prefix }) + "{prefix.end}")
+    return lang.get("prefix.potion") + ReplaceStr(lang.get("form.item.potion"), { "potion": lang.get("prefix.potion") + potion.effectname + " " + potion.effectduration, prefix }) + "{prefix.end}"
+}
+export function getLoreInfo(info) {
+    const lores = info.lore ?? []
+    if (lores.length == 0) return null
+    return lang.get("form.item.lore") + lores.join(lang.get("form.item.lore.step")) + "{prefix.end}"
+}
+export function getItemContent(item, key, replaceobj, pre_space) {
+    const info = item instanceof LLSE_Item ? getItemInfo(item) : item
+    let items = ""
+    // log(info)
+    if (info.items.length != 0) {
+        items += ReplaceStr(lang.get("form.item.items"), { prefix: pre_space })
+        const itemsinfos = info.items.map(i =>
+            i != null ? getItemContent(i, key, replaceobj, pre_space + "  ") : undefined
+        );
+        itemsinfos.forEach((item, index) => items += "\n" + pre_space + ReplaceStr(lang.get("form.item.items.step"), { slot: index + 1 }) + item)
     }
-    return ReplaceStr(gamelang.get(key), replace)
+    const replace = {
+        name: info.name,
+        lore: info.loreinfo || "",
+        enchinfo: getEnchContent(info.enchinfo, pre_space) || "",
+        potioninfo: getPotionContent(info.potioninfo, pre_space) || "",
+        customname: info.CustomName || "",
+        damage: info.damage,
+        aux: info.aux,
+        count: lang.get("prefix.count") + info.count + "{prefix.end}",
+        type: info.type,
+        items,
+        prefix_type: lang.get("prefix.type"),
+        prefix: "",
+        pre_space: pre_space,
+        pre_space2: pre_space,
+        "prefix.end": lang.get("prefix.end"),
+        "prefix.type": lang.get("prefix.type"),
+        "prefix.ench": lang.get("prefix.ench"),
+        "prefix.potion": lang.get("prefix.potion"),
+        "prefix.slot": lang.get("prefix.slot"),
+        "prefix.count": lang.get("prefix.count")
+    }
+    let str = info.CustomName ? ReplaceStr(lang.get("form.item.name"), { name: info.CustomName }) : ""
+    str += ReplaceStr(lang.get(key), Object.assign(replaceobj, replace))
+    return str
 }
 /**
  * 解析lang
@@ -442,7 +487,18 @@ export function parseLangFile(text) {
 export function getGameLang(langcode) {
     return parseLangFile(File.readFrom("./resource_packs/vanilla/texts/" + langcode + ".lang"))
 }
-
+/**
+ * 新建带有Aux的物品
+ * @param {String} type 
+ * @param {Number} count 
+ * @param {Number} aux 
+ * @returns {Item}
+ */
+export function newItemWithAux(type, count, aux) {
+    const item = mc.newItem(type, count)
+    item.setAux(aux);
+    return item;
+}
 /**
  * 初始化配置项(方便函数)
  * @param {Object} obj 

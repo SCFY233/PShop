@@ -66,7 +66,7 @@ export class PageForm {
      * @param {String} title 
      * @param {String} content 
      * @param {Object[]} items 
-     * @param {Function} callback 
+     * @param {Function(Player, Number)} callback
      */
     constructor(title, content, items, callback) {
         this.page = 1
@@ -90,9 +90,9 @@ export class PageForm {
         const start = (page - 1) * this.itemperpage
         const end = Math.min(start + this.itemperpage, this.items.length)
         const items = this.items.slice(start, end)
-        const gui = mc.newSimpleForm().setTitle(this.title).setContent(this.content.replaceAll("{page}", `${page}`).replaceAll("{totalPages}", `${this.maxPage}`))
+        const gui = mc.newSimpleForm().setTitle(this.title).setContent(this.content.replaceAll("{page}", page).replaceAll("{totalPages}", this.maxPage))
         for (const item of items) {
-            gui.addButton(item.text, item.image || "")
+            gui.addButton(item.name, item.image || "")
         }
         if (page > 1) {
             gui.addButton(lang.get("form.prev_page"), config.getIcon("form:prev"))
@@ -102,7 +102,7 @@ export class PageForm {
         }
         // gui.addButtons([lang.get("form.prev_page"), lang.get("form.next_page")], [config.get("icons")["form:prev"], config.get("icons")["form:next"]])
         for (const button of lastbuttons || []) {
-            gui.addButton(button.text, button.image || "")
+            gui.addButton(button.name, button.image || "")
         }
         return player.sendForm(gui, (player, id) => {
             const index = id ? start + id : id;
@@ -124,20 +124,5 @@ export class PageForm {
      */
     sendTo(player, lastbuttons, lastbuttonfunction) {
         return this.send(player, 1, lastbuttons, lastbuttonfunction)
-    }
-    /**
-     * 创建一个分页表单
-     * @param {String} title 
-     * @param {String} content 
-     * @param {Array} items 
-     * @param {Array} images 
-     * @param {Function} callback 
-     */
-    static create(title, content, items, images, callback) {
-        const itemlist = []
-        for (let i = 0; i < items.length; i++) {
-            itemlist.push({ text: items[i], image: images[i] })
-        }
-        return new PageForm(title, content, itemlist, callback)
     }
 }

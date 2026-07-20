@@ -70,33 +70,40 @@ const langdata = new JsonConfigFile(pluginpath + "lang.json", JSON.stringify({
     'update.NewVersion': "检测到{name}的新版本:{version}",
     'update.Notice': "更新公告:{notice}",
     'update.Download': "下载链接:{url}",
-    "gui.shop.main.title": "{perfix.shop}系统商店-主菜单",
-    "gui.shop.main.content": "来干点什么?",
-    "gui.shop.main.button.buy": "购买",
-    "gui.shop.main.button.sell": "出售",
-    "gui.back": "返回",
-    "gui.shop.buy.group.title": "{perfix.shop}系统商店-购买{item.name}",
-    "gui.shop.buy.group.content": "要买点什么?",
-    "gui.shop.buy.item.title": "{perfix.shop}系统商店-购买{item.name}",
-    "gui.shop.buy.item.content": "该商品信息如下:\n名称: {item.name}\n标准类型名:{item.type}\n特殊值:{item.aux}\n价格:{item.money}/个.",
-    "gui.item.content.ench": "附魔信息:{enchs}.",
-    "gui.item.content.ench.step": "\n|",
-    "gui.item.content.potion": "药水信息{potions}.",
-    "gui.item.content.items": "含有物品:",
-    "gui.item.content.items.step": "\n=",
-    "gui.shop.buy.item.count": "购买数量:",
-    "gui.tip.count": "数量输入正整数a.a",
-    "gui.shop.buy.item.submit": "确定",
-    "gui.tip.mustPositiveInteger": "数量必须为正整数!!!",
-    "gui.shop.buy.item.confirm.title": "{perfix.shop}系统商店-购买{item.name}",
-    "gui.shop.buy.item.confirm.content": "你确定要购买吗?请最后检查信息:\n{content}\n购买数量:{item.count}\n花费:{totalCost}.",
-    "gui.comfirm": "继续",
-    "gui.cancel": "取消",
-    "gui.tip": "提示",
-    "gui.tip.nomoney": "你没钱啦!花费:{totalCost}{money.name},但是你只有{pl.money}{money.name}!",
-    "gui.tip.noroom": "你背包没空间装不下啦eme...",
-    "gui.shop.buy.item.success.title": "{perfix.shop}系统商店",
-    "gui.shop.buy.item.success.content": "购买成功!!!!!\n点击返回继续购买,点击取消退出界面."
+    "form.back": "返回",
+    "form.comfirm": "继续",
+    "form.cancel": "取消",
+    "form.tip": "提示",
+    "form.action.do": "干",
+    "form.action.buy": "买",
+    "form.action.sell": "卖",
+    "form.shop.main.title": "{prefix.shop}系统商店-主菜单",
+    "form.shop.main.content": "来干点什么?",
+    "form.shop.main.button.buy": "购买",
+    "form.shop.main.button.sell": "出售",
+    "form.item.content.shop": "该商品信息如下:\n名称:{iname}\n价格:{price}/个{item}",
+    "form.item.content": "{pre_space}{prefix}{prefix.type}物品标准名称:{prefix.end}{name}{pre_space} {prefix.type}数量:{prefix.end}{count}个{enchinfo}{potioninfo}{items}",
+    "form.item.name": "{prefix.type}物品名称:{prefix.end}{name}\n",
+    "form.item.lore": "{prefix}{prefix.type}物品描述:{prefix.end}",
+    "form.item.lore.step": "{prefix}|",
+    "form.item.ench": "\n{prefix}{prefix.type}附魔属性:{prefix.end}{enchs}.",
+    "form.item.ench.step": "{prefix}#",
+    "form.item.potion": "\n{prefix}{prefix.type}药水效果:{prefix.end}{potion}.",
+    "form.item.items": "\n{prefix}{prefix.type}含有物品:{prefix.end}",
+    "form.item.items.step": "{prefix.slot}[{slot}格]{prefix.end}",
+    "form.shop.buy.item.title": "{prefix.shop}购买商品:{name}",
+    "form.shop.buy.item.count": "输入数量,你有{plmoney}{moneyname},可购买{count}个,留空返回",
+    "form.shop.buy.item.count.type": "应该输入正整数!可你输入了:{input}",
+    "form.shop.buy.item.count.max": "你钱不够!你无法购买{input}个!你最多只能购买:{maxcount}个",
+    "form.tip.item.count": "请输入正整数",
+    "form.shop.group.title": "{prefix.shop}{name}",
+    "form.shop.group.content": "来{action}点什么?",
+    "prefix.ench": "§d",
+    "prefix.potion": "§w",
+    "prefix.count": "§a",
+    "prefix.type": "§6",
+    "prefix.slot": "§s",
+    "prefix.end": "§r"
 }))
 export const lang = {}
 export function loadlang() {
@@ -107,7 +114,7 @@ export function loadlang() {
      * @param {String} key 
      * @returns {String} 
      */
-    lang.get = (key) => lang.data[key]?.replaceAll("{perfix.shop}", prefix.shop).replaceAll("{perfix.market}", prefix.market) || key
+    lang.get = (key) => lang.data[key]?.replaceAll("{prefix.shop}", prefix.shop).replaceAll("{prefix.market}", prefix.market) || key
 }
 //释放商店和市场文件
 export const shopdatajson = new JsonConfigFile(pluginpath + "shopdata.json", JSON.stringify({
@@ -128,6 +135,23 @@ export const shopdatajson = new JsonConfigFile(pluginpath + "shopdata.json", JSO
                     }]
                 }
             ]
+        },
+        {
+            name: "示例2",
+            type: "group",
+            image: "",
+            data: [
+                {
+                    name: "盒子",
+                    type: "item",
+                    image: "",
+                    data: [{
+                        snbt: true,
+                        snbtstr: "{\"Block\":{\"name\":\"minecraft:undyed_shulker_box\",\"states\":{},\"version\":18168865},\"Count\":1b,\"Damage\":0s,\"Name\":\"minecraft:undyed_shulker_box\",\"WasPickedUp\":0b,\"tag\":{\"Items\":[{\"Slot\":17b,\"Block\":{\"name\":\"minecraft:undyed_shulker_box\",\"states\":{},\"version\":18168865},\"Count\":1b,\"Damage\":0s,\"Name\":\"minecraft:undyed_shulker_box\",\"WasPickedUp\":0b,\"tag\":{\"Items\":[{\"Count\":1b,\"Damage\":0s,\"Name\":\"minecraft:mace\",\"Slot\":0b,\"WasPickedUp\":0b,\"tag\":{\"Damage\":0,\"RepairCost\":1,\"display\":{\"Name\":\"重锤aaa\"},\"ench\":[{\"id\":40s,\"lvl\":4s}]}},{\"Count\":64b,\"Damage\":0s,\"Name\":\"minecraft:apple\",\"Slot\":6b,\"WasPickedUp\":0b},{\"Count\":1b,\"Damage\":0s,\"Name\":\"minecraft:enchanted_book\",\"Slot\":11b,\"WasPickedUp\":0b,\"tag\":{\"RepairCost\":1,\"ench\":[{\"id\":1s,\"lvl\":1s},{\"id\":26s,\"lvl\":1s}]}},{\"Count\":1b,\"Damage\":45s,\"Name\":\"minecraft:splash_potion\",\"Slot\":13b,\"WasPickedUp\":0b},{\"Count\":1b,\"Damage\":0s,\"Name\":\"hy:smaragdus_knife\",\"Slot\":22b,\"WasPickedUp\":0b,\"tag\":{\"Damage\":0}}]}},{\"Count\":1b,\"Damage\":0s,\"Name\":\"minecraft:mace\",\"Slot\":0b,\"WasPickedUp\":0b,\"tag\":{\"Damage\":0,\"RepairCost\":1,\"display\":{\"Name\":\"重锤aaa\"},\"ench\":[{\"id\":40s,\"lvl\":4s}]}},{\"Count\":64b,\"Damage\":0s,\"Name\":\"minecraft:apple\",\"Slot\":6b,\"WasPickedUp\":0b},{\"Count\":1b,\"Damage\":0s,\"Name\":\"minecraft:enchanted_book\",\"Slot\":11b,\"WasPickedUp\":0b,\"tag\":{\"RepairCost\":1,\"ench\":[{\"id\":1s,\"lvl\":1s},{\"id\":26s,\"lvl\":1s}]}},{\"Count\":1b,\"Damage\":45s,\"Name\":\"minecraft:splash_potion\",\"Slot\":13b,\"WasPickedUp\":0b},{\"Count\":1b,\"Damage\":0s,\"Name\":\"hy:smaragdus_knife\",\"Slot\":22b,\"WasPickedUp\":0b,\"tag\":{\"Damage\":0}}]}}",
+                        money: 10,
+                    }]
+                }
+            ]
         }
     ],
     Sell: [
@@ -141,8 +165,8 @@ export const shopdatajson = new JsonConfigFile(pluginpath + "shopdata.json", JSO
                     type: "item",
                     image: "",
                     data: [{
-                        id: "minecraft:apple",
-                        aux: 0,
+                        snbt: true,
+                        snbtstr: "{\"Count\":64b,\"Damage\":0s,\"Name\":\"minecraft:apple\",\"WasPickedUp\":0b}",
                         money: 10,
                     }]
                 }
