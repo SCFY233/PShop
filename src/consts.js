@@ -10,8 +10,8 @@ const __dirname = path.dirname(__filename);
 export const BDSPath = path.join(__dirname, "..", "..", "..");
 export const pluginpath = "./plugins/Planet/PShop/";
 export const workpath = "./plugins/PShop/";
-export const versions = "3.2.0"
-export const fix = " Release"
+export const versions = "4.0.0"
+export const fix = " Alpha 26.07.21-7"
 export const author = "Planet工作室-星辰开发组-春风"
 export const moneyname = getSMoneyConfig().moneyname ?? "金币"
 
@@ -70,8 +70,9 @@ const langdata = new JsonConfigFile(pluginpath + "lang.json", JSON.stringify({
     'update.NewVersion': "检测到{name}的新版本:{version}",
     'update.Notice': "更新公告:{notice}",
     'update.Download': "下载链接:{url}",
+    "command.ori.typeerror": "请不要在命令方块或控制台使用PShop的命令",
     "form.back": "返回",
-    "form.comfirm": "继续",
+    "form.confirm": "继续",
     "form.cancel": "取消",
     "form.tip": "提示",
     "form.action.do": "干",
@@ -82,12 +83,12 @@ const langdata = new JsonConfigFile(pluginpath + "lang.json", JSON.stringify({
     "form.shop.main.button.buy": "购买",
     "form.shop.main.button.sell": "出售",
     "form.item.content.shop": "该商品信息如下:",
-    "form.item.content.shop.name": "名称:{iname}",
-    "form.item.content.shop.price": "价格:{price}/个",
+    "form.item.content.shop.name": "{prefix.type}名称:{prefix.end}{iname}",
+    "form.item.content.shop.price": "{prefix.type}价格:{prefix.end}{price}/个",
     "form.item.content.name": "({name})",
     "form.item.content.count": " x{count}",
     "form.item.content.prefix.step": "   ",
-    "form.item.content.damage": "耐久：{damage}/{maxdamage}",
+    "form.item.content.damage": "{prefix.type}耐久:{prefix.end}{damage}/{maxdamage}",
     "form.item.name": "{prefix.type}物品名称:{prefix.end}{name}",
     "form.item.content.lore.step": "|{text}",
     "form.item.content.ench.step": "#{ench}",
@@ -97,9 +98,17 @@ const langdata = new JsonConfigFile(pluginpath + "lang.json", JSON.stringify({
     "form.item.items.step.zb": "┗━━",
     "form.shop.buy.item.title": "{prefix.shop}购买商品:{name}",
     "form.shop.buy.item.count": "输入数量,你有{plmoney}{moneyname},可购买{count}个,留空返回",
-    "form.shop.buy.item.count.type": "应该输入正整数!可你输入了:{input}",
+    "form.shop.item.count.type": "应该输入正整数!可你输入了:{input}",
     "form.shop.buy.item.count.max": "你钱不够!你无法购买{input}个!你最多只能购买:{maxcount}个",
     "form.tip.item.count": "请输入正整数",
+    "form.shop.buy.item.confirm": "你确定要购买{count}个{iname}吗?\n这将会花费{totalCost}{moneyname},你将会剩余{plmoney}{moneyname}",
+    "form.shop.buy.item.success": "购买成功!你获得了{plcount}{iname}!\n当前余额:{plmoney}{moneyname}",
+    "form.shop.sell.item.title": "{prefix.shop}出售商品:{name}",
+    "form.shop.sell.item.count": "输入数量,你有{count}个{iname},留空返回",
+    "form.shop.sell.item.count.max": "你最多只能出售{maxcount}个",
+    "form.shop.sell.item.confirm": "你确定要出售{count}个{iname}吗?\n这将会获得{totalgive}{moneyname},你将会剩余{plcount}个{iname}",
+    "form.shop.sell.item.success": "出售成功!你获得了{totalgive}{moneyname}!\n当前余额:{plmoney}{moneyname}",
+    "form.shop.buy.item.fail": "购买失败!你剩余{plmoney}{moneyname}",
     "form.shop.group.title": "{prefix.shop}{name}",
     "form.shop.group.content": "来{action}点什么?",
     "prefix.ench": "§d",
@@ -170,6 +179,24 @@ export const shopdatajson = new JsonConfigFile(pluginpath + "shopdata.json", JSO
                     data: [{
                         snbt: true,
                         snbtstr: "{\"Count\":64b,\"Damage\":0s,\"Name\":\"minecraft:apple\",\"WasPickedUp\":0b}",
+                        money: 10,
+                    }]
+                }
+            ]
+        },
+        {
+            name: "示例2",
+            type: "group",
+            image: "",
+            data: [
+                {
+                    name: "示例(羊毛)",
+                    type: "item",
+                    image: "",
+                    data: [{
+                        id: "minecraft:white_wool",
+                        aux: 0,
+                        auxStrict: true,
                         money: 10,
                     }]
                 }

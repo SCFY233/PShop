@@ -1,11 +1,9 @@
 // LiteLoader-AIDS automatic generated
 /// <reference path="c:/ll3/dev/dts/helperlib/src/index.d.ts" />
-///<reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
-import { author, versions, fix, shopdata } from "./src/consts.js"
+/// <reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
+import { author, versions, fix, shopdata, config } from "./src/consts.js"
 import { getItemInfo } from "./src/lib/lib.js"
 import { shop } from "./src/shop.js"
-import { } from "./src/lib/sign.js"
-import { } from "./src/market.js"
 import { checkUpdate } from "./src/network.js"
 mc.listen("onServerStarted", () => {
     checkUpdate()
@@ -13,8 +11,33 @@ mc.listen("onServerStarted", () => {
     if (!["", " Release"].includes(fix)) logger.warn("你现在使用的版本为开发版,请勿用于生产环境!!!")
 })
 // shop.buyItem(pl, shopdata.Buy[0], function () { }
-mc.listen("onJump", (pl) => shop.main(pl, () => log("done")))
-mc.regConsoleCmd("rconfig", "", (_args) => {
-    File.delete("./plugins/Planet/PShop/")
-    log("done")
+// mc.listen("onJump", (pl) => shop.main(pl, () => log("done")))
+// mc.regConsoleCmd("rconfig", "", (_args) => {
+//     File.delete("./plugins/Planet/PShop/")
+//     log("done")
+// })
+
+const shopcmd = mc.newCommand(config.get("commands").shop.cmd, config.get("commands").shop.desc, PermType.Any)
+shopcmd.setEnum("action", ["buy", "sell", "gui"])
+shopcmd.optional("action", ParamType.Enum, "action", "action", 1)
+shopcmd.overload(["action"])
+shopcmd.overload([])
+shopcmd.setCallback((_cmd, ori, out, res) => {
+    if (ori.type != 0) return out.error(lang.get("command.ori.typeerror"))
+    if (ori.player == null) return
+    switch (res.action) {
+        case "buy":
+            shop.buy(ori.player, () => void 0)
+            break
+        case "sell":
+            shop.sell(ori.player, () => void 0)
+            break
+        case "gui":
+            shop.main(ori.player, () => void 0)
+            break
+        case undefined:
+            shop.main(ori.player, () => void 0)
+            break
+    }
 })
+shopcmd.setup()

@@ -2,7 +2,7 @@
 /// <reference path="c:/ll3/dev/dts/helperlib/src/index.d.ts" />
 ///<reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
 import { addSMoney, reduceSMoney, getSMoney, transferSMoney } from "../../../SMoney/main.js";
-import { parseItem } from "./nbt.js"
+import { parseItemNbt, parseItem } from "./nbt.js"
 import { config, givesdata, enchs, potions, gamelang, lang, prefix } from "../consts.js"
 import fs from 'fs'
 import * as GMLIB from "../../../GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.js"
@@ -251,7 +251,12 @@ export function getCanPutItemCount(player, item, aux, auxStrict) {
     }
     return count
 }
-
+export function parseItemNbtForCount(item) {
+    const obj = parseItem(item)
+    delete obj.Slot
+    delete obj.obj.Count
+    return obj
+}
 /**
  * 获取可以被扣除的物品数量
  * @param {Player} player 
@@ -265,9 +270,9 @@ export function getCanReductItemCount(player, item, aux, auxStrict) {
         count = its.filter(i => i.type == item && (!auxStrict || i.aux == aux)).reduce((pre, cur) => pre + cur.count, 0)
     } else if (item instanceof NbtCompound) {
         const example = mc.newItem(item)
-        const examplenbt = parseItem(item)
-        if (auxStrict) count = its.filter(i => i.type == example.type && i.aux == example.aux && same(parseItem(i), examplenbt)).reduce((pre, cur) => pre + cur.count, 0)
-        else count = its.filter(i => i.type == example.type && same(parseItem(i), examplenbt)).reduce((pre, cur) => pre + cur.count, 0)
+        const examplenbt = parseItemNbtForCount(item)
+        if (auxStrict) count = its.filter(i => i.type == example.type && i.aux == example.aux && same(parseItemNbtForCount(i), examplenbt)).reduce((pre, cur) => pre + cur.count, 0)
+        else count = its.filter(i => i.type == example.type && same(parseItemNbtForCount(i), examplenbt)).reduce((pre, cur) => pre + cur.count, 0)
     }
     return count
 }
@@ -280,7 +285,7 @@ export function getCanReductItemCount(player, item, aux, auxStrict) {
  * @param {Boolean} strictAux 
  * @returns {Boolean} 是否成功扣除物品
  */
-export function reductItembytype(player, itemtype, aux, count, strictAux) {
+export function reduceItembyType(player, itemtype, aux, count, strictAux) {
     try {
         var inv = player.getInventory();
         var items = inv.getAllItems();
@@ -305,20 +310,20 @@ export function reductItembytype(player, itemtype, aux, count, strictAux) {
     }
 }
 
-export function reductItembyNbt(player, itemsnbt, count, strictAux) {
+export function reduceItembyNbt(player, itemsnbt, count, strictAux) {
     try {
         var inv = player.getInventory();
         var items = inv.getAllItems();
         var remainingCount = count;
         const example = mc.newItem(NBT.parseSNBT(itemsnbt));
-        const examplenbt = parseItem(mc.newItem(NBT.parseSNBT(itemsnbt)));
+        const examplenbt = parseItemNbtForCount(mc.newItem(NBT.parseSNBT(itemsnbt)));
         var canReductCount = getCanReductItemCount(player, NBT.parseSNBT(itemsnbt), null, strictAux);
         if (canReductCount < count) {
             return false;
         }
         for (var i = 0; i < items.length && remainingCount > 0; i++) {
             var item = items[i];
-            if (item.type === example.type && (!strictAux || item.aux === example.aux) && same(parseItem(item), examplenbt)) {
+            if (item.type === example.type && (!strictAux || item.aux === example.aux) && same(parseItemNbtForCount(item), examplenbt)) {
                 var removeCount = Math.min(item.count, remainingCount);
                 inv.removeItem(i, removeCount);
                 remainingCount -= removeCount;
