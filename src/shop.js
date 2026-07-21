@@ -58,12 +58,8 @@ export const shop = {
         else {
             const data = idata.data[0]
             const tmpItem = data.snbt != true ? newItemWithAux(data.id, 1, data.aux) : mc.newItem(NBT.parseSNBT(data.snbtstr))
-            const content = getItemContent(tmpItem, "form.item.content", {}, "")
-            const icontent = ReplaceStr(lang.get("form.item.content.shop"), {
-                "iname": idata.name,
-                "price": data.money,
-                "item": "\n" + content
-            })
+            const content = getItemContent(tmpItem, "")
+            const icontent = `${lang.get("form.item.content.shop")}\n${ReplaceStr(lang.get("form.item.content.shop.name"), { iname: idata.name })}\n${ReplaceStr(lang.get("form.item.content.shop.price"), { price: data.money })}\n${content}`
             const gui = mc.newCustomForm()
             gui.setTitle(ReplaceStr(lang.get("form.shop.buy.item.title"), { name: idata.name }))
             gui.addLabel(icontent)

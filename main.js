@@ -14,3 +14,7 @@ mc.listen("onServerStarted", () => {
 })
 // shop.buyItem(pl, shopdata.Buy[0], function () { }
 mc.listen("onJump", (pl) => shop.main(pl, () => log("done")))
+mc.regConsoleCmd("rconfig", "", (_args) => {
+    File.delete("./plugins/Planet/PShop/")
+    log("done")
+})

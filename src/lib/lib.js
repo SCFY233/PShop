@@ -15,21 +15,22 @@ import * as GMLIB from "../../../GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.js"
  */
 export function same(a, b) {
     try {
-        if (a == b) return true;
+        if (a === b) return true;
         if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
         if (Object.keys(a).length !== Object.keys(b).length) return false;
+
         if (Array.isArray(a) && Array.isArray(b)) {
-            const setA = new Set(a);
-            for (const item of b) {
-                if (setA.forEach(i => !same(i, item))) return false
-            }
-            return true;
-        } else {
-            for (const key in a) {
-                if (!same(a[key], b[key])) return false;
+            for (let i = 0; i < a.length; i++) {
+                if (!same(a[i], b[i])) return false;
             }
             return true;
         }
+
+        for (const key of Object.keys(a)) {
+            if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
+            if (!same(a[key], b[key])) return false;
+        }
+        return true;
     } catch (e) {
         logger.error(`Error at Function Same: ${e}`);
         return false;
@@ -356,14 +357,19 @@ export function getItemInfo(item) {
         result.count = item.count
         result.aux = item.aux
         result.lore = item.lore ?? []
-        result.damage = item.damage ?? 0
+        result.damage = Number(item.maxDamage) - Number(item.obj?.tag?.Damage ?? 0)
+        result.maxdamage = item.maxDamage
+        result.maxcount = item.maxCount ?? 1
     } else {
+        const tmpItem = mc.newItem(item.obj.Name, 1)
         result.type = item.obj.Name
-        result.name = mc.newItem(item.obj.Name, 1).getTranslateName(config.get("itemtranslateCode") ?? "zh_CN") ?? mc.newItem(item.obj.Name, 1).name
+        result.name = tmpItem.getTranslateName(config.get("itemtranslateCode") ?? "zh_CN") ?? mc.newItem(item.obj.Name, 1).name
         result.count = item.obj.Count ?? 1
         result.aux = item.obj?.Damage ?? 0
         result.lore = item.obj?.tag?.Lore ?? []
-        result.damage = item.obj?.tag?.Damage ?? 0
+        result.damage = Number(tmpItem.maxDamage) - Number(item.obj?.tag?.Damage ?? 0)
+        result.maxdamage = tmpItem.maxDamage
+        result.maxcount = tmpItem.maxCount ?? 1
     }
     const parsed_data = parseItem(item)
     if (item.chargedItem) parsed_data.chargedItem = item.chargedItem
@@ -401,12 +407,10 @@ export function getEnchInfo(parsed_data) {
 export function getEnchText(ench) {
     return ench.translated + " " + ench.lvlRoman
 }
-export function getEnchContent(enchs, prefix = "") {
+export function getEnchContent(enchs) {
     let str = lang.get("prefix.ench")
-    if (enchs.length == 0) return
-    enchs.forEach(e => str += (lang.get("form.item.ench.step") + getEnchText(e)))
-    str += "{prefix.end}"
-    return ReplaceStr(lang.get("form.item.ench"), { enchs: str, prefix })
+    if (enchs.length == 0) return []
+    return enchs.map(e => getEnchText(e))
 }
 export function getPotionInfo(parsed_data) {
     const id = parsed_data.obj.Name
@@ -417,51 +421,70 @@ export function getPotionInfo(parsed_data) {
         return potioninfo
     } else return null
 }
-export function getPotionContent(potion, prefix = "") {
-    if (potion == null) return
-    log(lang.get("prefix.potion") + ReplaceStr(lang.get("form.item.potion"), { "potion": lang.get("prefix.potion") + potion.effectname + " " + potion.effectduration, prefix }) + "{prefix.end}")
-    return lang.get("prefix.potion") + ReplaceStr(lang.get("form.item.potion"), { "potion": lang.get("prefix.potion") + potion.effectname + " " + potion.effectduration, prefix }) + "{prefix.end}"
+export function getPotionContent(potion) {
+    if (potion == null) return ""
+    return ReplaceStr(lang.get("form.item.potion"), { "potion": potion.effectname + " " + potion.effectduration, prefix })
 }
 export function getLoreInfo(info) {
-    const lores = info.lore ?? []
-    if (lores.length == 0) return null
-    return lang.get("form.item.lore") + lores.join(lang.get("form.item.lore.step")) + "{prefix.end}"
+    return info.lore ?? null;
 }
-export function getItemContent(item, key, replaceobj, pre_space) {
+export function getItemContents(item, prefix = "") {
     const info = item instanceof LLSE_Item ? getItemInfo(item) : item
-    let items = ""
-    // log(info)
+    let items = []
     if (info.items.length != 0) {
-        items += ReplaceStr(lang.get("form.item.items"), { prefix: pre_space })
         const itemsinfos = info.items.map(i =>
-            i != null ? getItemContent(i, key, replaceobj, pre_space + "  ") : undefined
+            i != null ? getItemContent(i, prefix + lang.get("form.item.content.prefix.step")) : null
         );
-        itemsinfos.forEach((item, index) => items += "\n" + pre_space + ReplaceStr(lang.get("form.item.items.step"), { slot: index + 1 }) + item)
+        items = items.concat(itemsinfos.map((item, index) => {
+            if (item != null) return ReplaceStr(lang.get("form.item.items.step"), { slot: index + 1 < 10 ? "0" + (index + 1) : index + 1, item: item }) + item
+
+        }))
     }
     const replace = {
         name: info.name,
-        lore: info.loreinfo || "",
-        enchinfo: getEnchContent(info.enchinfo, pre_space) || "",
-        potioninfo: getPotionContent(info.potioninfo, pre_space) || "",
+        lore: getLoreInfo(info) || [],
+        enchinfo: getEnchContent(info.enchinfo) || [],
+        potioninfo: getPotionContent(info.potioninfo) || [],
         customname: info.CustomName || "",
         damage: info.damage,
+        maxdamage: info.maxdamage,
         aux: info.aux,
-        count: lang.get("prefix.count") + info.count + "{prefix.end}",
         type: info.type,
+        count: info.count,
+        maxcount: info.maxcount,
         items,
-        prefix_type: lang.get("prefix.type"),
-        prefix: "",
-        pre_space: pre_space,
-        pre_space2: pre_space,
-        "prefix.end": lang.get("prefix.end"),
-        "prefix.type": lang.get("prefix.type"),
-        "prefix.ench": lang.get("prefix.ench"),
-        "prefix.potion": lang.get("prefix.potion"),
-        "prefix.slot": lang.get("prefix.slot"),
-        "prefix.count": lang.get("prefix.count")
     }
-    let str = info.CustomName ? ReplaceStr(lang.get("form.item.name"), { name: info.CustomName }) : ""
-    str += ReplaceStr(lang.get(key), Object.assign(replaceobj, replace))
+    return replace
+}
+
+export function getItemContent(item, prefix = "") {
+    const contents = getItemContents(item, prefix)
+    let str
+    const itemslotstep = " ".repeat(ReplaceStr(lang.get("form.item.items.step"), { slot: "00", "prefix.slot": "", "prefix.end": "", }).length - lang.get("form.item.items.step.zb").length - 1) + "┗━━"
+    if (contents.customname != "") str = ReplaceStr(lang.get("form.item.name"), { name: contents.customname }) + ReplaceStr(lang.get("form.item.content.name"), { name: contents.name })
+    else str = ReplaceStr(lang.get("form.item.name"), { name: contents.name })
+    if (contents.damage != contents.maxdamage) str += ReplaceStr(lang.get("form.item.content.damage"), { damage: contents.damage, maxdamage: contents.maxdamage })
+    if (contents.maxcount != 1) str += ReplaceStr(lang.get("form.item.content.count"), { count: contents.count })
+    if (contents.lore.length != 0) {
+        const lores = contents.lore.map(item => `\n${prefix}${itemslotstep}${ReplaceStr(lang.get("form.item.content.lore.step"), { lore: item })}`)
+        str += lores.join("")
+    }
+    if (contents.enchinfo.length != 0) {
+        const enchs = contents.enchinfo.map(item => `\n${prefix}${itemslotstep}${lang.get("prefix.ench")}${ReplaceStr(lang.get("form.item.content.ench.step"), { ench: item })}${lang.get("prefix.end")}`)
+        str += enchs.join("")
+    }
+    if (contents.potioninfo != "") str += "\n" + prefix + itemslotstep + contents.potioninfo
+    if (contents.items.length != 0) {
+        str += "\n" + prefix + itemslotstep + lang.get("form.item.items")
+        const items = contents.items.map(item => `\n${prefix}  ${item}`)
+        str += items.join("")
+    }
+    str = ReplaceStr(str, {
+        "prefix.type": lang.get("prefix.type"),
+        "prefix.end": lang.get("prefix.end"),
+        "prefix.slot": lang.get("prefix.slot"),
+        "prefix.ench": lang.get("prefix.ench"),
+    })
     return str
 }
 /**

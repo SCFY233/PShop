@@ -1,7 +1,7 @@
 import { CompareVersion, ReplaceStr, warn } from "./lib/lib.js"
 import { versions, config, lang, consts } from "./consts.js"
 /**
- * 启动检查更新
+ * 检查更新
  * @returns {boolean}
  */
 export function checkUpdate() {
@@ -15,10 +15,6 @@ export function checkUpdate() {
                     log(ReplaceStr(lang.get("update.Notice"), { "notice": (r.updatemes[r.version] || "-") }))
                     log(ReplaceStr(lang.get("update.Download"), { "url": r.links.download[r.version] }))
                 }
-                // if (consts.version < r.data) {
-                //     warn(ReplaceStr(lang.get("network.update.newversion"), { "name": "data", "version": r.data }))
-                //     log(ReplaceStr(lang.get("network.update.download"), { "url": r.url }))
-                // }
             }
         })
     }
