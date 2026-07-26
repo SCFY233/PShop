@@ -39,7 +39,6 @@ export const shop = {
         return shop.group(player, shopdata.Buy, shop.buyItem, { name: "", actionkey: "form.action.buy" }, backfunction)
     },
     group(player, sdata, callback, options = { name: "", actionkey: "form.action.do" }, backfunction) {
-        log(arguments)
         const items = []
         sdata.forEach(element => {
             items.push({ name: element.name, image: shop.getIcon(element) })

@@ -31,7 +31,8 @@ export const config = new JsonConfigFile(pluginpath + "config.json", JSON.string
     },
     prefix: {
         shop: "[PShop-商店]",
-        market: "[PShop-市场]"
+        market: "[PShop-市场]",
+        chestshop: "[PShop-箱子商店]"
     },
     enable: {
         shop: true,
@@ -115,7 +116,14 @@ const langdata = new JsonConfigFile(pluginpath + "lang.json", JSON.stringify({
     "prefix.count": "§a",
     "prefix.type": "§6",
     "prefix.slot": "§s",
-    "prefix.end": "§r"
+    "prefix.end": "§r",
+    "form.chestshop.new.title": "{prefix.chestshop}创建商店",
+    "form.chestshop.new.input": "请输入价格({moneyname}/个)",
+    "form.chestshop.new.dropdown": "选择商店类型",
+    "form.chestshop.new.dropdown.buy": "收购商店",
+    "form.chestshop.new.dropdown.sell": "出售商店",
+    "form.chestshop.new.money.type": "应该输入正整数!可你输入了:{input}",
+
 }))
 export const lang = {}
 export function loadlang() {
@@ -126,7 +134,7 @@ export function loadlang() {
      * @param {String} key 
      * @returns {String} 
      */
-    lang.get = (key) => lang.data[key]?.replaceAll("{prefix.shop}", prefix.shop).replaceAll("{prefix.market}", prefix.market) || key
+    lang.get = (key) => lang.data[key]?.replaceAll("{prefix.shop}", prefix.shop).replaceAll("{prefix.market}", prefix.market).replaceAll("{prefix.chestshop}", prefix.chestshop) || key
 }
 //释放商店和市场文件
 export const shopdatajson = new JsonConfigFile(pluginpath + "shopdata.json", JSON.stringify({
@@ -222,6 +230,19 @@ export function loadMarketData() {
     marketdata = JSON.parse(marketdatajson.read())
     return marketdata
 }
+export const chestshopdatajson = new JsonConfigFile(pluginpath + "chestshop.json")
+export let chestshopdata = {
+    
+}
+export function loadChestshopData() {
+    chestshopdatajson.reload()
+    let d = JSON.parse(chestshopdatajson.read())
+    chestshopdata = d | {}
+    return d
+}
+export function getChestshopIDs() {
+    return Object.keys(chestshopdata)||[]
+}
 export const constsdata = new JsonConfigFile(workpath + "data.json")
 if (constsdata.read() == "{}") {
     logger.error("数据文件为空,请检查文件是否损坏!")
@@ -263,6 +284,7 @@ export function loadconstsmap() {
 export const prefix = {
     shop: config.get("prefix").shop || "[PShop-商店]",
     market: config.get("prefix").market || "[PShop-市场]",
+    chestshop: config.get("prefix").chestshop || "[PShop-箱子商店]",
 }
 export const Texture_Extractor = new TexturePathParser({
     bdsPath: BDSPath,

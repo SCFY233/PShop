@@ -4,14 +4,16 @@
 import { author, versions, fix, shopdata, config } from "./src/consts.js"
 import { getItemInfo } from "./src/lib/lib.js"
 import { shop } from "./src/shop.js"
+import { } from "./src/chestshop.js"
 import { checkUpdate } from "./src/network.js"
+import { fakeItem } from "./src/lib/packet.js"
 mc.listen("onServerStarted", () => {
     checkUpdate()
     log(`PShop 商店系统插件---加载成功,当前版本:${versions}${fix} 作者: ${author}`);
     if (!["", " Release"].includes(fix)) logger.warn("你现在使用的版本为开发版,请勿用于生产环境!!!")
 })
 // shop.buyItem(pl, shopdata.Buy[0], function () { }
-// mc.listen("onJump", (pl) => shop.main(pl, () => log("done")))
+// mc.listen("onJump", (pl) => fakeItem(pl, mc.newItem("minecraft:apple", 1), mc.newFloatPos(1, 110, 1,0)))
 // mc.regConsoleCmd("rconfig", "", (_args) => {
 //     File.delete("./plugins/Planet/PShop/")
 //     log("done")

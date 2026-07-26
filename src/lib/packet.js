@@ -137,6 +137,34 @@ export function updateSignText(players, x, y, z, options = {}) {
         return false;
     }
 }
+let fakeItemUniqueIdStart = 0x10000000
+function getFakeItemUniqueId(fakeItemUniqueId) {
+    if (mc.getEntity(fakeItemUniqueId)) {
+        return getFakeItemUniqueId(fakeItemUniqueId + 1);
+    } else {
+        fakeItemUniqueIdStart = fakeItemUniqueId + 1;
+        return fakeItemUniqueId;
+    }
+}
+export function getFakeItemId() {
+    return getFakeItemUniqueId(fakeItemUniqueIdStart);
+}
+export function fakeItem(player, item, pos) {
+    pos.y += 0.2
+    const bs = new BinaryStream()
+    bs.writeVarInt64(getFakeItemId())
+    bs.writeUnsignedVarInt64(getFakeItemId())
+    bs.writeItem(item)
+    bs.writeVec3(pos)
+    bs.writeVec3(mc.newFloatPos(0.0, 0.0, 0.0, player.pos.dimid))
+    bs.writeUnsignedVarInt(0)
+    bs.writeBool(false)
+    player.sendPacket(bs.createPacket(15))
+    log(1)
+}
+
+
+
 
 // // ==========================================
 // // [使用示例]

@@ -446,7 +446,7 @@ export class TexturePathParser {
         this.parseBehaviorPacks();
         this.parseResourcePacks();
         this.removeNullEntries();
-
+        this.saveToFile();
         console.log(`\n解析完成！共找到 ${Object.keys(this.result).length} 个物品/方块。`);
 
         return this.result;
@@ -457,7 +457,7 @@ export class TexturePathParser {
      */
     saveToFile() {
         const json = JSON.stringify(this.result, null, 4);
-        fs.writeFileSync(this.outputPath, json, 'utf8');
+        File.writeTo(this.outputPath, json,)
         console.log(`结果已保存到: ${this.outputPath}`);
     }
 
@@ -585,29 +585,4 @@ export class TexturePathParser {
 
         return { existing, missing };
     }
-}
-
-// 主程序
-const isMainModule = process.argv[1] && import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`;
-
-if (isMainModule) {
-    // 配置示例
-    const config = {
-        bdsPath: path.join(__dirname, '../../../../'), // BDS根目录
-        outputPath: path.join(__dirname, '../../../../texture_paths_output.json'), // 输出文件路径
-        worldName: 'Bedrock level' // 指定要解析的世界名称，不指定则解析所有世界
-    };
-
-    const parser = new TexturePathParser(config);
-
-    const result = parser.run();
-    parser.saveToFile();
-
-    // 验证材质文件是否存在
-    parser.validateTextures();
-
-    // 输出部分结果
-    console.log('\n解析结果（前10个）:');
-    const entries = Object.entries(result).slice(0, 10);
-    console.log(JSON.stringify(Object.fromEntries(entries), null, 2));
 }

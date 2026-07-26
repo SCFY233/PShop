@@ -527,6 +527,22 @@ export function newItemWithAux(type, count, aux) {
     item.setAux(aux);
     return item;
 }
+
+/**
+ * 防抖函数
+ * @param {string | number} id - 唯一标识符
+ * @param {Function} fn - 需要防抖的函数体（匿名函数）
+ * @param {number} delay - 延迟时间（毫秒），默认 70ms
+ */
+export function debounce(id, fn, delay = 70) {
+    let timers = debounce.timers || (debounce.timers = {});
+    clearTimeout(timers[id]);
+    timers[id] = setTimeout(() => {
+        fn();
+        timers[id] = null;
+    }, delay);
+}
+
 /**
  * 初始化配置项(方便函数)
  * @param {Object} obj 
