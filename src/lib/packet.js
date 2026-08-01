@@ -1,22 +1,7 @@
 import { Minecraft } from "../../../GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.js";
-// ==========================================
-// 协议兼容层
-// ==========================================
-/**
-根据协议版本选择 Y 坐标写入方式
-= 944: 使用 writeVarInt (支持负高度)
-< 944: 使用 writeUnsignedVarInt
-*/
 const writeY = mc.getServerProtocolVersion() >= 944
     ? (bs, y) => bs.writeVarInt(y)
     : (bs, y) => bs.writeUnsignedVarInt(y);
-// ==========================================
-// 底层发包函数
-// ==========================================
-/**
-发送 UpdateBlockPacket (ID 21 / 0x15)
-用于更新客户端指定坐标的方块状态
-*/
 export function sendUpdateBlockPacket(player, pos, runtimeId, layer = 0, flags = 3) {
     const bs = new BinaryStream();
     bs.writeVarInt(pos.x);
@@ -146,29 +131,11 @@ function getFakeItemUniqueId(fakeItemUniqueId) {
         return fakeItemUniqueId;
     }
 }
-export function getFakeItemId() {
-    return getFakeItemUniqueId(fakeItemUniqueIdStart);
-}
-export function fakeItem(player, item, pos) {
-    pos.y += 0.2
-    const bs = new BinaryStream()
-    bs.writeVarInt64(getFakeItemId())
-    bs.writeUnsignedVarInt64(getFakeItemId())
-    bs.writeItem(item)
-    bs.writeVec3(pos)
-    bs.writeVec3(mc.newFloatPos(0.0, 0.0, 0.0, player.pos.dimid))
-    bs.writeUnsignedVarInt(0)
-    bs.writeBool(false)
-    player.sendPacket(bs.createPacket(15))
-    log(1)
-}
 
 
-
-
-// // ==========================================
-// // [使用示例]
-// // ==========================================
+// ==========================================
+// [使用示例]
+// ==========================================
 
 // mc.listen("onChat", (player, msg) => {
 //     if (msg === "signtest") {
@@ -189,3 +156,92 @@ export function fakeItem(player, item, pos) {
 //         return false; // 拦截这条聊天信息,不广播给其他人
 //     }
 // });
+
+
+
+
+
+/**
+ * 通过 物品对象 和 坐标 创建 添加掉落物实体 数据包
+ * @type {(item: Item, pos: FloatPos) => {id: bigint, pkt: Packet}}
+ * @warning 创建出来的物品最多在客户端存在 32.305833 分钟，需要每半小时发一次 SetActorData 数据包
+ * @author 子沐呀 QQ 1756150362
+ * @since 2026-07-27
+ */
+const createAddItemActorPacket = (() => {
+    let mDecrementingID = 9223372036854775807n;
+    return (item, pos) => {
+        const id = --mDecrementingID;
+        const stream = new BinaryStream();
+        stream.writeVarInt64(id.toString()); // uniqueId
+        stream.writeUnsignedVarInt64(id.toString()); // runtimeId
+        stream.writeItem(item);
+        stream.writeFloat(pos.x);
+        stream.writeFloat(pos.y);
+        stream.writeFloat(pos.z);
+        stream.writeFloat(0);
+        stream.writeFloat(0);
+        stream.writeFloat(0);
+        stream.writeUnsignedVarInt(3); // length
+        stream.writeUnsignedVarInt(/* ActorDataIDs::ClientEvent */24);
+        stream.writeUnsignedVarInt(/* DataItemType::Short */1);
+        stream.writeSignedShort(-32767);
+        stream.writeUnsignedVarInt(/* ActorDataIDs::NametagAlwaysShow */81);
+        stream.writeUnsignedVarInt(/* DataItemType::Byte */0);
+        stream.writeBool(true);
+        stream.writeUnsignedVarInt(/* ActorDataIDs::Name */4);
+        stream.writeUnsignedVarInt(/* DataItemType::String */4);
+        stream.writeString("菲露露可爱捏~");
+        stream.writeBool(false);
+        return { id, pkt: stream.createPacket(/* MinecraftPacketIds::AddItemActor */15, true) }; // 开启raw，使用乱发模式OwO
+    };
+})();
+
+/**
+ * 创建 更新掉落物存在时间 数据包（也可以更新别的，自己玩）
+* @type {(id: bigint) => Packet}
+* 
+* @author 子沐呀 QQ 1756150362
+* @since 2026-07-27
+*/
+const createUpdateItemActorAgePacket = (() => {
+    return (id) => {
+        const stream = new BinaryStream();
+        stream.writeUnsignedVarInt64(id.toString()); // runtimeId
+        stream.writeUnsignedVarInt(3); // length
+        stream.writeUnsignedVarInt(/* ActorDataIDs::ClientEvent */24);
+        stream.writeUnsignedVarInt(/* DataItemType::Short */1);
+        stream.writeSignedShort(-32767);
+        stream.writeUnsignedVarInt(/* ActorDataIDs::NametagAlwaysShow */81);
+        stream.writeUnsignedVarInt(/* DataItemType::Byte */0);
+        stream.writeBool(true);
+        stream.writeUnsignedVarInt(/* ActorDataIDs::Name */4);
+        stream.writeUnsignedVarInt(/* DataItemType::String */4);
+        stream.writeString("真可爱呀~");
+        stream.writeUnsignedVarInt(0);
+        stream.writeUnsignedVarInt(0);
+        stream.writeUnsignedVarInt(0);
+        return stream.createPacket(/* MinecraftPacketIds::SetActorData */39, true);
+    };
+})();
+
+/**
+ * 创建 删除实体 数据包
+* @type {(id: bigint) => Packet}
+* 
+* @author 子沐呀 QQ 1756150362
+* @since 2026-07-27
+ */
+const createRemoveItemActorPacket = (() => {
+    return (id) => {
+        const stream = new BinaryStream();
+        stream.writeVarInt64(id.toString()); // uniqueId
+        return stream.createPacket(/* MinecraftPacketIds::RemoveActor */14, true);
+    }
+})();
+const item = mc.newItem("minecraft:apple", 64);
+const { id, pkt } = createAddItemActorPacket(item, { x: 0, y: 104, z: 0 });
+logger.warn(id.toString());
+mc.getPlayer("ColdestCarp5592").sendPacket(pkt);
+mc.getPlayer("ColdestCarp5592").sendPacket(createUpdateItemActorAgePacket(id));
+mc.getPlayer("ColdestCarp5592").sendPacket(createRemoveItemActorPacket(id));

@@ -6,7 +6,7 @@ import { getItemInfo } from "./src/lib/lib.js"
 import { shop } from "./src/shop.js"
 import { } from "./src/chestshop.js"
 import { checkUpdate } from "./src/network.js"
-import { fakeItem } from "./src/lib/packet.js"
+import {  } from "./src/lib/packet.js"
 mc.listen("onServerStarted", () => {
     checkUpdate()
     log(`PShop 商店系统插件---加载成功,当前版本:${versions}${fix} 作者: ${author}`);
