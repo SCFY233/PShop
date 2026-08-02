@@ -1,4 +1,6 @@
-import { Minecraft } from "../../../GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.js";
+import { GMLIB_BinaryStream, Minecraft } from "../../../GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.js";
+
+//鸣谢:子沐 Gemini 千问
 const writeY = mc.getServerProtocolVersion() >= 944
     ? (bs, y) => bs.writeVarInt(y)
     : (bs, y) => bs.writeUnsignedVarInt(y);
@@ -122,15 +124,6 @@ export function updateSignText(players, x, y, z, options = {}) {
         return false;
     }
 }
-let fakeItemUniqueIdStart = 0x10000000
-function getFakeItemUniqueId(fakeItemUniqueId) {
-    if (mc.getEntity(fakeItemUniqueId)) {
-        return getFakeItemUniqueId(fakeItemUniqueId + 1);
-    } else {
-        fakeItemUniqueIdStart = fakeItemUniqueId + 1;
-        return fakeItemUniqueId;
-    }
-}
 
 
 // ==========================================
@@ -158,23 +151,187 @@ function getFakeItemUniqueId(fakeItemUniqueId) {
 // });
 
 
+/**
+ * 往 BinaryStream 中写入无符号变长 64 位整数 (VarInt64)
+ * @param {BinaryStream} bs - LegacyScriptEngine 的二进制流对象
+ * @param {BigInt|String|Number} uvalue - 要写入的 64 位无符号整数
+ */
+function writeUnsignedVarInt64ToStream(bs, uvalue) {
+    let val = BigInt(uvalue);
 
+    do {
+        let next_byte = Number(val & 0x7Fn);
+        val >>= 7n;
+        if (val !== 0n) {
+            next_byte |= 0x80;
+        }
+        // 调用 BinaryStream 对象的写入单字节方法
+        bs.writeUnsignedChar(next_byte);
 
+    } while (val !== 0n);
+}
+/**
+ * 写入有符号变长 64 位整数 (VarInt64)
+ * 采用 ZigZag 编码将有符号数映射为无符号数后写入
+ * @param {BinaryStream} bs - LegacyScriptEngine 的二进制流对象
+ * @param {BigInt|String|Number} ivalue - 要写入的 64 位有符号整数
+ */
+function writeVarInt64ToStream(bs, ivalue) {
+    let val = BigInt(ivalue);
+
+    // 1. 64 位有符号数的 ZigZag 编码
+    // 公式: (val << 1) ^ (val >> 63)  [针对补码负数符号位扩展]
+    let zigzag = (val << 1n) ^ (val >> 63n);
+
+    // 2. 按照无符号 VarInt 逻辑写入
+    do {
+        let next_byte = Number(zigzag & 0x7Fn);
+        zigzag >>= 7n;
+        if (zigzag !== 0n) {
+            next_byte |= 0x80;
+        }
+        bs.writeUnsignedChar(next_byte);
+    } while (zigzag !== 0n);
+}
+export let mDecrementingID = 9223372036854775807n;
+// /**
+//  * 通过 物品对象 和 坐标 创建 添加掉落物实体 数据包
+//  * @type {(item: Item, pos: FloatPos) => {id: bigint, pkt: Packet}}
+//  * @warning 创建出来的物品最多在客户端存在 32.305833 分钟，需要每半小时发一次 SetActorData 数据包
+//  * @author 子沐呀 QQ 1756150362
+//  * @since 2026-07-27
+//  */
+// const createAddItemActorPacket = (() => {
+//     return (item, pos) => {
+//         const id = --mDecrementingID;
+//         const stream = new GMLIB_BinaryStream();
+//         stream.writePacketHeader(15)
+//         writeVarInt64ToStream(stream, id.toString()); // uniqueId
+//         writeUnsignedVarInt64ToStream(stream, id.toString()); // runtimeId
+//         stream.writeItem(item);
+//         stream.writeFloat(pos.x);
+//         stream.writeFloat(pos.y);
+//         stream.writeFloat(pos.z);
+//         stream.writeFloat(0);
+//         stream.writeFloat(0);
+//         stream.writeFloat(0);
+//         stream.writeUnsignedVarInt(3); // length
+//         stream.writeUnsignedVarInt(/* ActorDataIDs::ClientEvent */24);
+//         stream.writeUnsignedVarInt(/* DataItemType::Short */1);
+//         stream.writeSignedShort(-32767);
+//         stream.writeUnsignedVarInt(/* ActorDataIDs::NametagAlwaysShow */81);
+//         stream.writeUnsignedVarInt(/* DataItemType::Byte */0);
+//         stream.writeBool(true);
+//         stream.writeUnsignedVarInt(/* ActorDataIDs::Name */4);
+//         stream.writeUnsignedVarInt(/* DataItemType::String */4);
+//         stream.writeString("菲露露可爱捏~");
+//         stream.writeBool(false);
+//         stream.sendTo(mc.getPlayer("ColdestCarp5592"))
+//         return { id, }; // 开启raw，使用乱发模式OwO
+//     };
+// })();
+
+// /**
+//  * 创建 更新掉落物存在时间 数据包（也可以更新别的，自己玩）
+// * @type {(id: bigint) => Packet}
+// *
+// * @author 子沐呀 QQ 1756150362
+// * @since 2026-07-27
+// */
+// const createUpdateItemActorAgePacket = (() => {
+//     return (id) => {
+//         const stream = new BinaryStream();
+//         writeUnsignedVarInt64ToStream(stream, id.toString()); // runtimeId
+//         stream.writeUnsignedVarInt(3); // length
+//         stream.writeUnsignedVarInt(/* ActorDataIDs::ClientEvent */24);
+//         stream.writeUnsignedVarInt(/* DataItemType::Short */1);
+//         stream.writeSignedShort(-32767);
+//         stream.writeUnsignedVarInt(/* ActorDataIDs::NametagAlwaysShow */81);
+//         stream.writeUnsignedVarInt(/* DataItemType::Byte */0);
+//         stream.writeBool(true);
+//         stream.writeUnsignedVarInt(/* ActorDataIDs::Name */4);
+//         stream.writeUnsignedVarInt(/* DataItemType::String */4);
+//         stream.writeString("真可爱呀~");
+//         stream.writeUnsignedVarInt(0);
+//         stream.writeUnsignedVarInt(0);
+//         stream.writeUnsignedVarInt(0);
+//         return stream.createPacket(/* MinecraftPacketIds::SetActorData */39, true);
+//     };
+// })();
+
+// /**
+//  * 创建 删除实体 数据包
+// * @type {(id: bigint) => Packet}
+// *
+// * @author 子沐呀 QQ 1756150362
+// * @since 2026-07-27
+//  */
+// const createRemoveItemActorPacket = (() => {
+//     return (id) => {
+//         const stream = new BinaryStream();
+//         writeVarInt64ToStream(stream, id.toString()); // uniqueId
+//         return stream.createPacket(/* MinecraftPacketIds::RemoveActor */14, true);
+//     }
+// })();
+// const item = mc.newItem("minecraft:bedrock", 64);
+// const { id } = createAddItemActorPacket(item, { x: 0, y: 104, z: 0 });
+// logger.warn(id.toString());
+// mc.getPlayer("ColdestCarp5592").sendPacket(createUpdateItemActorAgePacket(id));
+// // mc.getPlayer("ColdestCarp5592").sendPacket(createRemoveItemActorPacket(id));
 
 /**
- * 通过 物品对象 和 坐标 创建 添加掉落物实体 数据包
- * @type {(item: Item, pos: FloatPos) => {id: bigint, pkt: Packet}}
- * @warning 创建出来的物品最多在客户端存在 32.305833 分钟，需要每半小时发一次 SetActorData 数据包
- * @author 子沐呀 QQ 1756150362
+ * @description 掉落物实体数据包封装（支持单玩家、玩家数组、全员发送及 5min 自动续期，使用自定义物品名称与数量）
+ * @author 子沐呀 是春风呀233
  * @since 2026-07-27
  */
-const createAddItemActorPacket = (() => {
-    let mDecrementingID = 9223372036854775807n;
-    return (item, pos) => {
-        const id = --mDecrementingID;
-        const stream = new BinaryStream();
-        stream.writeVarInt64(id.toString()); // uniqueId
-        stream.writeUnsignedVarInt64(id.toString()); // runtimeId
+
+export class DropItemManager {
+    constructor() {
+        this.mDecrementingID = 9223372036854775807n;
+        this.activeDrops = new Map(); // 存储掉落物的定时任务 { id: { timer, players } }
+    }
+
+    /**
+     * 解析并获取玩家对象数组
+     * @private
+     */
+    _resolvePlayers(targets) {
+        if (!targets) {
+            return mc.getOnlinePlayers();
+        }
+        const list = Array.isArray(targets) ? targets : [targets];
+        return list.map(t => typeof t === 'string' ? mc.getPlayer(t) : t).filter(Boolean);
+    }
+
+    /**
+     * 获取物品的自定义名称与数量字符串
+     * @private
+     * @param {Item} item 物品对象
+     * @returns {string}
+     */
+    _getItemDisplayName(item) {
+        const translateCode = (typeof config !== 'undefined' && config.get) ? (config.get("itemtranslateCode") ?? "zh_CN") : "zh_CN";
+        const baseName = item.getTranslateName(translateCode)
+        return baseName;
+    }
+
+    /**
+     * 创建并发送添加掉落物实体数据包
+     * @param {Item} item 物品对象
+     * @param {FloatPos} pos 坐标
+     * @param {Player | Player[] | string | string[]} [targets] 目标玩家（单个、数组、名字或不填）
+     * @returns {{id: bigint}}
+     */
+    spawnDropItem(item, pos, targets) {
+        const id = --this.mDecrementingID;
+        const playerList = this._resolvePlayers(targets);
+        const displayName = this._getItemDisplayName(item);
+
+        // 1. 组装 AddItemActor 数据包
+        const stream = new GMLIB_BinaryStream();
+        stream.writePacketHeader(15);
+        writeVarInt64ToStream(stream, id.toString()); // uniqueId
+        writeUnsignedVarInt64ToStream(stream, id.toString()); // runtimeId
         stream.writeItem(item);
         stream.writeFloat(pos.x);
         stream.writeFloat(pos.y);
@@ -182,66 +339,99 @@ const createAddItemActorPacket = (() => {
         stream.writeFloat(0);
         stream.writeFloat(0);
         stream.writeFloat(0);
-        stream.writeUnsignedVarInt(3); // length
-        stream.writeUnsignedVarInt(/* ActorDataIDs::ClientEvent */24);
-        stream.writeUnsignedVarInt(/* DataItemType::Short */1);
-        stream.writeSignedShort(-32767);
-        stream.writeUnsignedVarInt(/* ActorDataIDs::NametagAlwaysShow */81);
-        stream.writeUnsignedVarInt(/* DataItemType::Byte */0);
-        stream.writeBool(true);
-        stream.writeUnsignedVarInt(/* ActorDataIDs::Name */4);
-        stream.writeUnsignedVarInt(/* DataItemType::String */4);
-        stream.writeString("菲露露可爱捏~");
-        stream.writeBool(false);
-        return { id, pkt: stream.createPacket(/* MinecraftPacketIds::AddItemActor */15, true) }; // 开启raw，使用乱发模式OwO
-    };
-})();
 
-/**
- * 创建 更新掉落物存在时间 数据包（也可以更新别的，自己玩）
-* @type {(id: bigint) => Packet}
-* 
-* @author 子沐呀 QQ 1756150362
-* @since 2026-07-27
-*/
-const createUpdateItemActorAgePacket = (() => {
-    return (id) => {
-        const stream = new BinaryStream();
-        stream.writeUnsignedVarInt64(id.toString()); // runtimeId
         stream.writeUnsignedVarInt(3); // length
-        stream.writeUnsignedVarInt(/* ActorDataIDs::ClientEvent */24);
-        stream.writeUnsignedVarInt(/* DataItemType::Short */1);
+        stream.writeUnsignedVarInt(24); // ActorDataIDs::ClientEvent
+        stream.writeUnsignedVarInt(1);  // DataItemType::Short
         stream.writeSignedShort(-32767);
-        stream.writeUnsignedVarInt(/* ActorDataIDs::NametagAlwaysShow */81);
-        stream.writeUnsignedVarInt(/* DataItemType::Byte */0);
+        stream.writeUnsignedVarInt(81); // ActorDataIDs::NametagAlwaysShow
+        stream.writeUnsignedVarInt(0);  // DataItemType::Byte
         stream.writeBool(true);
-        stream.writeUnsignedVarInt(/* ActorDataIDs::Name */4);
-        stream.writeUnsignedVarInt(/* DataItemType::String */4);
-        stream.writeString("真可爱呀~");
-        stream.writeUnsignedVarInt(0);
-        stream.writeUnsignedVarInt(0);
-        stream.writeUnsignedVarInt(0);
-        return stream.createPacket(/* MinecraftPacketIds::SetActorData */39, true);
-    };
-})();
+        stream.writeUnsignedVarInt(4);  // ActorDataIDs::Name
+        stream.writeUnsignedVarInt(4);  // DataItemType::String
+        stream.writeString(displayName);
+        stream.writeBool(false)
+        // 直接发给目标玩家列表
+        playerList.forEach(player => {
+            if (player) stream.sendTo(player);
+        });
 
-/**
- * 创建 删除实体 数据包
-* @type {(id: bigint) => Packet}
-* 
-* @author 子沐呀 QQ 1756150362
-* @since 2026-07-27
- */
-const createRemoveItemActorPacket = (() => {
-    return (id) => {
-        const stream = new BinaryStream();
-        stream.writeVarInt64(id.toString()); // uniqueId
-        return stream.createPacket(/* MinecraftPacketIds::RemoveActor */14, true);
+        // 2. 每隔 5 分钟自动发送一次更新包保证存活
+        const timer = setInterval(() => {
+            this.refreshDropItem(id, playerList, displayName);
+        }, 5 * 60 * 1000);
+
+        this.activeDrops.set(id, { timer, players: playerList, displayName });
+
+        return id ;
     }
-})();
-const item = mc.newItem("minecraft:apple", 64);
-const { id, pkt } = createAddItemActorPacket(item, { x: 0, y: 104, z: 0 });
-logger.warn(id.toString());
-mc.getPlayer("ColdestCarp5592").sendPacket(pkt);
-mc.getPlayer("ColdestCarp5592").sendPacket(createUpdateItemActorAgePacket(id));
-mc.getPlayer("ColdestCarp5592").sendPacket(createRemoveItemActorPacket(id));
+
+    /**
+     * 创建并发送更新掉落物存在时间数据包 (SetActorData)
+     * @param {bigint} id 实体ID
+     * @param {Player | Player[] | string | string[]} [targets] 目标玩家
+     * @param {string} [customName] 自定义名称
+     */
+    refreshDropItem(id, targets, customName) {
+        const dropInfo = this.activeDrops.get(id);
+        const playerList = targets ? this._resolvePlayers(targets) : (dropInfo?.players || mc.getOnlinePlayers());
+        const displayName = customName || dropInfo?.displayName || "Dropped Item";
+
+        const stream = new BinaryStream();
+        writeUnsignedVarInt64ToStream(stream, id.toString()); // runtimeId
+        stream.writeUnsignedVarInt(3); // length
+        stream.writeUnsignedVarInt(24); // ActorDataIDs::ClientEvent
+        stream.writeUnsignedVarInt(1);  // DataItemType::Short
+        stream.writeSignedShort(-32767);
+        stream.writeUnsignedVarInt(81); // ActorDataIDs::NametagAlwaysShow
+        stream.writeUnsignedVarInt(0);  // DataItemType::Byte
+        stream.writeBool(true);
+        stream.writeUnsignedVarInt(4);  // ActorDataIDs::Name
+        stream.writeUnsignedVarInt(4);  // DataItemType::String
+        stream.writeString(displayName);
+        stream.writeBool(false)
+        stream.writeUnsignedVarInt(0);
+        stream.writeUnsignedVarInt(0);
+        stream.writeUnsignedVarInt(0);
+
+        const pkt = stream.createPacket(39, true); // MinecraftPacketIds::SetActorData
+
+        playerList.forEach(player => {
+            if (player) player.sendPacket(pkt);
+        });
+    }
+
+    /**
+     * 创建并发送删除实体数据包
+     * @param {bigint} id 实体ID
+     * @param {Player | Player[] | string | string[]} [targets] 目标玩家
+     */
+    removeDropItem(id, targets) {
+        const dropInfo = this.activeDrops.get(id);
+        const playerList = targets ? this._resolvePlayers(targets) : (dropInfo?.players || mc.getOnlinePlayers());
+
+        // 清除定时器
+        if (dropInfo && dropInfo.timer) {
+            clearInterval(dropInfo.timer);
+            this.activeDrops.delete(id);
+        }
+
+        const stream = new BinaryStream();
+        writeVarInt64ToStream(stream, id.toString()); // uniqueId
+        const pkt = stream.createPacket(14, true); // MinecraftPacketIds::RemoveActor
+
+        playerList.forEach(player => {
+            if (player) player.sendPacket(pkt);
+        });
+    }
+}
+
+export function getItemChestFloatPosFromIntPos({ x, y, z, dimid }) {
+    return new FloatPos(x + 0.5, y - 0.15, z + 0.5, dimid)
+}
+// const testitem1 = mc.newItem("apple", 1)
+// const testitem2 = mc.newItem("bedrock", 1)
+export const dropManager = new DropItemManager();
+// dropManager.spawnDropItem(testitem1, getItemFloatPosFromIntPos(new IntPos(0, 104, 0, 0)), "ColdestCarp5592")
+// dropManager.spawnDropItem(testitem2, getItemFloatPosFromIntPos(new IntPos(1, 104, 0, 0)), "ColdestCarp5592")
+

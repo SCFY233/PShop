@@ -67,10 +67,12 @@ config.getIcon = function (name) {
 if (config.get("version") == null || CompareVersion(config.get("version"), versions) == -1) {
     logger.warn("检测到旧版本配置文件,请您手动更新!\n请您备份并使用ll reload PShop命令重新加载插件\n然后参照默认配置文件进行修改\n然后再次ll reload PShop重载插件\n建议完全修改完后重启服务器")
 }
-const langdata = new JsonConfigFile(pluginpath + "lang.json", JSON.stringify({
+const langdata = new JsonConfigFile(pluginpath + "lang.json")
+langdata.inits({
     'update.NewVersion': "检测到{name}的新版本:{version}",
     'update.Notice': "更新公告:{notice}",
     'update.Download': "下载链接:{url}",
+    'log.update.error': "检查更新时出现错误:错误码:{code}错误:{result}",
     "command.ori.typeerror": "请不要在命令方块或控制台使用PShop的命令",
     "form.back": "返回",
     "form.confirm": "继续",
@@ -124,7 +126,7 @@ const langdata = new JsonConfigFile(pluginpath + "lang.json", JSON.stringify({
     "form.chestshop.new.dropdown.sell": "出售商店",
     "form.chestshop.new.money.type": "应该输入正整数!可你输入了:{input}",
 
-}))
+})
 export const lang = {}
 export function loadlang() {
     langdata.reload()
@@ -304,22 +306,6 @@ export const gamelang = {
 export function loadGameLang() {
     gamelang.data = getGameLang(config.get("gamelang") || "zh_CN")
 }
-
-export const imports = {
-    GMLIB: {
-        status: false,
-    },
-    SMoney: {
-        status: false,
-    }
-}
-mc.listen("onServerStarted", () => {
-    const plugins = ll.listPlugins()
-    if (plugins.includes("GMLIB-LegacyRemoteCallApi"))
-        imports.GMLIB.status = true
-    if (plugins.includes("SMoney"))
-        imports.SMoney.status = true
-})
 export const givesdata = new JsonConfigFile(pluginpath + "gives.json", JSON.stringify({
     version: versions,
 }))

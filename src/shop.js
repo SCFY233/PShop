@@ -1,10 +1,9 @@
 // LiteLoader-AIDS automatic generated
 /// <reference path="c:/ll3/dev/dts/helperlib/src/index.d.ts" />
 ///<reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
-import { getSMoney } from "../../SMoney/main.js"
 import { config, lang, moneyname, texture_paths, shopdata } from "./consts.js"
 import { PageForm } from "./lib/form.js"
-import { moneys, isPositiveInteger, ReplaceStr, getItemInfo, getCanPutItemCount, getEnchContent, newItemWithAux, getItemContent, getCanReductItemCount, reduceItembyType, reduceItembyNbt } from "./lib/lib.js"
+import { moneys, isPositiveInteger, ReplaceStrnewItemWithAux, getItemContent, getCanReductItemCount, reduceItembyType, reduceItembyNbt } from "./lib/lib.js"
 export const shop = {
     /**
      * 主表单

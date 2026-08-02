@@ -2,7 +2,7 @@ import { getSMoney } from "../../SMoney/main.js"
 import { config, lang, moneyname, texture_paths, chestshopdata, getChestshopIDs } from "./consts.js"
 import { } from "./lib/form.js"
 import { moneys, isPositiveInteger, ReplaceStr, getItemInfo, getCanPutItemCount, getEnchContent, newItemWithAux, getItemContent, getCanReductItemCount, reduceItembyType, reduceItembyNbt, debounce } from "./lib/lib.js"
-import { updateSignText } from "./lib/packet.js"
+import { updateSignText, dropManager } from "./lib/packet.js"
 const SignBlockMap = {
     north: [0, -1],
     south: [0, 1],
@@ -52,16 +52,13 @@ function newChestShop(player, chest, item, side, options = { input: "" }) {
         blocknbt.setTag("PShopID")
     })
 }
-const hasBeenNew = {
-
-}
+const hasBeenNew = {}
 mc.listen("onUseItemOn", (player, item, block, side) => {
-    log(1)
-    if (!player.isSneaking || block.type != "minecraft:chest" || item == null) return
-    if (Object.keys(hasBeenNew).includes(player.uniqueId)) return
+    if (!player.isSneaking || block.type != "minecraft:chest" || item.isNull() || item.type == "minecraft:chest") return
+    if (Object.keys(hasBeenNew).includes(player.uniqueId) && hasBeenNew[player.uniqueId] != null) return
     newChestShop(player, block, item, side)
     hasBeenNew[player.uniqueId] = setTimeout(() => {
         hasBeenNew[player.uniqueId] = null
-    })
+    }, 40)
     return false
 })
