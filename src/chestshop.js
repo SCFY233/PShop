@@ -2,7 +2,7 @@ import { getSMoney } from "../../SMoney/main.js"
 import { config, lang, moneyname, texture_paths, chestshopdata, getChestshopIDs } from "./consts.js"
 import { } from "./lib/form.js"
 import { moneys, isPositiveInteger, ReplaceStr, getItemInfo, getCanPutItemCount, getEnchContent, newItemWithAux, getItemContent, getCanReductItemCount, reduceItembyType, reduceItembyNbt, debounce } from "./lib/lib.js"
-import { updateSignText, dropManager } from "./lib/packet.js"
+import { updateSignText } from "./lib/packet.js"
 const SignBlockMap = {
     north: [0, -1],
     south: [0, 1],
@@ -54,6 +54,7 @@ function newChestShop(player, chest, item, side, options = { input: "" }) {
 }
 const hasBeenNew = {}
 mc.listen("onUseItemOn", (player, item, block, side) => {
+    if (player.getExtraData("PShop_diasbleCreateChestShop")) return
     if (!player.isSneaking || block.type != "minecraft:chest" || item.isNull() || item.type == "minecraft:chest") return
     if (Object.keys(hasBeenNew).includes(player.uniqueId) && hasBeenNew[player.uniqueId] != null) return
     newChestShop(player, block, item, side)

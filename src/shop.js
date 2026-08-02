@@ -3,7 +3,7 @@
 ///<reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
 import { config, lang, moneyname, texture_paths, shopdata } from "./consts.js"
 import { PageForm } from "./lib/form.js"
-import { moneys, isPositiveInteger, ReplaceStrnewItemWithAux, getItemContent, getCanReductItemCount, reduceItembyType, reduceItembyNbt } from "./lib/lib.js"
+import { moneys, isPositiveInteger, ReplaceStr, newItemWithAux, getItemContent, getCanReductItemCount, reduceItembyType, reduceItembyNbt, wlog } from "./lib/lib.js"
 export const shop = {
     /**
      * 主表单
@@ -91,6 +91,7 @@ export const shop = {
                             } else {
                                 r = pl.giveItem(mc.newItem(NBT.parseSNBT(data.snbtstr)), plcount)
                             }
+                            wlog(player, ReplaceStr(lang.get("log.shop.buy"), { "item.name": idata.name, "quantity": plcount, "totalCost": totalCost }))
                             if (r) pl.sendBetterModalForm(ReplaceStr(lang.get("form.shop.buy.item.title"), { name: idata.name }),
                                 ReplaceStr(lang.get("form.shop.buy.item.success"), { plcount, iname: idata.name, moneyname: moneyname, plmoney: moneys.get(pl) }),
                                 lang.get("form.back"), lang.get("form.cancel"),
@@ -153,6 +154,7 @@ export const shop = {
                             else
                                 r = reduceItembyNbt(player, data.snbtstr, plcount)
                             if (r == false) return
+                            wlog(player, ReplaceStr(lang.get("log.shop.sell"), { "item.name": idata.name, "quantity": plcount, "totalCost": totalgive }))
                             if (moneys.add(player, totalgive)) pl.sendBetterModalForm(ReplaceStr(lang.get("form.shop.sell.item.title"), { name: idata.name }),
                                 ReplaceStr(lang.get("form.shop.sell.item.success"), { totalgive, moneyname: moneyname, plmoney: moneys.get(pl) }),
                                 lang.get("form.back"), lang.get("form.cancel"),

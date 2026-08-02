@@ -1,10 +1,10 @@
 // LiteLoader-AIDS automatic generated
 /// <reference path="c:/ll3/dev/dts/helperlib/src/index.d.ts" />
 /// <reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
-import { author, versions, fix, shopdata, config, workpath } from "./src/consts.js"
+import { author, versions, fix, shopdata, config, workpath, lang, loadMarketData, loadShopData } from "./src/consts.js"
 import { getItemInfo } from "./src/lib/lib.js"
 import { shop } from "./src/shop.js"
-import { market } from "./src/market.js"
+import { market, marketitemsgui } from "./src/market.js"
 import { } from "./src/chestshop.js"
 import { checkUpdate } from "./src/network.js"
 import {  } from "./src/lib/packet.js"
@@ -38,6 +38,10 @@ if (config.get('enable').shop) {
             case "gui":
                 shop.main(ori.player, () => void 0)
                 break
+            case "reload":
+                loadShopData()
+                out.success(lang.get("command.market.reload.success"))
+                break
             default:
                 shop.main(ori.player, () => void 0)
                 break
@@ -46,8 +50,8 @@ if (config.get('enable').shop) {
     shopcmd.setup()
 }
 if (config.get('enable').market) {
-    const marketcmd = mc.newCommand(config.get("commands").market, lang.get("command.market.desc"), PermType.Any);
-    marketcmd.setEnum("type", ["buy_sell", "buy_sell_list", "buy_sell_search_normal", "buy_sell_search_better", "ctrl", "add", "edit", "del", "gui", "reload"])
+    const marketcmd = mc.newCommand(config.get("commands").market.cmd, config.get("commands").market.desc, PermType.Any);
+    marketcmd.setEnum("type", ["buy_sell", "buy_sell_list", "search_normal", "search_better", "ctrl", "add", "edit", "del", "gui", "reload"])
     marketcmd.optional("args", ParamType.Enum, "type", "args", 1)
     marketcmd.setCallback((_cmd, ori, out, res) => {
         if (ori.type !== 0) {
@@ -60,13 +64,13 @@ if (config.get('enable').market) {
                 market.buy_sell(pl)
                 break;
             case "buy_sell_list":
-                marketitemsgui(pl, replacestr(lang.get("market.buy_sell.list.title"), { "info": info2 }), market.data, 0, market.buy_sell_item, "market.buy_sell(pl)")
+                marketitemsgui(pl, lang.get("market.buy_sell.list.title"), market.data, 0, market.buy_sell_item, "market.buy_sell(pl)")
                 break;
-            case "buy_sell_search_normal":
-                market.buy_sell_search_normal(pl)
+            case "search_normal":
+                market.search_normal(pl)
                 break;
-            case "buy_sell_search_better":
-                market.buy_sell_search_better(pl)
+            case "search_better":
+                market.search_better(pl)
                 break;
             case "add":
                 market.additem(pl)
@@ -76,6 +80,7 @@ if (config.get('enable').market) {
                 break;
             case "del":
                 market.del(pl)
+                break;
             case "ctrl":
                 market.ctrl(pl)
                 break;
@@ -83,7 +88,7 @@ if (config.get('enable').market) {
                 market.main(pl)
                 break;
             case "reload":
-                market.loaddata()
+                loadMarketData()
                 out.success(lang.get("command.market.reload.success"))
                 break;
             default:

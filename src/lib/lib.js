@@ -69,8 +69,7 @@ export function wlog(pl, msg) {
     try {
         const formattedDate = getDateForLogging();
         const logFilePath = `./logs/PShop.log`;
-        File.writeTo("./logs/PShop.log", "")
-        return fs.appendFileSync(logFilePath, `${formattedDate} ${pl.realName} ${msg}\n`);
+        return File.writeLine(logFilePath, `${formattedDate} ${pl.realName} ${msg}\n`)
     } catch (e) {
         logger.error(`Error at Add Log: ${e}`);
     }
@@ -335,6 +334,18 @@ export function reduceItembyNbt(player, itemsnbt, count, strictAux) {
         logger.error(`Error at reductItembyNbt: ${e}`);
         return false;
     }
+}
+export function getSameItemCount(items, item) {
+    var count = 0;
+    for (var i = 0; i < items.length; i++) {
+        if (same(parseItem(items[i], ["Count"]), parseItem(item, ["Count"]))) {
+            count += items[i].count;
+        }
+        else if (JSON.stringify(parseItem(items[i], ["Count"])) == JSON.stringify(parseItem(item, ["Count"]))) {
+            count += items[i].count
+        }
+    }
+    return count;
 }
 /**
  * 查找元素在数组位置(粗略查找)
