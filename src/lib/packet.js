@@ -48,307 +48,80 @@ export function buildSignTextNBT(text, owner = "PShop", persistFormatting = true
     tag.setString("TextOwner", owner);
     return tag;
 }
-// // ==========================================
-// // 核心 API
-// // ==========================================
-// /**
-// 更新木牌文本 (支持真实修改与虚拟发包)
-// @param {Player|Player[]} players - 目标玩家(数组)
-// @param {number} x - X 坐标
-// @param {number} y - Y 坐标
-// @param {number} z - Z 坐标
-// @param {Object} [options] - 配置项
-// @param {string} [options.frontText=""] - 正面文本
-// @param {string} [options.backText=""] - 背面文本
-// @param {boolean} [options.persistFormatting=true] - 保留格式
-// @param {number} [options.frontColor=-16777216] - 正面颜色
-// @param {number} [options.backColor=-16777216] - 背面颜色
-// @param {boolean} [options.clientOnly=false] - true=仅客户端显示(假木牌),不修改服务端NBT
-// @param {number} [options.customRuntimeId] - 自定义方块RuntimeId (clientOnly为true且原位置不是木牌时必填)
-// @param {boolean} [options.forceRefresh=true] - 是否发送假RuntimeId打破客户端缓存
-// @param {number} [options.dimid] - 维度ID
-// @returns {boolean} 是否成功
-// */
-// export function updateSignText(players, x, y, z, options = {}) {
-//     try {
-//         const playerList = Array.isArray(players) ? players : [players];
-//         if (playerList.length === 0) return false;
-//         // 解构默认参数
-//         const {
-//             frontText = "", backText = "",
-//             persistFormatting = true,
-//             frontColor = -16777216, backColor = -16777216,
-//             clientOnly = false,
-//             forceRefresh = true,
-//             dimid = playerList[0].pos.dimid
-//         } = options;
-//         const pos = { x, y, z };
-//         const block = mc.getBlock(x, y, z, dimid);
-//         // 确定正确的 RuntimeId
-//         const correctRuntimeId = Minecraft.getBlockRuntimeId(block.type, block.tileData);
-//         const ownerName = playerList[0].realName || "";
-//         const nbt = block?.getBlockEntity() ? block.getBlockEntity().getNbt() : new NbtCompound();
-//         nbt.setTag("FrontText", buildSignTextNBT(frontText, ownerName, persistFormatting, frontColor));
-//         nbt.setTag("BackText", buildSignTextNBT(backText, ownerName, persistFormatting, backColor));
-//         nbt.setString("id", "Sign");
-//         nbt.setByte("isMovable", 1);
-//         nbt.setInt("x", x);
-//         nbt.setInt("y", y);
-//         nbt.setInt("z", z);
-//         if (!clientOnly && block) {
-//             block.getBlockEntity().setNbt(nbt);
-//         }
-//         // 准备打破缓存的假 RuntimeId
-//         const fakeRuntimeId = forceRefresh ? correctRuntimeId + 1 : null;
-//         // 向每个玩家发送数据包
-//         for (const player of playerList) {
-//             try {
-//                 // 1. 发送假 RuntimeId 打破客户端缓存
-//                 if (fakeRuntimeId !== null) {
-//                     sendUpdateBlockPacket(player, pos, fakeRuntimeId, 0, 3);
-//                 }
-//                 // 2. 发送正确的方块状态
-//                 sendUpdateBlockPacket(player, pos, correctRuntimeId, 0, 3);
-//                 // 3. 发送方块实体数据 (文本 NBT)
-//                 if (!sendBlockActorDataPacket(player, pos, nbt)) {
-//                     throw new Error("发送 BlockActorDataPacket 失败");
-//                 }
-//             } catch (e) {
-//                 logger.error(`[SignAPI] 向玩家 ${player.realName} 发包错误: ${e}`);
-//                 return false;
-//             }
-//         }
-//         return true;
-//     } catch (e) {
-//         logger.error(`[SignAPI] 更新木牌文本错误: ${e}`);
-//         return false;
-//     }
-// }
+// ==========================================
+// 核心 API
+// ==========================================
 /**
- * @file SignBlock.js
- * @description 假/真木牌方块实体对象（支持玩家动态进出广播、客户端缓存打破与周期发包续期）
- * @author 子沐呀 是春风呀233
- * @since 2026-07-27
- */
-
-export class SignBlock {
-    /**
-     * 创建一个木牌方块控制对象
-     * @param {IntPos|Object} pos 方块坐标 { x, y, z, dimid }
-     * @param {Object} [options] 配置项
-     * @param {string} [options.frontText=""] - 正面文本
-     * @param {string} [options.backText=""] - 背面文本
-     * @param {boolean} [options.persistFormatting=true] - 保留格式 (§)
-     * @param {number} [options.frontColor=-16777216] - 正面颜色 (ARGB)
-     * @param {number} [options.backColor=-16777216] - 背面颜色 (ARGB)
-     * @param {boolean} [options.clientOnly=true] - true=仅客户端发包显示(假木牌); false=修改服务端物理NBT
-     * @param {boolean} [options.forceRefresh=true] - 发送假RuntimeId打破客户端缓存
-     * @param {number} [options.visibleDistance=32] - 玩家触发显示的距离（格）
-     * @param {number} [options.checkInterval=1000] - 短循环：检测玩家进出视距的间隔(ms)
-     * @param {number} [options.renewInterval=240000] - 大循环：已在视距内玩家的自动刷包续期间隔(ms)
-     */
-    constructor(pos, options = {}) {
-        this.pos = { x: pos.x, y: pos.y, z: pos.z };
-        this.dimid = pos.dimid ?? 0;
-
-        // 文本与样式配置
-        this.frontText = options.frontText ?? "";
-        this.backText = options.backText ?? "";
-        this.persistFormatting = options.persistFormatting ?? true;
-        this.frontColor = options.frontColor ?? -16777216;
-        this.backColor = options.backColor ?? -16777216;
-
-        // 运行参数
-        this.clientOnly = options.clientOnly ?? true;
-        this.forceRefresh = options.forceRefresh ?? true;
-        this.visibleDistance = options.visibleDistance ?? 32;
-        this.checkInterval = options.checkInterval ?? 1000;
-        this.renewInterval = options.renewInterval ?? 4 * 60 * 1000;
-
-        // 维护当前视距内已发包的玩家 Set (存储 player.uniqueId)
-        this.activePlayers = new Set();
-
-        this._checkTimer = null;
-        this._renewTimer = null;
-
-        // 初始化服务端真实 NBT (如果非 clientOnly)
-        if (!this.clientOnly) {
-            this._applyServerNBT();
-        }
-
-        // 实例化即开启双循环机制
-        this.start();
-    }
-
-    /**
-     * 构建当前木牌的 NBT 数据结构
-     * @private
-     */
-    _buildNBT(ownerName = "PShop") {
-        const block = mc.getBlock(this.pos.x, this.pos.y, this.pos.z, this.dimid);
+更新木牌文本 (支持真实修改与虚拟发包)
+@param {Player|Player[]} players - 目标玩家(数组)
+@param {number} x - X 坐标
+@param {number} y - Y 坐标
+@param {number} z - Z 坐标
+@param {Object} [options] - 配置项
+@param {string} [options.frontText=""] - 正面文本
+@param {string} [options.backText=""] - 背面文本
+@param {boolean} [options.persistFormatting=true] - 保留格式
+@param {number} [options.frontColor=-16777216] - 正面颜色
+@param {number} [options.backColor=-16777216] - 背面颜色
+@param {boolean} [options.clientOnly=false] - true=仅客户端显示(假木牌),不修改服务端NBT
+@param {number} [options.customRuntimeId] - 自定义方块RuntimeId (clientOnly为true且原位置不是木牌时必填)
+@param {boolean} [options.forceRefresh=true] - 是否发送假RuntimeId打破客户端缓存
+@param {number} [options.dimid] - 维度ID
+@returns {boolean} 是否成功
+*/
+export function updateSignText(players, x, y, z, options = {}) {
+    try {
+        const playerList = Array.isArray(players) ? players : [players];
+        if (playerList.length === 0) return false;
+        // 解构默认参数
+        const {
+            frontText = "", backText = "",
+            persistFormatting = true,
+            frontColor = -16777216, backColor = -16777216,
+            clientOnly = false,
+            forceRefresh = true,
+            dimid = playerList[0].pos.dimid
+        } = options;
+        const pos = { x, y, z };
+        const block = mc.getBlock(x, y, z, dimid);
+        // 确定正确的 RuntimeId
+        const correctRuntimeId = Minecraft.getBlockRuntimeId(block.type, block.tileData);
+        const ownerName = playerList[0].realName || "";
         const nbt = block?.getBlockEntity() ? block.getBlockEntity().getNbt() : new NbtCompound();
-
-        nbt.setTag("FrontText", buildSignTextNBT(this.frontText, ownerName, this.persistFormatting, this.frontColor));
-        nbt.setTag("BackText", buildSignTextNBT(this.backText, ownerName, this.persistFormatting, this.backColor));
+        nbt.setTag("FrontText", buildSignTextNBT(frontText, ownerName, persistFormatting, frontColor));
+        nbt.setTag("BackText", buildSignTextNBT(backText, ownerName, persistFormatting, backColor));
         nbt.setString("id", "Sign");
         nbt.setByte("isMovable", 1);
-        nbt.setInt("x", this.pos.x);
-        nbt.setInt("y", this.pos.y);
-        nbt.setInt("z", this.pos.z);
-
-        return nbt;
-    }
-
-    /**
-     * 同步更新服务端物理方块 NBT
-     * @private
-     */
-    _applyServerNBT() {
-        try {
-            const block = mc.getBlock(this.pos.x, this.pos.y, this.pos.z, this.dimid);
-            if (block && block.getBlockEntity()) {
-                const nbt = this._buildNBT();
-                block.getBlockEntity().setNbt(nbt);
-            }
-        } catch (e) {
-            logger.error(`[SignBlock] 更新服务端 NBT 失败: ${e}`);
+        nbt.setInt("x", x);
+        nbt.setInt("y", y);
+        nbt.setInt("z", z);
+        if (!clientOnly && block) {
+            block.getBlockEntity().setNbt(nbt);
         }
-    }
-
-    /**
-     * 给单个玩家发送完整的木牌更新数据包序列
-     * @private
-     */
-    _sendSignPacket(player) {
-        if (!player) return;
-        try {
-            const block = mc.getBlock(this.pos.x, this.pos.y, this.pos.z, this.dimid);
-            if (!block) return;
-
-            const correctRuntimeId = Minecraft.getBlockRuntimeId(block.type, block.tileData);
-            const fakeRuntimeId = this.forceRefresh ? correctRuntimeId + 1 : null;
-            const nbt = this._buildNBT(player.realName || "PShop");
-
-            // 1. 发送假 RuntimeId 打破客户端方块缓存
-            if (fakeRuntimeId !== null) {
-                sendUpdateBlockPacket(player, this.pos, fakeRuntimeId, 0, 3);
-            }
-            // 2. 发送正确的方块状态
-            sendUpdateBlockPacket(player, this.pos, correctRuntimeId, 0, 3);
-            // 3. 发送方块实体 NBT 数据
-            sendBlockActorDataPacket(player, this.pos, nbt);
-        } catch (e) {
-            logger.error(`[SignBlock] 向玩家 ${player.realName} 发送木牌包失败: ${e}`);
-        }
-    }
-
-    /**
-     * 动态更新木牌文本内容并自动刷包
-     * @param {string} frontText 正面文本
-     * @param {string} [backText] 背面文本
-     */
-    updateText(frontText, backText = this.backText) {
-        this.frontText = frontText;
-        this.backText = backText;
-
-        // 如果影响物理服务端则同步更新
-        if (!this.clientOnly) {
-            this._applyServerNBT();
-        }
-
-        // 立即向当前处于激活范围内的所有玩家推送新文本数据包
-        this.activePlayers.forEach(uid => {
-            const player = mc.getPlayer(uid);
-            if (player) {
-                this._sendSignPacket(player);
-            } else {
-                this.activePlayers.delete(uid);
-            }
-        });
-    }
-
-    /**
-     * 【短循环】检测周围玩家视距：靠近则发包入队；远离则移除标记
-     * @private
-     */
-    _checkNearbyPlayers() {
-        const allOnline = mc.getOnlinePlayers();
-        allOnline.forEach(player => {
-            if (!player || player.pos.dimid !== this.dimid) {
-                // 异维度玩家剔除
-                if (this.activePlayers.has(player.uniqueId)) {
-                    this.activePlayers.delete(player.uniqueId);
+        // 准备打破缓存的假 RuntimeId
+        const fakeRuntimeId = forceRefresh ? correctRuntimeId + 1 : null;
+        // 向每个玩家发送数据包
+        for (const player of playerList) {
+            try {
+                // 1. 发送假 RuntimeId 打破客户端缓存
+                if (fakeRuntimeId !== null) {
+                    sendUpdateBlockPacket(player, pos, fakeRuntimeId, 0, 3);
                 }
-                return;
-            }
-
-            // 判断玩家距离
-            if (player.distanceTo(this.pos) <= this.visibleDistance) {
-                // 靠近：如果还没在 activePlayers 里，发包并记录
-                if (!this.activePlayers.has(player.uniqueId)) {
-                    this._sendSignPacket(player);
-                    this.activePlayers.add(player.uniqueId);
+                // 2. 发送正确的方块状态
+                sendUpdateBlockPacket(player, pos, correctRuntimeId, 0, 3);
+                // 3. 发送方块实体数据 (文本 NBT)
+                if (!sendBlockActorDataPacket(player, pos, nbt)) {
+                    throw new Error("发送 BlockActorDataPacket 失败");
                 }
-            } else {
-                // 远离：剔除（无需发销毁包，离开视距客户端自动清理）
-                if (this.activePlayers.has(player.uniqueId)) {
-                    this.activePlayers.delete(player.uniqueId);
-                }
+            } catch (e) {
+                logger.error(`[SignAPI] 向玩家 ${player.realName} 发包错误: ${e}`);
+                return false;
             }
-        });
-    }
-
-    /**
-     * 【大循环】为当前已在附近的 activePlayers 定期重刷续期包，防止区块重载/同步丢失
-     * @private
-     */
-    _renewForActivePlayers() {
-        if (this.activePlayers.size === 0) return;
-
-        this.activePlayers.forEach(uid => {
-            const player = mc.getPlayer(uid);
-            if (player) {
-                this._sendSignPacket(player);
-            } else {
-                // 清理已离线玩家
-                this.activePlayers.delete(uid);
-            }
-        });
-    }
-
-    /**
-     * 启动定时任务
-     */
-    start() {
-        if (this._checkTimer || this._renewTimer) return;
-
-        // 1. 立即执行一次短循环检测
-        this._checkNearbyPlayers();
-
-        // 2. 短循环：持续检测附近进入/离开视距的玩家
-        this._checkTimer = setInterval(() => {
-            this._checkNearbyPlayers();
-        }, this.checkInterval);
-
-        // 3. 大循环：对在 activePlayers 里的玩家批量刷包续期
-        this._renewTimer = setInterval(() => {
-            this._renewForActivePlayers();
-        }, this.renewInterval);
-    }
-
-    /**
-     * 彻底销毁这个木牌控制对象并停止循环
-     */
-    destroy() {
-        if (this._checkTimer) {
-            clearInterval(this._checkTimer);
-            this._checkTimer = null;
         }
-        if (this._renewTimer) {
-            clearInterval(this._renewTimer);
-            this._renewTimer = null;
-        }
-        this.activePlayers.clear();
+        return true;
+    } catch (e) {
+        logger.error(`[SignAPI] 更新木牌文本错误: ${e}`);
+        return false;
     }
 }
 
