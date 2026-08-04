@@ -11,7 +11,7 @@ export const BDSPath = path.join(__dirname, "..", "..", "..");
 export const pluginpath = "./plugins/Planet/PShop/";
 export const workpath = "./plugins/PShop/";
 export const versions = "4.0.0"
-export const fix = " Alpha 26.07.21-7"
+export const fix = " Alpha 26.08.03-3"
 export const author = "Planet工作室-星辰开发组-春风"
 export const moneyname = getSMoneyConfig().moneyname ?? "金币"
 
@@ -22,21 +22,19 @@ export const config = new JsonConfigFile(pluginpath + "config.json", JSON.string
     commands: {
         shop: {
             cmd: "shop",
-            desc: "PShop-商店"
+            desc: "PShop-系统商店"
         },
-        market: {
-            cmd: "market",
-            desc: "PShop-市场"
+        pshop: {
+            cmd: "pshop",
+            desc: "PShop-主命令"
         }
     },
     prefix: {
         shop: "[PShop-商店]",
-        market: "[PShop-市场]",
         chestshop: "[PShop-箱子商店]"
     },
     enable: {
         shop: true,
-        market: true,
         log: true,
     },
     icon: {
@@ -125,113 +123,20 @@ langdata.inits({
     "form.chestshop.new.dropdown.buy": "收购商店",
     "form.chestshop.new.dropdown.sell": "出售商店",
     "form.chestshop.new.money.type": "应该输入正整数!可你输入了:{input}",
-    // Market 相关配置
-    "market.title": "{prefix.market}市场",
-    "market.button.buy_sell": "购买/出售",
-    "market.button.ctrl": "管理",
-    "market.buy_sell.maintitle": "{prefix.market}市场-购买/出售",
-    "market.buy_sell.button.list": "浏览列表",
-    "market.buy_sell.button.search.normal": "普通搜索",
-    "market.buy_sell.button.search.better": "高级搜索",
-    "market.buy_sell.list.title": "{prefix.market}市场商品列表",
-    "market.buy_sell.search.normal.input": "请输入搜索关键词",
-    "market.buy_sell_item.title": "{info2}{item.name}",
-    "market.buy_sell_item.content": "{prefix.type}商品名称:{prefix.end}{item.name}\n{prefix.type}物品信息:{prefix.end}{itemdata.type} x{itemdata.count}\n{prefix.type}价格:{prefix.end}{item.money}{money.name} ({avgmoney}/{money.name}单价)\n{prefix.type}卖家:{prefix.end}{item.player}\n{prefix.type}上架时间:{prefix.end}{item.time}",
-    "market.buy_sell_item.button.buy": "购买",
-    "market.buy_sell_item.button.sell": "出售",
-    "market.buy_sell_item.no": "该商品已被下架!",
-    "market.buy_sell_item.buy.cantbypartial": "该商品不支持部分购买",
-    "market.buy_sell_item.buy.count": "数量: {count}",
-    "market.buy_sell_item.slider.count": "选择购买数量 (0-{count})",
-    "market.buy_sell_item.buy.nomoney": "余额不足!\n需要: {totalCost}{money.name}\n你的余额: {pl.money}{money.name}",
-    "market.buy_sell_item.buy.confirm": "确认购买?\n花费: {totalCost}{money.name}",
-    "market.buy_sell_item.buy.success": "购买成功!",
-    "market.buy_sell_item.player.buy.success": "你的商品 [{item.name}] 被购买了, 获得 {totalCost}{money.name}",
-    "market.buy_sell_item.noitem": "你没有足够的物品来完成交易!",
-    "market.buy_sell_item.sell.confirm": "确认出售?\n获得: {totalCost}{money.name}",
-    "market.buy_sell_item.sell.success": "出售成功!",
-    "market.buy_sell_item.player.sell.success": "你的商品 [{item.name}] 被出售了, 物品已返回",
-    "market.buy_sell_item.sell.cantbypartial": "注意: 该商品不支持部分出售",
-    "market.search.normal.maintitle": "{prefix.market}普通搜索",
-    "market.search.normal.noitem": "未找到匹配的商品",
-    "market.search.normal.title": "{prefix.market}搜索结果 [{keyword}]",
-    "market.search.better.maintitle": "{prefix.market}高级搜索",
-    "market.search.betterinput": "请输入搜索关键词",
-    "market.search.bettersearch.dropdown": "搜索方式",
-    "market.search.bettersearch.dropdown.name": "按名称搜索",
-    "market.search.bettersearch.dropdown.type": "按类型搜索",
-    "market.search.bettersearch.dropdown.player": "按卖家搜索",
-    "market.search.bettersort.dropdown": "排序方式",
-    "market.search.bettersort.dropdown.nosort": "默认排序",
-    "market.search.bettersort.dropdown.up": "名称升序",
-    "market.search.bettersort.dropdown.down": "名称降序",
-    "market.search.bettersort.dropdown.money.up": "价格升序",
-    "market.search.bettersort.dropdown.money.down": "价格降序",
-    "market.search.betterbypartial.dropdown": "部分交易",
-    "market.search.betterbypartial.dropdown.all": "全部",
-    "market.search.betterbypartial.dropdown.yes": "仅支持部分",
-    "market.search.betterbypartial.dropdown.no": "不支持部分",
-    "market.search.better.noitem": "未找到匹配的商品",
-    "market.search.better.title": "{prefix.market}搜索结果 [{keyword}] 共{count}个",
-    "market.ctrl.maintitle": "{prefix.market}市场管理",
-    "market.ctrl.button.add": "添加商品",
-    "market.ctrl.button.edit": "编辑/删除",
-    "market.add.maintitle": "{prefix.market}添加商品",
-    "market.add.button.byitemtype": "按类型添加",
-    "market.add.button.byhaveitem": "按背包添加",
-    "market.add.button.byhand": "按手中物品添加",
-    "market.add.byitemtype.confirm.title": "{info}确认添加",
-    "market.add.byitemtype.confirm.desc": "确定要添加商品到市场吗?",
-    "market.add.byitemtype.title": "{prefix.market}按类型添加",
-    "market.add.byitemtype.input.type": "物品ID (如 minecraft:apple)",
-    "market.add.byitemtype.input.aux": "物品辅助值",
-    "market.add.byitemtype.input.count": "物品数量",
-    "market.add.byitemtype.switch.bypartial.sell": "允许部分交易",
-    "market.add.byitemtype.input.money": "价格 ({moneyname})",
-    "market.add.byitemtype.input.type.error": "物品ID格式不正确",
-    "market.add.byitemtype.input.aux.error": "辅助值必须是整数",
-    "market.add.input.count.error": "数量必须是正整数",
-    "market.add.input.money.error": "价格必须是正整数",
-    "market.add.item.prefix.buy": "[收购]",
-    "market.add.item.prefix.sell": "[出售]",
-    "market.add.notenough.money": "余额不足!\n需要: {totalCost}{money.name}\n你的余额: {pl.money}{money.name}",
-    "market.add.success": "添加成功!",
-    "market.baneditem": "该物品禁止交易!",
-    "market.add.byhaveitem.title": "{prefix.market}从背包选择",
-    "market.add.byhaveitem.dropdown.item": "选择物品",
-    "market.add.byhaveitem.switch.mode": "出售模式 (关闭=收购)",
-    "market.add.byhaveitem.switch.bypartial": "允许部分交易",
-    "market.add.byhaveitem.slider.count": "选择数量",
-    "market.add.byhaveitem.input.money": "价格 ({moneyname})",
-    "market.add.byhand.title": "{prefix.market}从手中添加",
-    "market.add.byhand.mainhand": "主手物品",
-    "market.add.byhand.offhand": "副手物品",
-    "market.add.byhand.empty": "手中没有物品!",
-    "market.add.byhand.switch.mode": "出售模式 (关闭=收购)",
-    "market.add.byhand.switch.bypartial": "允许部分交易",
-    "market.add.byhand.slider.count": "选择数量",
-    "market.add.byhand.input.money": "价格 ({moneyname})",
-    "market.edit.title": "{prefix.market}编辑商品",
-    "market.edit.button.self": "编辑我的商品",
-    "market.edit.button.all": "编辑所有商品",
-    "market.edit.noitem": "没有找到可编辑的商品",
-    "market.edit.switch.mode": "出售模式 (关闭=收购)",
-    "market.edit.switch.bypartial": "允许部分交易",
-    "market.edit.input.money": "价格 ({moneyname})",
-    "market.edit.switch.delete": "删除此商品",
-    "market.edit.success": "编辑成功!",
-    "market.edit.notenough.money": "余额不足!\n需要: {totalCost}{money.name}\n你的余额: {pl.money}{money.name}",
-    "market.edit.error.type": "不能将收购商品改为出售商品",
-    "market.del.confirm": "确认删除此商品?",
-    "market.del.success": "删除成功!",
+
+    // GUI 通用配置
+    "form.group.content": "第 {page}/{totalPages} 页",
+    "form.button.lastpage": "上一页",
+    "form.button.nextpage": "下一页",
+    "form.back": "返回",
+    "form.cancel": "取消",
+    "form.confirm": "确认",
+    // 表单分页配置
+    "form.prev_page": "上一页",
+    "form.next_page": "下一页",
+
     "log.shop.buy": "购买物品:{item.name} 数量:{quantity} 价格:{totalCost}",
     "log.shop.sell": "出售物品:{item.name} 数量:{quantity} 价格:{totalCost}",
-    "log.market.buy": "玩家 {pl.name} 购买了 [{item.name}] x{count}, 花费 {totalCost}{money.name} (卖家: {item.player})",
-    "log.market.sell": "玩家 {pl.name} 出售了 [{item.name}] x{count}, 获得 {totalCost}{money.name} (买家: {item.player})",
-    "log.market.add": "玩家 {pl.name} 添加了商品 [{item.name}] x{count}, 价格 {totalCost}{money.name}",
-    "log.market.edit": "玩家 {pl.name} 编辑了商品 [{item.name}]",
-    "log.market.del": "玩家 {pl.name} 删除了商品 [{item.name}]",
-    "item.try.reduce.fail": "物品扣除失败,请重试",
 })
 export const lang = {}
 export function loadlang() {
@@ -242,7 +147,7 @@ export function loadlang() {
      * @param {String} key 
      * @returns {String} 
      */
-    lang.get = (key) => lang.data[key]?.replaceAll("{prefix.shop}", prefix.shop).replaceAll("{prefix.market}", prefix.market).replaceAll("{prefix.chestshop}", prefix.chestshop) || key
+    lang.get = (key) => lang.data[key]?.replaceAll("{prefix.shop}", prefix.shop).replaceAll("{prefix.chestshop}", prefix.chestshop) || key
 }
 //释放商店和市场文件
 export const shopdatajson = new JsonConfigFile(pluginpath + "shopdata.json", JSON.stringify({
@@ -331,13 +236,6 @@ export function loadShopData() {
     shopdata.Sell = d.Sell || []
     return d
 }
-export const marketdatajson = new JsonConfigFile(pluginpath + "marketdata.json", JSON.stringify({ data: [] }));
-export let marketdata = []
-export function loadMarketData() {
-    marketdatajson.reload()
-    marketdata = JSON.parse(marketdatajson.read()) ?? []
-    return marketdata
-}
 export const chestshopdatajson = new JsonConfigFile(pluginpath + "chestshop.json")
 export let chestshopdata = {
     
@@ -391,7 +289,6 @@ export function loadconstsmap() {
 //前缀
 export const prefix = {
     shop: config.get("prefix").shop || "[PShop-商店]",
-    market: config.get("prefix").market || "[PShop-市场]",
     chestshop: config.get("prefix").chestshop || "[PShop-箱子商店]",
 }
 export const Texture_Extractor = new TexturePathParser({
@@ -436,7 +333,6 @@ export function loaddatas() {
     loadconstsmap();
     loadTexture();
     loadShopData();
-    loadMarketData();
     const endMem = process.memoryUsage();
     logger.warn('完成!使用内存: ' + ((endMem.heapUsed - startMem.heapUsed) / 1024 / 1024).toFixed(2) + ' MB');
     console.timeEnd('加载数据用时');

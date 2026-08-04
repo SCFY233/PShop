@@ -377,9 +377,9 @@ export function getItemInfo(item) {
         result.maxdamage = item.maxDamage
         result.maxcount = item.maxCount ?? 1
     } else {
-        const tmpItem = mc.newItem(item.obj.Name, 1)
+        const tmpItem = newItemWithAux(item.obj.Name, 1, item.obj?.Damage ?? 0)
         result.type = item.obj.Name
-        result.name = tmpItem.getTranslateName(config.get("itemtranslateCode") ?? "zh_CN") ?? mc.newItem(item.obj.Name, 1).name
+        result.name = tmpItem.getTranslateName(config.get("itemtranslateCode") ?? "zh_CN") ?? tmpItem.name
         result.count = item.obj.Count ?? 1
         result.aux = item.obj?.Damage ?? 0
         result.lore = item.obj?.tag?.Lore ?? []
@@ -535,8 +535,10 @@ export function getGameLang(langcode) {
  */
 export function newItemWithAux(type, count, aux) {
     const item = mc.newItem(type, count)
-    item.setAux(aux);
-    return item;
+    const nbt = item.getNbt()
+    nbt.setByte("Damage", aux)
+    log(mc.newItem(nbt).aux)
+    return mc.newItem(nbt);
 }
 
 /**

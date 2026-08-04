@@ -1,10 +1,8 @@
 // LiteLoader-AIDS automatic generated
 /// <reference path="c:/ll3/dev/dts/helperlib/src/index.d.ts" />
 /// <reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
-import { author, versions, fix, shopdata, config, workpath, lang, loadMarketData, loadShopData } from "./src/consts.js"
-import { getItemInfo } from "./src/lib/lib.js"
+import { author, versions, fix, config, workpath, lang, loadShopData, loaddatas } from "./src/consts.js"
 import { shop } from "./src/shop.js"
-import { market, marketitemsgui } from "./src/market.js"
 import { } from "./src/chestshop.js"
 import { checkUpdate } from "./src/network.js"
 import {  } from "./src/lib/packet.js"
@@ -49,54 +47,20 @@ if (config.get('enable').shop) {
     })
     shopcmd.setup()
 }
-if (config.get('enable').market) {
-    const marketcmd = mc.newCommand(config.get("commands").market.cmd, config.get("commands").market.desc, PermType.Any);
-    marketcmd.setEnum("type", ["buy_sell", "buy_sell_list", "search_normal", "search_better", "ctrl", "add", "edit", "del", "gui", "reload"])
-    marketcmd.optional("args", ParamType.Enum, "type", "args", 1)
-    marketcmd.setCallback((_cmd, ori, out, res) => {
-        if (ori.type !== 0) {
-            out.error(lang.get("command.ori.typeerror"));
-            return;
-        }
-        const pl = ori.player
-        switch (res.args) {
-            case "buy_sell":
-                market.buy_sell(pl)
-                break;
-            case "buy_sell_list":
-                marketitemsgui(pl, lang.get("market.buy_sell.list.title"), market.data, 0, market.buy_sell_item, "market.buy_sell(pl)")
-                break;
-            case "search_normal":
-                market.search_normal(pl)
-                break;
-            case "search_better":
-                market.search_better(pl)
-                break;
-            case "add":
-                market.additem(pl)
-                break;
-            case "edit":
-                market.edit(pl)
-                break;
-            case "del":
-                market.del(pl)
-                break;
-            case "ctrl":
-                market.ctrl(pl)
-                break;
-            case "gui":
-                market.main(pl)
-                break;
-            case "reload":
-                loadMarketData()
-                out.success(lang.get("command.market.reload.success"))
-                break;
-            default:
-                market.main(pl)
-                break
-        }
-    })
-    marketcmd.overload([])
-    marketcmd.overload(["args"])
-    marketcmd.setup()
-}
+
+const pshopcmd = mc.newCommand(config.get("commands").pshop.cmd, config.get("commands").pshop.desc, PermType.Any)
+pshopcmd.setEnum("action", ["version", "reload"])
+pshopcmd.optional("action", ParamType.Enum, "action", 1)
+pshopcmd.overload(["action"])
+pshopcmd.overload([])
+pshopcmd.setCallback((_cmd, ori, out, res) => {
+    switch (res.action) {
+        case "reload":
+            loaddatas()
+            break;
+        default:
+            out.error(`PShop ${versions}${fix} by ${author}`)
+            break;
+    }
+})
+pshopcmd.setup()

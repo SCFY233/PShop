@@ -105,13 +105,13 @@ export class PageForm {
             gui.addButton(button.name, button.image || "")
         }
         return player.sendForm(gui, (player, id) => {
-            const index = id ? start + id : id;
+            const index = start + id;
             if (id == null) return
             if (id == items.length && page > 1) {
                 return this.send(player, page - 1, lastbuttons, lastbuttonfunction)
-            } else if (id == items.length + 1 && page < this.maxPage) {
+            } else if ((id == items.length && page == 1) || (id == items.length + 1 && page < this.maxPage && page != 1)) {
                 return this.send(player, page + 1, lastbuttons, lastbuttonfunction)
-            } else if (id < items.length) return this.callback(player, index);
+            } else if (id < items.length) return this.callback(player, index, page);
             else return lastbuttonfunction(player, id - items.length - 1);
         })
     }
