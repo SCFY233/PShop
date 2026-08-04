@@ -45,14 +45,15 @@ export const shop = {
         const gui = new PageForm(ReplaceStr(lang.get("form.shop.group.title"), { "name": options.name ?? "" }),
             ReplaceStr(lang.get("form.shop.group.content"), { "action": lang.get(options.actionkey) }),
             items, function (player, index, page) {
-                return callback(player, sdata[index], Object.assign(options, { page }), (pl) => shop.group(pl, sdata, callback, options, backfunction))
+                // 返回时回到当前页（page），使用原始 options 的其他属性
+                return callback(player, sdata[index], Object.assign(options, { page }), (pl) => shop.group(pl, sdata, callback, Object.assign(options, { page }), backfunction))
         })
-        if (page == null || page == 1)
+        if (options.page == null || options.page == 1)
             gui.sendTo(player, [{ name: lang.get("form.back"), image: config.getIcon("form:back") }], (player) => backfunction(player))
-        else gui.send(player, page, [{ name: lang.get("form.back"), image: config.getIcon("form:back") }], (player) => backfunction(player))
+        else gui.send(player, options.page, [{ name: lang.get("form.back"), image: config.getIcon("form:back") }], (player) => backfunction(player))
     },
     buyItem(player, idata, options, backfunction) {
-        if (idata.type == "group") return shop.group(player, idata.data, shop.buyItem, options, backfunction)
+        if (idata.type == "group") return shop.group(player, idata.data, shop.buyItem, Object.assign(options, { page: 1 }), backfunction)
         else {
             const data = idata.data[0]
             const tmpItem = data.snbt != true ? newItemWithAux(data.id, 1, data.aux) : mc.newItem(NBT.parseSNBT(data.snbtstr))
@@ -62,12 +63,12 @@ export const shop = {
             gui.setTitle(ReplaceStr(lang.get("form.shop.buy.item.title"), { name: idata.name }))
             gui.addLabel(icontent)
             gui.addDivider()
-            const maxcount = Math.ceil(moneys.get(player) / data.money)
+            const maxcount = Math.floor(moneys.get(player) / data.money)
             gui.addInput(ReplaceStr(lang.get("form.shop.buy.item.count"), {
                 plmoney: moneys.get(player),
                 moneyname: moneyname,
                 count: maxcount
-            }), "", options.input ?? "", lang.get("form.tip.item.count"))
+            }), "", options.input ?? "")
             player.sendForm(gui, (pl, d) => {
                 if (d == null) return
                 if (d[2] == "") return backfunction(pl)
@@ -81,7 +82,7 @@ export const shop = {
                 else {
                     const totalCost = plcount * Number(data.money)
                     pl.sendBetterModalForm(ReplaceStr(lang.get("form.shop.buy.item.title"), { name: idata.name }),
-                        ReplaceStr(lang.get("form.shop.buy.item.confirm"), { iname: idata.name, count: plcount, totalCost, moneyname: moneyname, plmoney: moneys.get(pl) - totalCost }),
+                        ReplaceStr(lang.get("form.shop.buy.item.confirm"), { iname: idata.name, count: plcount, totalCost, moneyname: moneyname, plmoney: (moneys.get(pl) - totalCost).toFixed(5).replaceAll(" ", "") }),
                         lang.get("form.confirm"), lang.get("form.back"),
                         config.getIcon("form:confirm"), config.getIcon("form:back"), (pl, id) => {
                             if (id == null) return
@@ -110,7 +111,7 @@ export const shop = {
         return shop.group(player, shopdata.Sell, shop.sellItem, { actionkey: "form.action.sell" }, backfunction)
     },
     sellItem(player, idata, options, backfunction) {
-        if (idata.type == "group") return shop.group(player, idata.data, shop.sellItem, options, backfunction)
+        if (idata.type == "group") return shop.group(player, idata.data, shop.sellItem, Object.assign(options, { page: 1 }), backfunction)
         else {
             const data = idata.data[0]
             const tmpItem = data.snbt != true ? newItemWithAux(data.id, 1, data.aux) : mc.newItem(NBT.parseSNBT(data.snbtstr))
@@ -129,7 +130,7 @@ export const shop = {
                 moneyname: moneyname,
                 count: maxcount,
                 iname: idata.name
-            }), "", options.input ?? "", lang.get("form.tip.item.count"))
+            }), "", options.input ?? "")
             player.sendForm(gui, (pl, d) => {
                 if (d == null) return
                 if (d[2] == "") return backfunction(pl)

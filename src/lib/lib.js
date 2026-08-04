@@ -66,6 +66,7 @@ export function getDateForLogging() {
  * @param {String} msg 
  */
 export function wlog(pl, msg) {
+    if (!config.get("enable").log) return
     try {
         const formattedDate = getDateForLogging();
         const logFilePath = `./logs/PShop.log`;
@@ -373,8 +374,8 @@ export function getItemInfo(item) {
         result.count = item.count
         result.aux = item.aux
         result.lore = item.lore ?? []
-        result.damage = Number(item.maxDamage) - Number(item.obj?.tag?.Damage ?? 0)
-        result.maxdamage = item.maxDamage
+        result.damage = Number(item.maxDamage ?? 1) - Number(item.obj?.tag?.Damage ?? 0)
+        result.maxdamage = item.maxDamage ?? 1
         result.maxcount = item.maxCount ?? 1
     } else {
         const tmpItem = newItemWithAux(item.obj.Name, 1, item.obj?.Damage ?? 0)
@@ -383,8 +384,8 @@ export function getItemInfo(item) {
         result.count = item.obj.Count ?? 1
         result.aux = item.obj?.Damage ?? 0
         result.lore = item.obj?.tag?.Lore ?? []
-        result.damage = Number(tmpItem.maxDamage) - Number(item.obj?.tag?.Damage ?? 0)
-        result.maxdamage = tmpItem.maxDamage
+        result.damage = Number(tmpItem.maxDamage ?? 1) - Number(item.obj?.tag?.Damage ?? 0)
+        result.maxdamage = tmpItem.maxDamage ?? 1
         result.maxcount = tmpItem.maxCount ?? 1
     }
     const parsed_data = parseItem(item)
@@ -537,7 +538,6 @@ export function newItemWithAux(type, count, aux) {
     const item = mc.newItem(type, count)
     const nbt = item.getNbt()
     nbt.setByte("Damage", aux)
-    log(mc.newItem(nbt).aux)
     return mc.newItem(nbt);
 }
 

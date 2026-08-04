@@ -104,15 +104,34 @@ export class PageForm {
         for (const button of lastbuttons || []) {
             gui.addButton(button.name, button.image || "")
         }
+        // 计算翻页按钮索引
+        let buttonsCount = items.length;
+        let prevPageIndex = -1, nextPageIndex = -1;
+        
+        if (page > 1) prevPageIndex = buttonsCount++;
+        if (page < this.maxPage) nextPageIndex = buttonsCount++;
+        
         return player.sendForm(gui, (player, id) => {
-            const index = start + id;
             if (id == null) return
-            if (id == items.length && page > 1) {
+            
+            // 处理上一页按钮
+            if (id === prevPageIndex) {
                 return this.send(player, page - 1, lastbuttons, lastbuttonfunction)
-            } else if ((id == items.length && page == 1) || (id == items.length + 1 && page < this.maxPage && page != 1)) {
+            }
+            
+            // 处理下一页按钮
+            if (id === nextPageIndex) {
                 return this.send(player, page + 1, lastbuttons, lastbuttonfunction)
-            } else if (id < items.length) return this.callback(player, index, page);
-            else return lastbuttonfunction(player, id - items.length - 1);
+            }
+            
+            // 处理商品项
+            if (id < items.length) {
+                const index = start + id;
+                return this.callback(player, index, page);
+            }
+            
+            // 处理自定义按钮
+            return lastbuttonfunction(player, id - buttonsCount);
         })
     }
     /**

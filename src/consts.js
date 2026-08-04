@@ -11,7 +11,7 @@ export const BDSPath = path.join(__dirname, "..", "..", "..");
 export const pluginpath = "./plugins/Planet/PShop/";
 export const workpath = "./plugins/PShop/";
 export const versions = "4.0.0"
-export const fix = " Alpha 26.08.03-3"
+export const fix = " Alpha 26.08.04-6"
 export const author = "Planet工作室-星辰开发组-春风"
 export const moneyname = getSMoneyConfig().moneyname ?? "金币"
 
@@ -84,13 +84,13 @@ langdata.inits({
     "form.shop.main.button.buy": "购买",
     "form.shop.main.button.sell": "出售",
     "form.item.content.shop": "该商品信息如下:",
-    "form.item.content.shop.name": "{prefix.type}名称:{prefix.end}{iname}",
+    "form.item.content.shop.name": "{prefix.type}名称:{prefix.end}{iname}§r",
     "form.item.content.shop.price": "{prefix.type}价格:{prefix.end}{price}/个",
-    "form.item.content.name": "({name})",
+    "form.item.content.name": "({name}§r)",
     "form.item.content.count": " x{count}",
     "form.item.content.prefix.step": "   ",
     "form.item.content.damage": "{prefix.type}耐久:{prefix.end}{damage}/{maxdamage}",
-    "form.item.name": "{prefix.type}物品名称:{prefix.end}{name}",
+    "form.item.name": "{prefix.type}物品名称:{prefix.end}{name}§r",
     "form.item.content.lore.step": "|{text}",
     "form.item.content.ench.step": "#{ench}",
     "form.item.potion": "{prefix.type}效果:{prefix.end}{potion}.",
@@ -101,16 +101,15 @@ langdata.inits({
     "form.shop.buy.item.count": "输入数量,你有{plmoney}{moneyname},可购买{count}个,留空返回",
     "form.shop.item.count.type": "应该输入正整数!可你输入了:{input}",
     "form.shop.buy.item.count.max": "你钱不够!你无法购买{input}个!你最多只能购买:{maxcount}个",
-    "form.tip.item.count": "请输入正整数",
     "form.shop.buy.item.confirm": "你确定要购买{count}个{iname}吗?\n这将会花费{totalCost}{moneyname},你将会剩余{plmoney}{moneyname}",
     "form.shop.buy.item.success": "购买成功!你获得了{plcount}{iname}!\n当前余额:{plmoney}{moneyname}",
     "form.shop.sell.item.title": "{prefix.shop}出售商品:{name}",
-    "form.shop.sell.item.count": "输入数量,你有{count}个{iname},留空返回",
+    "form.shop.sell.item.count": "输入数量,你有{count}个{iname}§r,留空返回",
     "form.shop.sell.item.count.max": "你最多只能出售{maxcount}个",
-    "form.shop.sell.item.confirm": "你确定要出售{count}个{iname}吗?\n这将会获得{totalgive}{moneyname},你将会剩余{plcount}个{iname}",
+    "form.shop.sell.item.confirm": "你确定要出售{count}个{iname}§r吗?\n这将会获得{totalgive} {moneyname},你将会剩余{plcount}个{iname}",
     "form.shop.sell.item.success": "出售成功!你获得了{totalgive}{moneyname}!\n当前余额:{plmoney}{moneyname}",
     "form.shop.buy.item.fail": "购买失败!你剩余{plmoney}{moneyname}",
-    "form.shop.group.title": "{prefix.shop}{name}",
+    "form.shop.group.title": "{prefix.shop}{name}§r",
     "form.shop.group.content": "来{action}点什么?",
     "prefix.ench": "§d",
     "prefix.count": "§a",
@@ -302,7 +301,7 @@ export const texture_paths = {
 }
 export function loadTexture() {
     texture_paths.data = { ...Texture_Extractor.run(), ...vanilla_texture_paths() }
-    Texture_Extractor.validateTextures()
+    // Texture_Extractor.validateTextures()
 }
 export const gamelang = {
     get: (key) => gamelang?.data?.[key] ?? key
@@ -337,5 +336,6 @@ export function loaddatas() {
     const endMem = process.memoryUsage();
     logger.warn('完成!使用内存: ' + ((endMem.heapUsed - startMem.heapUsed) / 1024 / 1024).toFixed(2) + ' MB');
     console.timeEnd('加载数据用时');
+    return true;
 }
 loaddatas()

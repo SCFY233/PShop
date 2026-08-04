@@ -56,7 +56,7 @@ pshopcmd.overload([])
 pshopcmd.setCallback((_cmd, _ori, out, res) => {
     switch (res.action) {
         case "reload":
-            loaddatas()
+            loaddatas() ? out.success("success") : out.error("error")
             break;
         default:
             out.success(`PShop ${versions}${fix} by ${author}`)
