@@ -1,7 +1,7 @@
 // LiteLoader-AIDS automatic generated
 /// <reference path="c:/ll3/dev/dts/helperlib/src/index.d.ts" />
 ///<reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
-import { addSMoney, reduceSMoney, getSMoney, transferSMoney } from "../../../SMoney/main.js";
+import { addSMoney, reduceSMoney, getSMoney, transferSMoney } from "../../../SMoney/lib.js";
 import { parseItemNbt, parseItem } from "./nbt.js"
 import { config, enchs, potions, gamelang, lang, prefix } from "../consts.js"
 import fs from 'fs'

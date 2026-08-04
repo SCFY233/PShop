@@ -3,7 +3,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { TexturePathParser } from './lib/extractTextures.js';
 import { parseProperties, wlog, ReplaceStr, CompareVersion, getGameLang } from './lib/lib.js';
-import { getSMoneyConfig } from '../../SMoney/main.js';
+import { getSMoneyConfig } from '../../SMoney/lib.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
