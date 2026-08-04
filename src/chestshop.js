@@ -1,4 +1,3 @@
-import { getSMoney } from "../../SMoney/main.js"
 import { config, lang, moneyname, texture_paths, chestshopdata, getChestshopIDs } from "./consts.js"
 import { } from "./lib/form.js"
 import { moneys, isPositiveInteger, ReplaceStr, getItemInfo, getCanPutItemCount, getEnchContent, newItemWithAux, getItemContent, getCanReductItemCount, reduceItembyType, reduceItembyNbt, debounce } from "./lib/lib.js"
