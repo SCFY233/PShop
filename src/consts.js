@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { TexturePathParser } from './lib/extractTextures.js';
-import { parseProperties, addgiveItems, addgiveMoneys, setgiveReduceMoneys, wlog, ReplaceStr, CompareVersion, getGameLang } from './lib/lib.js';
+import { parseProperties, wlog, ReplaceStr, CompareVersion, getGameLang } from './lib/lib.js';
 import { getSMoneyConfig } from '../../SMoney/main.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -302,6 +302,7 @@ export const texture_paths = {
 }
 export function loadTexture() {
     texture_paths.data = { ...Texture_Extractor.run(), ...vanilla_texture_paths() }
+    Texture_Extractor.validateTextures()
 }
 export const gamelang = {
     get: (key) => gamelang?.data?.[key] ?? key
@@ -309,21 +310,21 @@ export const gamelang = {
 export function loadGameLang() {
     gamelang.data = getGameLang(config.get("gamelang") || "zh_CN")
 }
-export const givesdata = new JsonConfigFile(pluginpath + "gives.json", JSON.stringify({
-    version: versions,
-}))
-if (givesdata.get("version") == null) {
-    let old = JSON.parse(givesdata.read())
-    let ks = Object.keys(old)
-    for (let k of ks) {
-        if (typeof k != "number" && k != "version") {
-            addgiveItems(data.name2xuid(k), [old[k].item], [''])
-            addgiveMoneys(data.name2xuid(k), [old[k].money], [''])
-            setgiveReduceMoneys(data.name2xuid(k), [])
-            givesdata.delete(k)
-        }
-    }
-}
+// export const givesdata = new JsonConfigFile(pluginpath + "gives.json", JSON.stringify({
+//     version: versions,
+// }))
+// if (givesdata.get("version") == null) {
+//     let old = JSON.parse(givesdata.read())
+//     let ks = Object.keys(old)
+//     for (let k of ks) {
+//         if (typeof k != "number" && k != "version") {
+//             addgiveItems(data.name2xuid(k), [old[k].item], [''])
+//             addgiveMoneys(data.name2xuid(k), [old[k].money], [''])
+//             setgiveReduceMoneys(data.name2xuid(k), [])
+//             givesdata.delete(k)
+//         }
+//     }
+// }
 export function loaddatas() {
     console.time('加载数据用时');
     const startMem = process.memoryUsage();

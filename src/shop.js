@@ -37,17 +37,19 @@ export const shop = {
     buy(player, backfunction) {
         return shop.group(player, shopdata.Buy, shop.buyItem, { name: "", actionkey: "form.action.buy" }, backfunction)
     },
-    group(player, sdata, callback, options = { name: "", actionkey: "form.action.do" }, backfunction) {
+    group(player, sdata, callback, options = { name: "", actionkey: "form.action.do", page: 1 }, backfunction) {
         const items = []
         sdata.forEach(element => {
             items.push({ name: element.name, image: shop.getIcon(element) })
         });
         const gui = new PageForm(ReplaceStr(lang.get("form.shop.group.title"), { "name": options.name ?? "" }),
             ReplaceStr(lang.get("form.shop.group.content"), { "action": lang.get(options.actionkey) }),
-            items, function (player, index) {
-            return callback(player, sdata[index], options, (pl) => shop.group(pl, sdata, callback, options, backfunction))
+            items, function (player, index, page) {
+                return callback(player, sdata[index], Object.assign(options, { page }), (pl) => shop.group(pl, sdata, callback, options, backfunction))
         })
-        gui.sendTo(player, [{ name: lang.get("form.back"), image: config.getIcon("form:back") }], (player) => backfunction(player))
+        if (page == null || page == 1)
+            gui.sendTo(player, [{ name: lang.get("form.back"), image: config.getIcon("form:back") }], (player) => backfunction(player))
+        else gui.send(player, page, [{ name: lang.get("form.back"), image: config.getIcon("form:back") }], (player) => backfunction(player))
     },
     buyItem(player, idata, options, backfunction) {
         if (idata.type == "group") return shop.group(player, idata.data, shop.buyItem, options, backfunction)

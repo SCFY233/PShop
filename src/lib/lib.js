@@ -3,7 +3,7 @@
 ///<reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
 import { addSMoney, reduceSMoney, getSMoney, transferSMoney } from "../../../SMoney/main.js";
 import { parseItemNbt, parseItem } from "./nbt.js"
-import { config, givesdata, enchs, potions, gamelang, lang, prefix } from "../consts.js"
+import { config, enchs, potions, gamelang, lang, prefix } from "../consts.js"
 import fs from 'fs'
 import * as GMLIB from "../../../GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.js"
 //通用函数
@@ -158,80 +158,80 @@ export const moneys =
 export function isPositiveInteger(number) {
     return Number.isInteger(number) && number > 0;
 }
-//gives相关函数
-export function addgiveItem(plxuid, item, note) {
-    let gives = getgives(plxuid)
-    gives.item.push({
-        item: item,
-        note: note
-    })
-    givesdata.set(String(plxuid), gives)
-}
-export function addgiveMoney(plxuid, money, note) {
-    let gives = getgives(plxuid)
-    gives.money.push({
-        value: money,
-        note: note
-    })
-    givesdata.set(String(plxuid), gives)
-}
-export function addgiveReduceMoney(plxuid, money, note) {
-    let gives = getgives(plxuid)
-    gives.reducemoney.push({
-        value: money,
-        note: note
-    })
-    givesdata.set(String(plxuid), gives)
-}
-export function addgiveItems(plxuid, items, note) {
-    items.forEach(item => addgiveItem(plxuid, item, note))
-}
-export function addgiveMoneys(plxuid, moneys, note) {
-    moneys.forEach(money => addgiveMoney(plxuid, money, note))
-}
-export function addgiveReduceMoneys(plxuid, moneys, note) {
-    moneys.forEach(money => addgiveReduceMoney(plxuid, money, note))
-}
-export function setgiveItems(plxuid, items = []) {
-    let gives = getgives(plxuid)
-    gives.item = items
-    givesdata.set(String(plxuid), gives)
-}
-export function setgiveMoneys(plxuid, moneys = []) {
-    let gives = getgives(plxuid)
-    gives.money = moneys
-    givesdata.set(String(plxuid), gives)
-}
-export function setgiveReduceMoneys(plxuid, moneys = []) {
-    let gives = getgives(plxuid)
-    gives.reducemoney = moneys
-    givesdata.set(String(plxuid), gives)
-}
-export function getgives(plxuid) {
-    let gives = givesdata.get(String(plxuid)) || {}
-    return gives
-}
-mc.listen("onJoin", (pl) => {
-    let gdata = getgives(pl.xuid)
-    if (!gdata?.item) setgiveItems(pl.xuid, [])
-    else if (!gdata?.money) setgiveMoneys(pl.xuid, [])
-    else if (!gdata?.reducemoney) setgiveReduceMoneys(pl.xuid, [])
-    else {
-        gdata = getgives(pl.xuid)
-        gdata.item.forEach(itemsnbt => {
-            pl.giveItem(mc.newItem(NBT.parseSNBT(itemsnbt.item)))
-            itemsnbt.note && pl.sendLang("give.item.note", { note: itemsnbt.note })
-        })
-        gdata.money.forEach(money => {
-            moneys.add(pl.xuid, money.money)
-            money.note && pl.sendLang("give.money.note", { note: money.note })
-        })
-        gdata.reducemoney.forEach(money => {
-            moneys.reduce(pl.xuid, money.money)
-            money.note && pl.sendLang("give.reducemoney.note", { note: money.note })
-        })
-    }
-})
+// //gives相关函数
+// export function addgiveItem(plxuid, item, note) {
+//     let gives = getgives(plxuid)
+//     gives.item.push({
+//         item: item,
+//         note: note
+//     })
+//     givesdata.set(String(plxuid), gives)
+// }
+// export function addgiveMoney(plxuid, money, note) {
+//     let gives = getgives(plxuid)
+//     gives.money.push({
+//         value: money,
+//         note: note
+//     })
+//     givesdata.set(String(plxuid), gives)
+// }
+// export function addgiveReduceMoney(plxuid, money, note) {
+//     let gives = getgives(plxuid)
+//     gives.reducemoney.push({
+//         value: money,
+//         note: note
+//     })
+//     givesdata.set(String(plxuid), gives)
+// }
+// export function addgiveItems(plxuid, items, note) {
+//     items.forEach(item => addgiveItem(plxuid, item, note))
+// }
+// export function addgiveMoneys(plxuid, moneys, note) {
+//     moneys.forEach(money => addgiveMoney(plxuid, money, note))
+// }
+// export function addgiveReduceMoneys(plxuid, moneys, note) {
+//     moneys.forEach(money => addgiveReduceMoney(plxuid, money, note))
+// }
+// export function setgiveItems(plxuid, items = []) {
+//     let gives = getgives(plxuid)
+//     gives.item = items
+//     givesdata.set(String(plxuid), gives)
+// }
+// export function setgiveMoneys(plxuid, moneys = []) {
+//     let gives = getgives(plxuid)
+//     gives.money = moneys
+//     givesdata.set(String(plxuid), gives)
+// }
+// export function setgiveReduceMoneys(plxuid, moneys = []) {
+//     let gives = getgives(plxuid)
+//     gives.reducemoney = moneys
+//     givesdata.set(String(plxuid), gives)
+// }
+// export function getgives(plxuid) {
+//     let gives = givesdata.get(String(plxuid)) || {}
+//     return gives
+// }
+// mc.listen("onJoin", (pl) => {
+//     let gdata = getgives(pl.xuid)
+//     if (!gdata?.item) setgiveItems(pl.xuid, [])
+//     else if (!gdata?.money) setgiveMoneys(pl.xuid, [])
+//     else if (!gdata?.reducemoney) setgiveReduceMoneys(pl.xuid, [])
+//     else {
+//         gdata = getgives(pl.xuid)
+//         gdata.item.forEach(itemsnbt => {
+//             pl.giveItem(mc.newItem(NBT.parseSNBT(itemsnbt.item)))
+//             itemsnbt.note && pl.sendLang("give.item.note", { note: itemsnbt.note })
+//         })
+//         gdata.money.forEach(money => {
+//             moneys.add(pl.xuid, money.money)
+//             money.note && pl.sendLang("give.money.note", { note: money.note })
+//         })
+//         gdata.reducemoney.forEach(money => {
+//             moneys.reduce(pl.xuid, money.money)
+//             money.note && pl.sendLang("give.reducemoney.note", { note: money.note })
+//         })
+//     }
+// })
 /**
  * 获取可以添加的物品数量
  * @param {Player} player 

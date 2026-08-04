@@ -6,10 +6,19 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// 方块材质面优先级：同 aux 多面时按此顺序选取代表面（侧面优先）
+const FACE_PRIORITY = ['side', '*', 'up', 'down', 'north', 'south', 'east', 'west'];
+
 /**
  * 物品和方块材质解析器类
  * 用于解析行为包和材质包，提取物品和方块的材质路径
- * 
+ *
+ * 解析思路：
+ * - 行为包（BP）为权威来源：物品读取 minecraft:icon，方块读取 material_instances/item_visual/permutations
+ * - 材质包（RP）提供材质表：item_texture.json 与 terrain_texture.json 构建 key -> 路径 映射
+ * - 方块回退：BP 未定义 material_instances 时（如 HiddenYears），查 RP 根目录 blocks.json 的面映射
+ * - 最终按 aux 格式输出：{"cc:xxx": {"0": "path", "1": "path"}}，未匹配保留 null
+ *
  * @class TexturePathParser
  * @example
  * const parser = new TexturePathParser({
@@ -18,7 +27,6 @@ const __dirname = path.dirname(__filename);
  *   worldName: 'Bedrock level'
  * });
  * const result = parser.run();
- * parser.saveToFile();
  */
 export class TexturePathParser {
     /**
@@ -45,6 +53,16 @@ export class TexturePathParser {
         this.behaviorPacksPath = path.join(this.bdsPath, 'behavior_packs');
         this.resourcePacksPath = path.join(this.bdsPath, 'resource_packs');
         this.worldsPath = path.join(this.bdsPath, 'worlds');
+
+        // 材质表：item_texture.json / terrain_texture.json 的 key -> 路径(字符串或数组)
+        this.textureTable = {};
+        // 物品图标：identifier -> item_texture.json 的 key
+        this.itemIcons = {};
+        // 方块材质：identifier -> { default: {face:key}, itemVisual: {face:key}, permutations: [{face:key}, ...] }
+        this.blockData = {};
+        // blocks.json（RP根目录）方块标识符 -> {face: textureKey}
+        // 用于 BP 方块未定义 material_instances 时的回退（如 HiddenYears 的方块）
+        this.blocksJsonTable = {};
 
         this.result = {};
         this.namespaces = new Set(); // 收集所有命名空间
@@ -93,7 +111,7 @@ export class TexturePathParser {
     }
 
     /**
-     * 解析行为包中的物品定义
+     * 解析行为包中的物品和方块定义
      */
     parseBehaviorPacks() {
         console.log('正在解析行为包...');
@@ -167,55 +185,122 @@ export class TexturePathParser {
     }
 
     /**
-     * 解析物品文件
+     * 解析物品文件，读取 identifier 与 minecraft:icon
      */
     parseItemFile(filePath) {
         const content = this.parseJsonFile(filePath);
         if (!content) return;
 
         try {
-            if (content['minecraft:item'] && content['minecraft:item'].description) {
-                const identifier = content['minecraft:item'].description.identifier;
-                if (identifier) {
-                    // 提取命名空间
-                    const [namespace] = identifier.split(':');
-                    if (namespace) {
-                        this.namespaces.add(namespace);
-                    }
-                    this.result[identifier] = null; // 占位，稍后从材质包中获取
-                }
+            const item = content['minecraft:item'];
+            if (!item || !item.description || !item.description.identifier) return;
+
+            const identifier = item.description.identifier;
+            const [namespace] = identifier.split(':');
+            if (namespace) this.namespaces.add(namespace);
+
+            // minecraft:icon 可能在 components 下，也可能直接挂在 item 下（兼容多版本）
+            const components = item.components || {};
+            const iconRaw = components['minecraft:icon'] !== undefined
+                ? components['minecraft:icon']
+                : item['minecraft:icon'];
+
+            let iconKey = null;
+            if (typeof iconRaw === 'string') {
+                iconKey = iconRaw;
+            } else if (iconRaw && typeof iconRaw === 'object' && iconRaw.texture) {
+                iconKey = iconRaw.texture;
             }
+
+            this.itemIcons[identifier] = iconKey;
         } catch (err) {
             console.warn(`解析物品文件失败: ${filePath}`, err.message);
         }
     }
 
     /**
-     * 解析方块文件
+     * 解析方块文件，读取 material_instances / item_visual / permutations 的各面材质 key
      */
     parseBlockFile(filePath) {
         const content = this.parseJsonFile(filePath);
         if (!content) return;
 
         try {
-            if (content['minecraft:block'] && content['minecraft:block'].description) {
-                const identifier = content['minecraft:block'].description.identifier;
-                if (identifier) {
-                    // 提取命名空间
-                    const [namespace] = identifier.split(':');
-                    if (namespace) {
-                        this.namespaces.add(namespace);
+            const block = content['minecraft:block'];
+            if (!block || !block.description || !block.description.identifier) return;
+
+            const identifier = block.description.identifier;
+            const [namespace] = identifier.split(':');
+            if (namespace) this.namespaces.add(namespace);
+
+            const components = block.components || {};
+
+            // 默认材质（components.minecraft:material_instances）
+            const defaultFaceMap = this.extractFaceMap(components['minecraft:material_instances']);
+
+            // 物品栏视觉材质（components.minecraft:item_visual.material_instances）
+            let itemVisualFaceMap = null;
+            const itemVisual = components['minecraft:item_visual'];
+            if (itemVisual && itemVisual.material_instances) {
+                itemVisualFaceMap = this.extractFaceMap(itemVisual.material_instances);
+            }
+
+            // permutations 中的材质覆盖
+            const permutations = [];
+            if (Array.isArray(block.permutations)) {
+                for (const perm of block.permutations) {
+                    const permComponents = perm.components || {};
+                    const faceMap = this.extractFaceMap(permComponents['minecraft:material_instances']);
+                    if (Object.keys(faceMap).length > 0) {
+                        permutations.push(faceMap);
                     }
-                    this.result[identifier] = null; // 占位，稍后从材质包中获取
                 }
             }
+
+            this.blockData[identifier] = {
+                default: defaultFaceMap,
+                itemVisual: itemVisualFaceMap,
+                permutations
+            };
         } catch (err) {
             console.warn(`解析方块文件失败: ${filePath}`, err.message);
         }
     }
 
     /**
-     * 解析材质包中的材质定义
+     * 从 material_instances 提取 {face: textureKey} 映射
+     */
+    extractFaceMap(materialInstances) {
+        const faceMap = {};
+        if (!materialInstances || typeof materialInstances !== 'object') return faceMap;
+
+        for (const [face, data] of Object.entries(materialInstances)) {
+            if (!data) continue;
+            // data 可能是 { texture: "cc:xxx", render_method: "..." } 或字符串简写
+            if (typeof data === 'string') {
+                faceMap[face] = data;
+            } else if (typeof data === 'object' && data.texture) {
+                faceMap[face] = data.texture;
+            }
+        }
+        return faceMap;
+    }
+
+    /**
+     * 从多个面中按优先级选取代表材质 key（侧面优先）
+     */
+    selectFaceTexture(faceMap) {
+        if (!faceMap) return null;
+        for (const face of FACE_PRIORITY) {
+            if (faceMap[face]) return faceMap[face];
+        }
+        // 回退：任意一个面
+        const keys = Object.keys(faceMap);
+        return keys.length ? faceMap[keys[0]] : null;
+    }
+
+    /**
+     * 解析材质包中的材质定义，构建 textureTable
      */
     parseResourcePacks() {
         console.log('正在解析材质包...');
@@ -264,7 +349,7 @@ export class TexturePathParser {
 
             console.log(`    - 解析包: ${pack.name}`);
 
-            // 扫描所有可能的材质定义文件
+            // 扫描材质定义文件，构建材质表
             this.scanTextureFiles(packPath);
         }
 
@@ -276,138 +361,209 @@ export class TexturePathParser {
     }
 
     /**
-     * 扫描材质包中的所有材质文件
+     * 扫描材质包中的 item_texture.json / terrain_texture.json / blocks.json
+     * - item_texture.json / terrain_texture.json: 构建 key -> 路径 材质表
+     * - blocks.json (RP根目录): 构建方块标识符 -> {face: textureKey} 映射，用于 BP 无 material_instances 时回退
      */
     scanTextureFiles(packPath) {
         const texturesPath = path.join(packPath, 'textures');
-        if (!fs.existsSync(texturesPath)) return;
-
-        // 扫描item_texture.json
-        const itemTexturePath = path.join(texturesPath, 'item_texture.json');
-        if (fs.existsSync(itemTexturePath)) {
-            const content = this.parseJsonFile(itemTexturePath);
-            if (content && content.texture_data) {
-                for (const [key, value] of Object.entries(content.texture_data)) {
-                    this.processTextureData(key, value);
-                }
-            }
-        }
-
-        // 扫描terrain_texture.json
-        const terrainTexturePath = path.join(texturesPath, 'terrain_texture.json');
-        if (fs.existsSync(terrainTexturePath)) {
-            const content = this.parseJsonFile(terrainTexturePath);
-            if (content && content.texture_data) {
-                for (const [key, value] of Object.entries(content.texture_data)) {
-                    this.processTextureData(key, value);
-                }
-            }
-        }
-
-        // 扫描blocks和items目录中的png文件
-        const blocksPath = path.join(texturesPath, 'blocks');
-        if (fs.existsSync(blocksPath)) {
-            this.scanPngFiles(blocksPath, 'blocks');
-        }
-
-        const itemsPath = path.join(texturesPath, 'items');
-        if (fs.existsSync(itemsPath)) {
-            this.scanPngFiles(itemsPath, 'items');
-        }
-    }
-
-    /**
-     * 处理材质数据，支持aux值
-     */
-    processTextureData(key, value) {
-        const textures = value.textures;
-        
-        if (!textures) return;
-
-        // 如果是数组，处理aux值
-        if (Array.isArray(textures)) {
-            textures.forEach((texture, index) => {
-                // 数组索引就是aux值
-                const actualTexture = typeof texture === 'string' ? texture : texture.path;
-                if (actualTexture) {
-                    this.matchTextureToIdentifier(key, actualTexture, index);
-                }
-            });
-        } else {
-            // 单个材质，aux值为0
-            this.matchTextureToIdentifier(key, textures, 0);
-        }
-    }
-
-    /**
-     * 将材质与标识符匹配
-     */
-    matchTextureToIdentifier(key, texturePath, auxValue = 0) {
-            // 使用动态收集的命名空间
-            const possibleIdentifiers = [];
-            
-            // 添加所有收集到的命名空间
-            for (const namespace of this.namespaces) {
-                possibleIdentifiers.push(`${namespace}:${key}`);
-            }
-            
-            // 添加minecraft命名空间和原始key
-            possibleIdentifiers.push(`minecraft:${key}`);
-            possibleIdentifiers.push(key);
-    
-            for (const identifier of possibleIdentifiers) {
-                if (this.result.hasOwnProperty(identifier)) {
-                    // 如果标识符已存在，检查是否需要转换为aux格式
-                    const existingValue = this.result[identifier];
-                    
-                    if (existingValue === null) {
-                        // 单个材质，使用aux格式
-                        this.result[identifier] = {
-                            [auxValue]: texturePath
-                        };
-                    } else if (typeof existingValue === 'string') {
-                        // 已有单个材质，转换为aux格式
-                        this.result[identifier] = {
-                            "0": existingValue,
-                            [auxValue]: texturePath
-                        };
-                    } else if (typeof existingValue === 'object') {
-                        // 已是aux格式，添加新材质
-                        existingValue[auxValue] = texturePath;
+        if (fs.existsSync(texturesPath)) {
+            // item_texture.json
+            const itemTexturePath = path.join(texturesPath, 'item_texture.json');
+            if (fs.existsSync(itemTexturePath)) {
+                const content = this.parseJsonFile(itemTexturePath);
+                if (content && content.texture_data) {
+                    for (const [key, value] of Object.entries(content.texture_data)) {
+                        this.addTextureData(key, value.textures);
                     }
-    
-                    return;
                 }
             }
-    
-            // 如果没有匹配到，尝试模糊匹配
-                    for (const identifier in this.result) {
-                        if (this.result[identifier] !== null) continue;
-                        const idParts = identifier.split(':');
-                        if (idParts.length === 2 && idParts[1] === key) {
-                            // 使用aux格式
-                            this.result[identifier] = {
-                                [auxValue]: texturePath
-                            };
-                            return;
-                        }
-                    }        }
+
+            // terrain_texture.json
+            const terrainTexturePath = path.join(texturesPath, 'terrain_texture.json');
+            if (fs.existsSync(terrainTexturePath)) {
+                const content = this.parseJsonFile(terrainTexturePath);
+                if (content && content.texture_data) {
+                    for (const [key, value] of Object.entries(content.texture_data)) {
+                        this.addTextureData(key, value.textures);
+                    }
+                }
+            }
+        }
+
+        // blocks.json（RP 根目录，vanilla 风格方块材质映射）
+        const blocksJsonPath = path.join(packPath, 'blocks.json');
+        if (fs.existsSync(blocksJsonPath)) {
+            this.parseBlocksJson(blocksJsonPath);
+        }
+    }
 
     /**
-     * 扫描PNG文件并添加到结果中
+     * 解析 RP 根目录的 blocks.json
+     * 格式：{ "format_version": [...], "<blockIdentifier>": { "textures": "key" | {face: key, ...} } }
+     * textures 为字符串时视作 '*' 面；为对象时按面写入
      */
-    scanPngFiles(dirPath, type) {
-        const files = fs.readdirSync(dirPath, { withFileTypes: true });
+    parseBlocksJson(blocksJsonPath) {
+        const content = this.parseJsonFile(blocksJsonPath);
+        if (!content || typeof content !== 'object') return;
 
-        for (const file of files) {
-            if (!file.isFile() || !file.name.endsWith('.png')) continue;
+        for (const [identifier, data] of Object.entries(content)) {
+            // 跳过 format_version 等元字段
+            if (identifier === 'format_version') continue;
+            if (!data || typeof data !== 'object') continue;
 
-            const nameWithoutExt = file.name.replace('.png', '');
-            const texturePath = `textures/${type}/${nameWithoutExt}`;
+            const textures = data.textures;
+            if (textures === undefined) continue;
 
-            // 尝试匹配所有可能的命名空间
-            this.matchTextureToIdentifier(nameWithoutExt, texturePath);
+            const faceMap = {};
+            if (typeof textures === 'string') {
+                // 单一材质键，视作通配面
+                faceMap['*'] = textures;
+            } else if (typeof textures === 'object') {
+                // 面映射 {up, down, side, north, south, east, west}
+                for (const [face, key] of Object.entries(textures)) {
+                    if (typeof key === 'string') {
+                        faceMap[face] = key;
+                    }
+                }
+            }
+
+            if (Object.keys(faceMap).length > 0) {
+                this.blocksJsonTable[identifier] = faceMap;
+            }
         }
+    }
+
+    /**
+     * 将一条 texture_data 条目写入材质表
+     * textures 可为字符串、字符串数组或 {path: "..."} 对象
+     */
+    addTextureData(key, textures) {
+        if (textures === undefined || textures === null) return;
+
+        if (typeof textures === 'string') {
+            this.textureTable[key] = textures;
+        } else if (Array.isArray(textures)) {
+            const arr = textures
+                .map(t => (typeof t === 'string' ? t : (t && t.path)))
+                .filter(t => t);
+            if (arr.length > 0) this.textureTable[key] = arr.length === 1 ? arr[0] : arr;
+        } else if (typeof textures === 'object' && textures.path) {
+            this.textureTable[key] = textures.path;
+        }
+    }
+
+    /**
+     * 在材质表中查找 key 对应的路径
+     * 回退: 无命名空间（不含 ":"）的 key 视为原版 terrain_texture 键，
+     *       按原版约定映射为 textures/blocks/<key>
+     * @returns {string|string[]|null} 字符串路径、路径数组（多 aux 变体）或 null
+     */
+    resolveTextureKey(key) {
+        if (!key) return null;
+        const val = this.textureTable[key];
+        if (val !== undefined) return val;
+        // 原版键回退：不含命名空间的 key（如 "gold_ore"、"sandstone_top"）
+        if (typeof key === 'string' && !key.includes(':')) {
+            return `textures/blocks/${key}`;
+        }
+        return null;
+    }
+
+    /**
+     * 根据物品图标 key 解析材质路径，输出 aux 格式
+     */
+    buildItemResult(iconKey) {
+        const resolved = this.resolveTextureKey(iconKey);
+        if (resolved === null) return null;
+
+        // 字符串 -> {"0": path}
+        if (typeof resolved === 'string') {
+            return { 0: resolved };
+        }
+        // 数组 -> {"0": path0, "1": path1, ...}
+        if (Array.isArray(resolved)) {
+            const map = {};
+            resolved.forEach((p, i) => { map[i] = p; });
+            return map;
+        }
+        return null;
+    }
+
+    /**
+     * 根据方块材质数据组装 aux 格式结果
+     * - aux 0: 物品栏视觉（itemVisual）优先，否则取默认（components）代表面
+     * - aux 1..n: 每个 permutations 中含材质覆盖的代表面
+     * - 同 aux 多面取侧面（FACE_PRIORITY）
+     * - 路径去重
+     * - 回退: BP 无 material_instances 时，查 RP 根目录 blocks.json（blocksJsonTable）
+     */
+    buildBlockResult(blockInfo, identifier) {
+        const variantKeys = [];
+
+        // 默认变体：itemVisual 优先（物品栏展示），否则取 components 默认
+        const defaultFaceMap = blockInfo.itemVisual || blockInfo.default;
+        const defaultKey = this.selectFaceTexture(defaultFaceMap);
+        if (defaultKey) variantKeys.push(defaultKey);
+
+        // permutations 变体
+        for (const perm of blockInfo.permutations) {
+            const key = this.selectFaceTexture(perm);
+            if (key) variantKeys.push(key);
+        }
+
+        // 回退: BP 未定义 material_instances 时，使用 RP 根目录 blocks.json 的面映射
+        if (variantKeys.length === 0) {
+            const blocksJsonFaceMap = this.blocksJsonTable[identifier];
+            const fallbackKey = this.selectFaceTexture(blocksJsonFaceMap);
+            if (fallbackKey) variantKeys.push(fallbackKey);
+        }
+
+        if (variantKeys.length === 0) return null;
+
+        // 逐 key 解析为路径，展开数组型 aux 变体，去重后分配 aux
+        const auxMap = {};
+        let aux = 0;
+        const seen = new Set();
+
+        for (const key of variantKeys) {
+            const resolved = this.resolveTextureKey(key);
+            if (resolved === null) continue;
+
+            const paths = typeof resolved === 'string' ? [resolved] : (Array.isArray(resolved) ? resolved : []);
+            for (const p of paths) {
+                if (!p || seen.has(p)) continue;
+                seen.add(p);
+                auxMap[aux++] = p;
+            }
+        }
+
+        return Object.keys(auxMap).length > 0 ? auxMap : null;
+    }
+
+    /**
+     * 组装最终结果：遍历物品与方块，查材质表填充路径
+     */
+    buildResult() {
+        console.log('正在组装材质映射...');
+
+        // 物品
+        let itemMatched = 0;
+        for (const [identifier, iconKey] of Object.entries(this.itemIcons)) {
+            const auxMap = this.buildItemResult(iconKey);
+            this.result[identifier] = auxMap;
+            if (auxMap !== null) itemMatched++;
+        }
+        console.log(`  - 物品: ${itemMatched}/${Object.keys(this.itemIcons).length} 个匹配到材质`);
+
+        // 方块
+        let blockMatched = 0;
+        for (const [identifier, blockInfo] of Object.entries(this.blockData)) {
+            const auxMap = this.buildBlockResult(blockInfo, identifier);
+            this.result[identifier] = auxMap;
+            if (auxMap !== null) blockMatched++;
+        }
+        console.log(`  - 方块: ${blockMatched}/${Object.keys(this.blockData).length} 个匹配到材质`);
     }
 
     /**
@@ -445,9 +601,10 @@ export class TexturePathParser {
 
         this.parseBehaviorPacks();
         this.parseResourcePacks();
-        this.removeNullEntries();
+        this.buildResult();
+        // 保留未匹配项为 null（便于排查），如需清除可调用 removeNullEntries()
         this.saveToFile();
-        console.log(`\n解析完成！共找到 ${Object.keys(this.result).length} 个物品/方块。`);
+        console.log(`\n解析完成！共记录 ${Object.keys(this.result).length} 个物品/方块。`);
 
         return this.result;
     }
@@ -457,7 +614,7 @@ export class TexturePathParser {
      */
     saveToFile() {
         const json = JSON.stringify(this.result, null, 4);
-        File.writeTo(this.outputPath, json,)
+        File.writeTo(this.outputPath, json);
         console.log(`结果已保存到: ${this.outputPath}`);
     }
 
@@ -470,11 +627,13 @@ export class TexturePathParser {
         const missing = {};
 
         for (const [identifier, textureData] of Object.entries(this.result)) {
-            // 处理aux格式的材质
+            if (textureData === null) continue;
+
+            // 处理 aux 格式的材质 {"0": path, "1": path}
             if (typeof textureData === 'object') {
                 let allFound = true;
                 const auxTextures = {};
-                
+
                 for (const [auxValue, texturePath] of Object.entries(textureData)) {
                     let found = false;
 
@@ -507,15 +666,13 @@ export class TexturePathParser {
                     missing[identifier] = textureData;
                 }
             } else {
-                // 处理单个材质
+                // 处理单个材质（字符串）
                 let found = false;
 
-                // 检查全局材质包
                 if (this.checkTextureInDir(this.resourcePacksPath, textureData)) {
                     found = true;
                 }
 
-                // 检查世界材质包
                 if (!found && this.worldName && fs.existsSync(this.worldsPath)) {
                     const worldPath = path.join(this.worldsPath, this.worldName);
                     const worldResourcePacksPath = path.join(worldPath, 'resource_packs');
@@ -540,6 +697,7 @@ export class TexturePathParser {
 
     /**
      * 在指定目录中检查材质文件是否存在
+     * 兼容 .png / .tga / .texture_set.json 多种格式
      */
     checkTextureInDir(packsDir, texturePath) {
         if (!fs.existsSync(packsDir)) return false;
@@ -552,12 +710,22 @@ export class TexturePathParser {
             const packPath = path.join(packsDir, pack.name);
             const fullTexturePath = path.join(packPath, texturePath);
 
-            // 检查PNG文件
+            // 检查 PNG 文件
             if (fs.existsSync(fullTexturePath + '.png')) {
                 return true;
             }
 
-            // 检查JSON文件（对于item_texture.json等定义的材质）
+            // 检查 TGA 文件
+            if (fs.existsSync(fullTexturePath + '.tga')) {
+                return true;
+            }
+
+            // 检查 texture_set.json（PBR 材质集，主色层文件名同路径）
+            if (fs.existsSync(fullTexturePath + '.texture_set.json')) {
+                return true;
+            }
+
+            // 检查路径本身（无扩展名或其他情况）
             if (fs.existsSync(fullTexturePath)) {
                 return true;
             }
@@ -577,9 +745,9 @@ export class TexturePathParser {
         console.log(`❌ 缺失的材质: ${Object.keys(missing).length} 个`);
 
         if (Object.keys(missing).length > 0) {
-            console.log('\n缺失的材质列表:');
+            console.log('\n缺失的材质列表:(已自动回退,无需担心)');
             for (const [identifier, texturePath] of Object.entries(missing)) {
-                console.log(`  - ${identifier}: ${texturePath}`);
+                console.log(`  - ${identifier}: ${JSON.stringify(texturePath)}`);
             }
         }
 

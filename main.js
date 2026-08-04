@@ -49,17 +49,17 @@ if (config.get('enable').shop) {
 }
 
 const pshopcmd = mc.newCommand(config.get("commands").pshop.cmd, config.get("commands").pshop.desc, PermType.Any)
-pshopcmd.setEnum("action", ["version", "reload"])
-pshopcmd.optional("action", ParamType.Enum, "action", 1)
-pshopcmd.overload(["action"])
+pshopcmd.setEnum("saction", ["version", "reload"])
+pshopcmd.optional("action", ParamType.Enum, "saction", 1)
+pshopcmd.overload(["saction"])
 pshopcmd.overload([])
-pshopcmd.setCallback((_cmd, ori, out, res) => {
+pshopcmd.setCallback((_cmd, _ori, out, res) => {
     switch (res.action) {
         case "reload":
             loaddatas()
             break;
         default:
-            out.error(`PShop ${versions}${fix} by ${author}`)
+            out.success(`PShop ${versions}${fix} by ${author}`)
             break;
     }
 })
