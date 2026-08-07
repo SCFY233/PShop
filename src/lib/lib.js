@@ -131,14 +131,14 @@ export const moneys =
          * @param {Number} value 值
          * @returns {Boolean} 是否成功
          */
-    add: (player, value) => addSMoney(player.xuid, value) ? true : error(`Failed to add money for ${player.realName} (xuid: ${player.xuid})`),
+    add: (player, value) => addSMoney(player.xuid, String(value)) ? true : error(`Failed to add money for ${player.realName} (xuid: ${player.xuid})`),
         /**
          * 减钱
          * @param {Player} player 玩家对象
          * @param {Number} value 值
          * @returns {Boolean} 是否成功
          */
-    reduce: (player, value) => reduceSMoney(player.xuid, value) ? true : error(`Failed to reduce money for ${player.realName} (xuid: ${player.xuid})`),
+    reduce: (player, value) => reduceSMoney(player.xuid, String(value)) ? true : error(`Failed to reduce money for ${player.realName} (xuid: ${player.xuid})`),
         /**
          * 获取钱数
          * @param {Player} player 玩家对象
@@ -152,7 +152,7 @@ export const moneys =
          * @param {Number} value 转账金额
          * @returns {Boolean} 是否成功
          */
-    transfer: (from, to, value) => transferSMoney(from.xuid, to.xuid, value) ? true : error(`Failed to transfer money from ${from.realName} (xuid: ${from.xuid}) to ${to.realName} (xuid: ${to.xuid})`),
+    transfer: (from, to, value) => transferSMoney(from.xuid, to.xuid, String(value)) ? true : error(`Failed to transfer money from ${from.realName} (xuid: ${from.xuid}) to ${to.realName} (xuid: ${to.xuid})`),
 }
 
 //检测正整数函数
@@ -536,9 +536,21 @@ export function getGameLang(langcode) {
  */
 export function newItemWithAux(type, count, aux) {
     const item = mc.newItem(type, count)
-    const nbt = item.getNbt()
-    nbt.setByte("Damage", aux)
-    return mc.newItem(nbt);
+    item.setAux(aux)
+    return item
+}
+/**
+ * 
+ * @param {Item} item 
+ * @param {Number} count 
+ */
+export function giveItemF(pl, item, count) {
+    while (count >= item.maxCount) {
+        pl.giveItem(mc.newItem(item.getNbt().setByte("Count", item.maxCount)))
+        count -= item.maxCount
+    }
+    if (count > 0) pl.giveItem(mc.newItem(item.getNbt().setByte("Count", count)))
+    return true
 }
 
 /**

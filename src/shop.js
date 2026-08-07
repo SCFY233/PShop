@@ -3,7 +3,7 @@
 ///<reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
 import { config, lang, moneyname, texture_paths, shopdata } from "./consts.js"
 import { PageForm } from "./lib/form.js"
-import { moneys, isPositiveInteger, ReplaceStr, newItemWithAux, getItemContent, getCanReductItemCount, reduceItembyType, reduceItembyNbt, wlog } from "./lib/lib.js"
+import { giveItemF, moneys, isPositiveInteger, ReplaceStr, newItemWithAux, getItemContent, getCanReductItemCount, reduceItembyType, reduceItembyNbt, wlog } from "./lib/lib.js"
 export const shop = {
     /**
      * 主表单
@@ -90,9 +90,9 @@ export const shop = {
                             if (moneys.reduce(pl, totalCost) == false) return
                             let r
                             if (data.snbt != true) {
-                                r = pl.giveItem(newItemWithAux(data.id, 1, data.aux), plcount)
+                                r = giveItemF(pl, newItemWithAux(data.id, 1, data.aux), plcount)
                             } else {
-                                r = pl.giveItem(mc.newItem(NBT.parseSNBT(data.snbtstr)), plcount)
+                                r = giveItemF(pl, mc.newItem(NBT.parseSNBT(data.snbtstr)), plcount)
                             }
                             wlog(player, ReplaceStr(lang.get("log.shop.buy"), { "item.name": idata.name, "quantity": plcount, "totalCost": totalCost }))
                             if (r) pl.sendBetterModalForm(ReplaceStr(lang.get("form.shop.buy.item.title"), { name: idata.name }),
