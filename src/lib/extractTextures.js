@@ -9,6 +9,75 @@ const __dirname = path.dirname(__filename);
 // 方块材质面优先级：同 aux 多面时按此顺序选取代表面（侧面优先）
 const FACE_PRIORITY = ['side', '*', 'up', 'down', 'north', 'south', 'east', 'west'];
 
+// brarchive 格式魔数: 7D 27 25 B1 A0 52 70 26
+const BRARCHIVE_MAGIC = Buffer.from([0x7D, 0x27, 0x25, 0xB1, 0xA0, 0x52, 0x70, 0x26]);
+
+/**
+ * 读取 brarchive 归档文件，返回 { filename: Buffer } 映射
+ * brarchive 格式:
+ *   - 文件头 16 字节: 8字节魔数 + 4字节文件数(LE) + 4字节版本(LE)
+ *   - 目录: file_count * 256 字节，每条目:
+ *     1字节名称长度 + 名称 + 填充至248 + 4字节偏移(LE) + 4字节大小(LE)
+ *   - 数据: 原始文件数据堆叠
+ */
+function readBrarchive(filePath) {
+    const data = fs.readFileSync(filePath);
+    if (data.length < 16) return {};
+
+    // 校验魔数
+    if (!data.subarray(0, 8).equals(BRARCHIVE_MAGIC)) {
+        return {};
+    }
+
+    const fileCount = data.readUInt32LE(8);
+    const dataStart = 16 + fileCount * 256;
+    const result = {};
+
+    for (let i = 0; i < fileCount; i++) {
+        const entryStart = 16 + i * 256;
+        const nameLen = data[entryStart];
+        const name = data.subarray(entryStart + 1, entryStart + 1 + nameLen).toString('utf8');
+        const dataOffset = data.readUInt32LE(entryStart + 248);
+        const fileSize = data.readUInt32LE(entryStart + 252);
+
+        if (fileSize === 0) continue;
+
+        const fileData = data.subarray(dataStart + dataOffset, dataStart + dataOffset + fileSize);
+        result[name] = fileData;
+    }
+
+    return result;
+}
+
+/**
+ * 从 brarchive 中读取 JSON 文件并对每个调用 callback
+ */
+function readBrarchiveJsonFiles(brarchivePath, callback) {
+    if (!fs.existsSync(brarchivePath)) return;
+
+    const files = readBrarchive(brarchivePath);
+    for (const [name, buffer] of Object.entries(files)) {
+        if (name.endsWith('.json')) {
+            callback(name, buffer);
+        }
+    }
+}
+
+/**
+ * 解析 Buffer 中的 JSON 内容，支持带注释
+ */
+function parseJsonBuffer(buffer) {
+    try {
+        const content = buffer.toString('utf8');
+        const cleanedContent = content
+            .replace(/\/\/.*$/gm, '')
+            .replace(/\/\*[\s\S]*?\*\//g, '');
+        return JSON.parse(cleanedContent);
+    } catch (err) {
+        return null;
+    }
+}
+
 /**
  * 物品和方块材质解析器类
  * 用于解析行为包和材质包，提取物品和方块的材质路径
@@ -144,6 +213,9 @@ export class TexturePathParser {
 
     /**
      * 解析指定目录中的行为包
+     * 支持两种结构:
+     *   1. 展开目录: blocks/*.json, items/*.json (新版 CCR / HiddenYears)
+     *   2. brarchive: __brarchive/blocks.brarchive, __brarchive/items.brarchive (旧版 CoreCraft)
      */
     parseBehaviorPacksInDir(packsDir) {
         if (!fs.existsSync(packsDir)) return;
@@ -160,7 +232,7 @@ export class TexturePathParser {
 
             console.log(`    - 解析包: ${pack.name}`);
 
-            // 解析物品
+            // 解析物品 - 展开目录
             const itemsPath = path.join(packPath, 'items');
             if (fs.existsSync(itemsPath)) {
                 this.readJsonFiles(itemsPath, (filePath) => {
@@ -168,11 +240,29 @@ export class TexturePathParser {
                 });
             }
 
-            // 解析方块
+            // 解析物品 - brarchive（旧版 CoreCraft）
+            const itemsBrarchive = path.join(packPath, '__brarchive', 'items.brarchive');
+            if (fs.existsSync(itemsBrarchive)) {
+                console.log(`      - 从 brarchive 读取物品: items.brarchive`);
+                readBrarchiveJsonFiles(itemsBrarchive, (name, buffer) => {
+                    this.parseItemBuffer(name, buffer);
+                });
+            }
+
+            // 解析方块 - 展开目录
             const blocksPath = path.join(packPath, 'blocks');
             if (fs.existsSync(blocksPath)) {
                 this.readJsonFiles(blocksPath, (filePath) => {
                     this.parseBlockFile(filePath);
+                });
+            }
+
+            // 解析方块 - brarchive（旧版 CoreCraft）
+            const blocksBrarchive = path.join(packPath, '__brarchive', 'blocks.brarchive');
+            if (fs.existsSync(blocksBrarchive)) {
+                console.log(`      - 从 brarchive 读取方块: blocks.brarchive`);
+                readBrarchiveJsonFiles(blocksBrarchive, (name, buffer) => {
+                    this.parseBlockBuffer(name, buffer);
                 });
             }
         }
@@ -190,7 +280,22 @@ export class TexturePathParser {
     parseItemFile(filePath) {
         const content = this.parseJsonFile(filePath);
         if (!content) return;
+        this.parseItemContent(content);
+    }
 
+    /**
+     * 从 brarchive Buffer 解析物品文件
+     */
+    parseItemBuffer(name, buffer) {
+        const content = parseJsonBuffer(buffer);
+        if (!content) return;
+        this.parseItemContent(content);
+    }
+
+    /**
+     * 解析物品 JSON 内容的公共逻辑
+     */
+    parseItemContent(content) {
         try {
             const item = content['minecraft:item'];
             if (!item || !item.description || !item.description.identifier) return;
@@ -214,7 +319,7 @@ export class TexturePathParser {
 
             this.itemIcons[identifier] = iconKey;
         } catch (err) {
-            console.warn(`解析物品文件失败: ${filePath}`, err.message);
+            // 静默忽略解析错误
         }
     }
 
@@ -224,7 +329,22 @@ export class TexturePathParser {
     parseBlockFile(filePath) {
         const content = this.parseJsonFile(filePath);
         if (!content) return;
+        this.parseBlockContent(content);
+    }
 
+    /**
+     * 从 brarchive Buffer 解析方块文件
+     */
+    parseBlockBuffer(name, buffer) {
+        const content = parseJsonBuffer(buffer);
+        if (!content) return;
+        this.parseBlockContent(content);
+    }
+
+    /**
+     * 解析方块 JSON 内容的公共逻辑
+     */
+    parseBlockContent(content) {
         try {
             const block = content['minecraft:block'];
             if (!block || !block.description || !block.description.identifier) return;
@@ -263,7 +383,7 @@ export class TexturePathParser {
                 permutations
             };
         } catch (err) {
-            console.warn(`解析方块文件失败: ${filePath}`, err.message);
+            // 静默忽略解析错误
         }
     }
 
@@ -362,6 +482,9 @@ export class TexturePathParser {
 
     /**
      * 扫描材质包中的 item_texture.json / terrain_texture.json / blocks.json
+     * 支持两种结构:
+     *   1. 展开目录: textures/item_texture.json (新版 CCR / HiddenYears)
+     *   2. brarchive: __brarchive/textures.brarchive 中包含 item_texture.json 等 (旧版 CoreCraft RP)
      * - item_texture.json / terrain_texture.json: 构建 key -> 路径 材质表
      * - blocks.json (RP根目录): 构建方块标识符 -> {face: textureKey} 映射，用于 BP 无 material_instances 时回退
      */
@@ -395,6 +518,33 @@ export class TexturePathParser {
         const blocksJsonPath = path.join(packPath, 'blocks.json');
         if (fs.existsSync(blocksJsonPath)) {
             this.parseBlocksJson(blocksJsonPath);
+        }
+
+        // 从 brarchive 读取材质定义文件（旧版 CoreCraft RP）
+        const texturesBrarchive = path.join(packPath, '__brarchive', 'textures.brarchive');
+        if (fs.existsSync(texturesBrarchive)) {
+            console.log(`      - 从 brarchive 读取材质定义: textures.brarchive`);
+            const files = readBrarchive(texturesBrarchive);
+
+            // item_texture.json
+            if (files['item_texture.json']) {
+                const content = parseJsonBuffer(files['item_texture.json']);
+                if (content && content.texture_data) {
+                    for (const [key, value] of Object.entries(content.texture_data)) {
+                        this.addTextureData(key, value.textures);
+                    }
+                }
+            }
+
+            // terrain_texture.json
+            if (files['terrain_texture.json']) {
+                const content = parseJsonBuffer(files['terrain_texture.json']);
+                if (content && content.texture_data) {
+                    for (const [key, value] of Object.entries(content.texture_data)) {
+                        this.addTextureData(key, value.textures);
+                    }
+                }
+            }
         }
     }
 
@@ -614,7 +764,7 @@ export class TexturePathParser {
      */
     saveToFile() {
         const json = JSON.stringify(this.result, null, 4);
-        File.writeTo(this.outputPath, json);
+        fs.writeFileSync(this.outputPath, json, 'utf8');
         console.log(`结果已保存到: ${this.outputPath}`);
     }
 

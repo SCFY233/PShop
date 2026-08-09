@@ -7,35 +7,42 @@ import { config, enchs, potions, gamelang, lang, prefix } from "../consts.js"
 import fs from 'fs'
 import * as GMLIB from "../../../GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.js"
 //通用函数
-/**
- * 判断两个值是否类似（支持不同顺序但内容相同的数组）
- * @param {Any} a 
- * @param {Any} b 
- * @returns {Boolean}
- */
 export function same(a, b) {
     try {
         if (a === b) return true;
-        if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
-        if (Object.keys(a).length !== Object.keys(b).length) return false;
-
-        if (Array.isArray(a) && Array.isArray(b)) {
+        if (a !== a && b !== b) return true;
+        if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) {
+            return false;
+        }
+        const isArrayA = Array.isArray(a);
+        const isArrayB = Array.isArray(b);
+        if (isArrayA !== isArrayB) return false;
+        if (isArrayA) {
+            if (a.length !== b.length) return false;
             for (let i = 0; i < a.length; i++) {
                 if (!same(a[i], b[i])) return false;
             }
             return true;
         }
-
-        for (const key of Object.keys(a)) {
+        const keysA = Object.keys(a);
+        const keysB = Object.keys(b);
+        if (keysA.length !== keysB.length) return false;
+        for (let i = 0; i < keysA.length; i++) {
+            const key = keysA[i];
             if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
             if (!same(a[key], b[key])) return false;
         }
         return true;
     } catch (e) {
-        logger.error(`Error at Function Same: ${e}`);
+        logger.error(`Error at Same: ${e}`);
         return false;
     }
 }
+export function samePos(pos1, pos2) {
+    const { x, y, z, dimid } = pos1
+    return x === pos2.x && y === pos2.y && z === pos2.z && dimid === pos2.dimid
+}
+
 /**
  * 比较版本
  * @param {String} version1 本地版本号
@@ -341,8 +348,7 @@ export function getSameItemCount(items, item) {
     for (var i = 0; i < items.length; i++) {
         if (same(parseItem(items[i], ["Count"]), parseItem(item, ["Count"]))) {
             count += items[i].count;
-        }
-        else if (JSON.stringify(parseItem(items[i], ["Count"])) == JSON.stringify(parseItem(item, ["Count"]))) {
+        } else if (JSON.stringify(parseItem(items[i], ["Count"])) == JSON.stringify(parseItem(item, ["Count"]))) {
             count += items[i].count
         }
     }
@@ -554,18 +560,30 @@ export function giveItemF(pl, item, count) {
 }
 
 /**
- * 防抖函数
- * @param {string | number} id - 唯一标识符
- * @param {Function} fn - 需要防抖的函数体（匿名函数）
- * @param {number} delay - 延迟时间（毫秒），默认 70ms
+ * 判断方向
+ * @param {IntPos} playerPos
+ * @param {IntPos} blockPos
+ * @returns
  */
-export function debounce(id, fn, delay = 70) {
-    let timers = debounce.timers || (debounce.timers = {});
-    clearTimeout(timers[id]);
-    timers[id] = setTimeout(() => {
-        fn();
-        timers[id] = null;
-    }, delay);
+export function getDirection(playerPos, blockPos) {
+    if (playerPos.dimid !== blockPos.dimid) return "north";
+
+    const dx = playerPos.x - blockPos.x;
+    const dz = playerPos.z - blockPos.z;
+
+    if (dx === 0 && dz === 0) return "north";
+
+    if (Math.abs(dx) > Math.abs(dz))
+        return dx > 0 ? "east" : "west";
+    else return dz > 0 ? "south" : "north";
+}
+/**
+ * @param {IntPos} pos1 
+ * @param {[number, number, number]} [offset=[0, 0, 0]] - 偏移数组 [x, y, z]
+ * @returns {IntPos}
+ */
+export function getAddPos(pos1, [x = 0, y = 0, z = 0] = []) {
+    return new IntPos(pos1.x + x, pos1.y + y, pos1.z + z, pos1.dimid);
 }
 
 /**
@@ -594,5 +612,14 @@ LLSE_Player.prototype.giveItems = function (items, counts) {
     } catch (e) {
         console.error(`Error at givtItems:${e}`)
     }
+}
+
+export function getPosFromPosObj(posObj) {
+    if (Math.ceil(posObj.x) == posObj.x)
+        return new IntPos(posObj.x, posObj.y, posObj.z, posObj.dimid);
+    else return new FloatPos(posObj.x, posObj.y, posObj.z, posObj.dimid);
+}
+export function getPosObjFromPos(pos) {
+    return { x: pos.x, y: pos.y, z: pos.z, dimid: pos.dimid };
 }
 

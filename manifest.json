@@ -4,7 +4,7 @@
     "type": "lse-nodejs",
     "author": "Planet工作室-星辰开发组-春风",
     "description": "商店插件",
-    "version": "3.2.0",
+    "version": "4.0.0",
     "dependencies": [
         {
             "name": "legacy-script-engine-nodejs"
@@ -13,10 +13,10 @@
             "name": "GMLIB-LegacyRemoteCallApi"
         },
         {
-            "name": "GMLIB"
+            "name": "SMoney"
         },
         {
-            "name": "SMoney"
+            "name": "iListenAttentively-LseExport"
         }
     ]
 }

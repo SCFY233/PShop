@@ -116,13 +116,18 @@ langdata.inits({
     "prefix.type": "§6",
     "prefix.slot": "§s",
     "prefix.end": "§r",
-    "form.chestshop.new.title": "{prefix.chestshop}创建商店",
-    "form.chestshop.new.input": "请输入价格({moneyname}/个)",
-    "form.chestshop.new.dropdown": "选择商店类型",
-    "form.chestshop.new.dropdown.buy": "收购商店",
-    "form.chestshop.new.dropdown.sell": "出售商店",
-    "form.chestshop.new.money.type": "应该输入正整数!可你输入了:{input}",
 
+    "tell.chestshop.moneytype": "价格应该为正整数,可你输入了:{input}",
+
+    "chestshop.sign.line1": "§a{plname}§r",
+    "chestshop.sign.action.buy": "§e收购§r",
+    "chestshop.sign.action.sell": "§e出售§r",
+    "chestshop.sign.action.mix": "§e收购|出售§r",
+    "chestshop.sign.line2": "{action} §bx{count}§r",
+    "chestshop.sign.line3": "{itemname}",
+    "chestshop.sign.line4": "{money}{moneyname}/个",
+    "chestshop.sign.system": "系统商店",
+    "chestshop.sign.infinite": "无限",
     // GUI 通用配置
     "form.group.content": "第 {page}/{totalPages} 页",
     "form.button.lastpage": "上一页",
@@ -147,6 +152,7 @@ export function loadlang() {
      * @returns {String} 
      */
     lang.get = (key) => lang.data[key]?.replaceAll("{prefix.shop}", prefix.shop).replaceAll("{prefix.chestshop}", prefix.chestshop) || key
+    lang.gets = (keys) => keys.map(key => lang.get(key))
 }
 //释放商店和市场文件
 export const shopdatajson = new JsonConfigFile(pluginpath + "shopdata.json", JSON.stringify({
@@ -236,17 +242,18 @@ export function loadShopData() {
     return d
 }
 export const chestshopdatajson = new JsonConfigFile(pluginpath + "chestshop.json")
-export let chestshopdata = {
-    
-}
-export function loadChestshopData() {
+export let chestshopdata = {}
+export function loadChestShopData() {
     chestshopdatajson.reload()
     let d = JSON.parse(chestshopdatajson.read())
-    chestshopdata = d ?? {}
+    chestshopdata = d || {}
     return d
 }
-export function getChestshopIDs() {
-    return Object.keys(chestshopdata)||[]
+export function getChestShopIDs() {
+    return Object.keys(chestshopdata) || []
+}
+export function saveChestShopData() {
+    return chestshopdatajson.write(JSON.stringify(chestshopdata))
 }
 export const constsdata = new JsonConfigFile(workpath + "data.json")
 if (constsdata.read() == "{}") {
@@ -324,6 +331,29 @@ export function loadGameLang() {
 //         }
 //     }
 // }
+
+export const SignBlockMap = {
+    north: [0, 0, -1],
+    south: [0, 0, 1],
+    west: [-1, 0, 0],
+    east: [1, 0, 0],
+}
+
+export const signtileDataMap = {
+    north: 2,
+    south: 3,
+    west: 4,
+    east: 5
+}
+
+export const sideMap = {
+    0: "up",
+    1: "down",
+    2: "north",
+    3: "south",
+    4: "west",
+    5: "east"
+}
 export function loaddatas() {
     console.time('加载数据用时');
     const startMem = process.memoryUsage();
@@ -333,6 +363,7 @@ export function loaddatas() {
     loadconstsmap();
     loadTexture();
     loadShopData();
+    loadChestShopData();
     const endMem = process.memoryUsage();
     logger.warn('完成!使用内存: ' + ((endMem.heapUsed - startMem.heapUsed) / 1024 / 1024).toFixed(2) + ' MB');
     console.timeEnd('加载数据用时');
