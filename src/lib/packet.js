@@ -1,5 +1,5 @@
 import { GMLIB_BinaryStream, Minecraft } from "../../../GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.js";
-import { getAddPos, getItemInfo, getPosFromPosObj, getPosObjFromPos, getSameItemCount, ReplaceStr } from "./lib.js";
+import { getAddPos, getItemInfo, getPosFromPosObj, getPosObjFromPos, getSameItemCount, ReplaceStr, getMaxCount } from "./lib.js";
 import { SignBlockMap, signtileDataMap, sideMap, lang, moneyname } from "../consts.js";
 //鸣谢:子沐 Gemini 千问
 const writeY = mc.getServerProtocolVersion() >= 944
@@ -692,8 +692,8 @@ function formatSignLine(line) {
  * @property {number} [frontColor=-16777216] - 正面文本颜色 (ARGB 整数)
  * @property {number} [backColor=-16777216] - 背面文本颜色 (ARGB 整数)
  * @property {boolean} [clientOnly=false] - 是否仅客户端显示(假木牌,不修改服务端真实方块 NBT)
- * @property {number} [visibleDistance=16] - 触发发包显示的玩家可视距离(单位:格)
- * @property {number} [checkInterval=1000] - 玩家靠近/离开的定时检测间隔(毫秒)
+ * @property {number} [visibleDistance=32] - 触发发包显示的玩家可视距离(单位:格)
+ * @property {number} [checkInterval=1500] - 玩家靠近/离开的定时检测间隔(毫秒)
  * @property {number} [renewInterval=300000] - 假掉落物大循环续期发包的间隔(ms),默认5分钟
  */
 export class ChestShop {
@@ -710,27 +710,25 @@ export class ChestShop {
         this.dropItemPos = getItemChestFloatPosFromIntPos(this.chestPos);
         this.money = options.money
         this.owner = options.owner
+
         this.isSystem = options.isSystem ?? false
         this.type = options.type ?? "sell"
-    // 掉落物属性完全保留
+
         this.id = --globalDecrementingID;
         this.item = mc.newItem(NBT.parseSNBT(item).setByte("Count", 1));
         this.displayName = getItemDisplayName(this.item);
-
-        // 告示牌属性完全保留
+        this.ownerName = this.isSystem ? lang.get("chestshopsystem") : data.fromUuid(this.owner)?.name ?? "???",
         this.frontText = options.frontText ?? "";
         this.backText = options.backText ?? "";
         this.persistFormatting = options.persistFormatting ?? true;
         this.frontColor = options.frontColor ?? -16777216;
         this.backColor = options.backColor ?? -16777216;
         this.clientOnly = options.clientOnly ?? false;
-
-        // 通用循环配置
-        this.visibleDistance = options.visibleDistance || 16;
-        this.checkInterval = options.checkInterval || 1000;
+        this.showItem = options.showItem ?? true
+        this.visibleDistance = options.visibleDistance || 32;
+        this.checkInterval = options.checkInterval || 1500;
         this.renewInterval = options.renewInterval || 5 * 60 * 1000;
 
-        // 统一复用 activePlayers 维护当前能看见该商店的玩家集合
         this.activePlayers = new Set();
         this._checkTimer = null;
         this._renewTimer = null;
@@ -856,16 +854,17 @@ export class ChestShop {
                 }
                 return;
             }
-
             // 使用 chestPos 作为基准点计算距离
             const inRange = player.distanceTo(getPosFromPosObj(this.chestPos)) <= this.visibleDistance;
             const hasPl = this.activePlayers.has(player.uniqueId);
-
             if (inRange && !hasPl) {
                 // 靠近:如果还没在 activePlayers 里,发包并加入大循环
                 this._sendRemovePacket(player); // 防重发先刷掉假掉落物
-                this._sendSpawnPacket(player);  // 生成假掉落物
+                if (this.showItem) {
+                    this._sendSpawnPacket(player);  // 生成假掉落物
+                }
                 this._sendSignPacket(player);   // 生成假木牌数据
+                this.updatesign()
                 this.activePlayers.add(player.uniqueId);
             } else if (!inRange && hasPl) {
                 // 远离:如果在 activePlayers 里,发移除包并剔除
@@ -886,8 +885,10 @@ export class ChestShop {
             const pl = mc.getPlayer(uuid);
             if (pl) {
                 // 先删后发,完成客户端假掉落物续期 (木牌不需要大循环续期)
-                this._sendRemovePacket(pl);
-                this._sendSpawnPacket(pl);
+                if (this.showItem) {
+                    this._sendRemovePacket(pl);
+                    this._sendSpawnPacket(pl);
+                }
                 this.updatesign()
             } else {
                 // 清除离线玩家
@@ -897,7 +898,7 @@ export class ChestShop {
     }
     getItemCountinChest() {
         if (this.isSystem) {
-            return lang.get("chestshop.sign.infinite");
+            return lang.get("chestshopinfinite");
         }
         const block = mc.getBlock(this.chestPos.x, this.chestPos.y, this.chestPos.z, this.chestPos.dimid);
         if (!block) return 0
@@ -907,22 +908,25 @@ export class ChestShop {
     }
     updatesign() {
         const count = this.getItemCountinChest()
+        const ct = mc.getBlock(this.chestPos.x, this.chestPos.y, this.chestPos.z, this.chestPos.dimid)?.getContainer()
+        if (ct == null) return
+        const maxCount = getMaxCount(ct, this.item)
         const lines = lang.gets(["chestshop.sign.line1", "chestshop.sign.line2", "chestshop.sign.line3", "chestshop.sign.line4"])
+        if (count == 0 && this.type == "sell") lines[1] = lang.get("chestshop.sign.line2.null")
+        if (count == maxCount && this.type == "buy") lines[1] = lang.get("chestshop.sign.line2.full")
         let action = ""
         switch (this.type) {
             case "buy":
-                action = lang.get("chestshop.sign.action.buy")
-                break
-            case "mix":
-                action = lang.get("chestshop.sign.action.sellbuy")
+                action = lang.get("chestshop.action.buy")
                 break
             default:
-                action = lang.get("chestshop.sign.action.sell")
+                action = lang.get("chestshop.action.sell")
                 break
         }
+        if (mc.getBlock(this.signPos)?.isAir) mc.setBlock(this.signPos, "minecraft:wall_sign", signtileDataMap[this.side])
         this.setSignText(lines.map(line => formatSignLine(ReplaceStr(line, {
-            count,
-            plname: this.isSystem ? lang.get("chestshop.sign.system") : data.fromUuid(this.owner).name ?? "???",
+            count: this.type == "sell" ? count : maxCount - count,
+            plname: this.ownerName,
             money: this.money,
             moneyname,
             itemname: this.displayName,
@@ -937,7 +941,6 @@ export class ChestShop {
 
         // 立即执行一次短循环检测
         this._checkNearbyPlayers();
-
         // 短循环:持续检测附近进入/离开的玩家
         this._checkTimer = setInterval(() => {
             this._checkNearbyPlayers();
@@ -947,6 +950,7 @@ export class ChestShop {
         this._renewTimer = setInterval(() => {
             this._renewForActivePlayers();
         }, this.renewInterval);
+        if (this.activePlayers.size > 0) this.updatesign()
     }
 
     /**
@@ -975,4 +979,48 @@ export class ChestShop {
         // 清空玩家数组
         this.activePlayers.clear();
     }
+}
+
+
+
+/**
+ * 向指定玩家发送仅其自己可见的客户端声音 (数据包 ID 86)
+ * 
+ * @param {Player} player - LLSE 的玩家对象
+ * @param {Object} [sound] - 声音配置对象
+ * @param {string} sound.sound - 基岩版声音事件名称，如 'note.harp', 'random.levelup'
+ * @param {number} [sound.volume=1.0] - 音量 (大于 1.0 通常会增加传播距离，但因为是发给个人，主要影响响度)
+ * @param {number} [sound.pitch=1.0] - 音高 (通常范围 0.0 ~ 2.0，1.0为原音)
+ * @param {IntPos|FloatPos|{x: number, y: number, z: number}} [options.pos] - 声音发出的 3D 坐标 {x, y, z}。如果不传，则默认在玩家头部位置播放
+ * @returns {boolean} 是否发送成功
+ */
+export function playClientSound(player, sound = { sound: "114514", volume: 1.0, pitch: 1.0 }, options = {}) {
+    if (!player || !player.sendPacket) {
+        return false;
+    }
+    // 解析配置参数，设定默认值
+    const pos = options.pos || {
+        x: player.pos.x,
+        y: player.pos.y + 0.37, // 默认在玩家头部/耳边播放
+        z: player.pos.z
+    };
+    const volume = options.volume !== undefined ? options.volume : 1.0;
+    const pitch = options.pitch !== undefined ? options.pitch : 1.0;
+    const bs = new BinaryStream();
+    // 1. 写入声音名称
+    bs.writeString(sound.sound);
+
+    // 2. 写入坐标 (基岩版发声坐标精度为 1/8)
+    bs.writeVarInt(Math.round(pos.x * 8));
+    bs.writeUnsignedVarInt(Math.round(pos.y * 8));
+    bs.writeVarInt(Math.round(pos.z * 8));
+
+    // 3. 写入音量和音高
+    bs.writeFloat(volume);
+    bs.writeFloat(pitch);
+
+    // 4. 创建 ID 为 86 的 PlaySoundPacket 并发送
+    const packet = bs.createPacket(86);
+    return player.sendPacket(packet);
+
 }

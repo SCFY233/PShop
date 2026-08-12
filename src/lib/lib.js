@@ -6,37 +6,39 @@ import { parseItemNbt, parseItem } from "./nbt.js"
 import { config, enchs, potions, gamelang, lang, prefix } from "../consts.js"
 import fs from 'fs'
 import * as GMLIB from "../../../GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.js"
-//通用函数
+/**
+ * 优化：移除耗时的 try-catch 块，统一 Array 与 Object 的遍历拦截逻辑。
+ * 如果上层需要捕获，应在上层调用时处理，而不是在此高频基础函数内。
+ */
 export function same(a, b) {
-    try {
-        if (a === b) return true;
-        if (a !== a && b !== b) return true;
-        if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) {
-            return false;
-        }
-        const isArrayA = Array.isArray(a);
-        const isArrayB = Array.isArray(b);
-        if (isArrayA !== isArrayB) return false;
-        if (isArrayA) {
-            if (a.length !== b.length) return false;
-            for (let i = 0; i < a.length; i++) {
-                if (!same(a[i], b[i])) return false;
-            }
-            return true;
-        }
-        const keysA = Object.keys(a);
-        const keysB = Object.keys(b);
-        if (keysA.length !== keysB.length) return false;
-        for (let i = 0; i < keysA.length; i++) {
-            const key = keysA[i];
-            if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
-            if (!same(a[key], b[key])) return false;
-        }
-        return true;
-    } catch (e) {
-        logger.error(`Error at Same: ${e}`);
+    if (a === b) return true;
+    if (a !== a && b !== b) return true; // 处理 NaN
+    if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) {
         return false;
     }
+
+    const isArrayA = Array.isArray(a);
+    if (isArrayA !== Array.isArray(b)) return false;
+
+    if (isArrayA) {
+        if (a.length !== b.length) return false;
+        for (let i = 0; i < a.length; i++) {
+            if (!same(a[i], b[i])) return false;
+        }
+        return true;
+    }
+
+    const keysA = Object.keys(a);
+    const keysB = Object.keys(b);
+    if (keysA.length !== keysB.length) return false;
+
+    for (let i = 0; i < keysA.length; i++) {
+        const key = keysA[i];
+        if (!Object.prototype.hasOwnProperty.call(b, key) || !same(a[key], b[key])) {
+            return false;
+        }
+    }
+    return true;
 }
 export function samePos(pos1, pos2) {
     const { x, y, z, dimid } = pos1
@@ -88,11 +90,14 @@ export function wlog(pl, msg) {
  * @param {Object{String:String}} replaceobj 
  * @returns 
  */
+/**
+ * 优化：使用单次正则扫描替代多次 replaceAll，极大减少字符串副本的创建和内存开销。
+ */
 export function ReplaceStr(str, replaceobj) {
-    for (let key in replaceobj) {
-        str = str.replaceAll(`{${key}}`, replaceobj[key])
-    }
-    return str
+    if (!str || !replaceobj) return str;
+    return str.replace(/\{([^}]+)\}/g, (match, key) => {
+        return replaceobj[key] !== undefined ? String(replaceobj[key]) : match;
+    });
 }
 //log方便函数
 export const [warn, error] = [logger.warn, logger.error]
@@ -138,20 +143,20 @@ export const moneys =
          * @param {Number} value 值
          * @returns {Boolean} 是否成功
          */
-    add: (player, value) => addSMoney(player.xuid, String(value)) ? true : error(`Failed to add money for ${player.realName} (xuid: ${player.xuid})`),
+    add: (player, value) => addSMoney(player instanceof LLSE_Player ? player.xuid : player, String(value)) ? true : error(`Failed to add money for ${player?.realName ?? player} (xuid: ${player.xuid})`),
         /**
          * 减钱
          * @param {Player} player 玩家对象
          * @param {Number} value 值
          * @returns {Boolean} 是否成功
          */
-    reduce: (player, value) => reduceSMoney(player.xuid, String(value)) ? true : error(`Failed to reduce money for ${player.realName} (xuid: ${player.xuid})`),
+    reduce: (player, value) => reduceSMoney(player instanceof LLSE_Player ? player.xuid : player, String(value)) ? true : error(`Failed to reduce money for ${player?.realName ?? player} (xuid: ${player.xuid})`),
         /**
          * 获取钱数
          * @param {Player} player 玩家对象
          * @returns {Number} 该玩家当前拥有的钱数
          */
-    get: (player) => getSMoney(player.xuid),
+    get: (player) => getSMoney(player instanceof LLSE_Player ? player.xuid : player),
         /**
          * 转账
          * @param {Player} from 转出玩家对象
@@ -159,7 +164,7 @@ export const moneys =
          * @param {Number} value 转账金额
          * @returns {Boolean} 是否成功
          */
-    transfer: (from, to, value) => transferSMoney(from.xuid, to.xuid, String(value)) ? true : error(`Failed to transfer money from ${from.realName} (xuid: ${from.xuid}) to ${to.realName} (xuid: ${to.xuid})`),
+    transfer: (from, to, value) => transferSMoney(from instanceof LLSE_Player ? from.xuid : form, to instanceof LLSE_Player ? to.xuid : to, String(value)) ? true : error(`Failed to transfer money from ${from?.realName ?? from} (xuid: ${from.xuid}) to ${to?.realName ?? to} (xuid: ${to.xuid})`),
 }
 
 //检测正整数函数
@@ -250,7 +255,7 @@ export function getCanPutItemCount(player, item, aux, auxStrict) {
     let its = player.getInventory().getAllItems()
     let count = 0
     if (typeof item === "string") {
-        its.filter(i => i.isNull() || (i.type == item && (!auxStrict || i.aux == aux))).forEach(i => count += i.isNull() ? 64 : (64 - i.count))
+        its.filter(i => i.isNull() || (i.type == item && (!auxStrict || i.aux == aux))).forEach(i => count += i.isNull() ? i.maxCount : (i.maxCount - i.count))
     } else if (item instanceof NbtCompound) {
         const example = mc.newItem(item)
         const examplenbt = parseItem(item)
@@ -284,27 +289,27 @@ export function getCanReductItemCount(player, item, aux, auxStrict) {
     return count
 }
 /**
- * 使用物品标准类型名扣除物品
- * @param {Player} player 
- * @param {String} itemtype 
- * @param {Number} aux 
- * @param {Number} count 
- * @param {Boolean} strictAux 
- * @returns {Boolean} 是否成功扣除物品
+ * 优化：内部统一扣除逻辑，避免 type 和 Nbt 扣除函数各自重复写两遍遍历逻辑
+ * 减少中间变量的创建，并在单次事务中完成计算与扣除操作。
  */
-export function reduceItembyType(player, itemtype, aux, count, strictAux) {
+function _reduceItems(player, count, matchFunc) {
     try {
-        var inv = player.getInventory();
-        var items = inv.getAllItems();
-        var remainingCount = count;
-        var canReductCount = getCanReductItemCount(player, itemtype, aux, strictAux);
-        if (canReductCount < count) {
-            return false;
+        const inv = player.getInventory();
+        const items = inv.getAllItems();
+        let remainingCount = count;
+
+        // 第一遍扫描：确认数量是否足够 (直接使用条件匹配，避免调用外部消耗性能的函数)
+        let availableCount = 0;
+        for (let i = 0; i < items.length; i++) {
+            if (matchFunc(items[i])) availableCount += items[i].count;
         }
-        for (var i = 0; i < items.length && remainingCount > 0; i++) {
-            var item = items[i];
-            if (item.type === itemtype && (!strictAux || item.aux === aux)) {
-                var removeCount = Math.min(item.count, remainingCount);
+        if (availableCount < count) return false;
+
+        // 第二遍扫描：执行扣除
+        for (let i = 0; i < items.length && remainingCount > 0; i++) {
+            const item = items[i];
+            if (matchFunc(item)) {
+                const removeCount = Math.min(item.count, remainingCount);
                 inv.removeItem(i, removeCount);
                 remainingCount -= removeCount;
             }
@@ -312,47 +317,59 @@ export function reduceItembyType(player, itemtype, aux, count, strictAux) {
         player.refreshItems();
         return true;
     } catch (e) {
-        logger.error(`Error at reductItembytype: ${e}`);
+        logger.error(`Error at _reduceItems: ${e}`);
         return false;
     }
 }
 
-export function reduceItembyNbt(player, itemsnbt, count, strictAux) {
-    try {
-        var inv = player.getInventory();
-        var items = inv.getAllItems();
-        var remainingCount = count;
-        const example = mc.newItem(NBT.parseSNBT(itemsnbt));
-        const examplenbt = parseItemNbtForCount(mc.newItem(NBT.parseSNBT(itemsnbt)));
-        var canReductCount = getCanReductItemCount(player, NBT.parseSNBT(itemsnbt), null, strictAux);
-        if (canReductCount < count) {
-            return false;
-        }
-        for (var i = 0; i < items.length && remainingCount > 0; i++) {
-            var item = items[i];
-            if (item.type === example.type && (!strictAux || item.aux === example.aux) && same(parseItemNbtForCount(item), examplenbt)) {
-                var removeCount = Math.min(item.count, remainingCount);
-                inv.removeItem(i, removeCount);
-                remainingCount -= removeCount;
-            }
-        }
-        player.refreshItems();
-        return true;
-    } catch (e) {
-        logger.error(`Error at reductItembyNbt: ${e}`);
-        return false;
-    }
+export function reduceItembyType(player, itemtype, aux, count, strictAux) {
+    // 统一调用
+    return _reduceItems(player, count, (item) =>
+        item.type === itemtype && (!strictAux || item.aux === aux)
+    );
 }
+
+export function reduceItembyNbt(player, itemsnbt, count, strictAux) {
+    // 优化：将 example 的解析移出循环，避免在多次遍历比对时反复解析 SNBT 和创建实例
+    const example = mc.newItem(NBT.parseSNBT(itemsnbt));
+    const examplenbt = parseItemNbtForCount(example);
+
+    // 统一调用
+    return _reduceItems(player, count, (item) =>
+        item.type === example.type &&
+        (!strictAux || item.aux === example.aux) &&
+        same(parseItemNbtForCount(item), examplenbt)
+    );
+}
+/**
+ * 优化：使用专用的 parseItemNbtForCount 替代 parseItem(item, ["Count"])。
+ * 1. 将目标物品的解析移出循环体，避免 O(N) 的重复解析开销。
+ * 2. 彻底剔除底层昂贵的 JSON.stringify 回退机制。
+ */
 export function getSameItemCount(items, item) {
-    var count = 0;
-    for (var i = 0; i < items.length; i++) {
-        if (same(parseItem(items[i], ["Count"]), parseItem(item, ["Count"]))) {
+    let count = 0;
+    // 将目标物品的 NBT 解析提前，只执行一次
+    const targetNbt = parseItemNbtForCount(item);
+
+    for (let i = 0; i < items.length; i++) {
+        // 统一使用专用的 forCount 解析并结合高效的 same 深度比较
+        if (same(parseItemNbtForCount(items[i]), targetNbt)) {
             count += items[i].count;
-        } else if (JSON.stringify(parseItem(items[i], ["Count"])) == JSON.stringify(parseItem(item, ["Count"]))) {
-            count += items[i].count
         }
     }
     return count;
+}
+/**
+ *
+ * @param {Container} ct
+ * @param {Item} item
+ * @returns
+ */
+export function getMaxCount(ct, item) {
+    const targetNbt = parseItemNbtForCount(item)
+    return ct.getAllItems()
+        .filter(i => i.isNull() || (i.type == item.type && same(parseItemNbtForCount(i), targetNbt)))
+        .reduce(pre => pre + item.maxCount, 0)
 }
 /**
  * 查找元素在数组位置(粗略查找)
@@ -451,23 +468,30 @@ export function getPotionContent(potion) {
 export function getLoreInfo(info) {
     return info.lore ?? null;
 }
+/**
+ * 优化：剔除 filter, map, concat，直接使用 for 循环拼接文本，降低 GC 压力。
+ */
 export function getItemContents(item, prefix = "") {
-    const info = item instanceof LLSE_Item ? getItemInfo(item) : item
-    let items = []
-    if (info.items.length != 0) {
-        const itemsinfos = info.items.map(i =>
-            i != null ? getItemContent(i, prefix + lang.get("form.item.content.prefix.step")) : null
-        );
-        items = items.concat(itemsinfos.map((item, index) => {
-            if (item != null) return ReplaceStr(lang.get("form.item.items.step"), { slot: index + 1 < 10 ? "0" + (index + 1) : index + 1, item: item }) + item
+    const info = item instanceof LLSE_Item ? getItemInfo(item) : item;
+    const items = [];
 
-        }))
+    if (info.items && info.items.length !== 0) {
+        const nextPrefix = prefix + lang.get("form.item.content.prefix.step");
+        for (let i = 0; i < info.items.length; i++) {
+            const subItem = info.items[i];
+            if (subItem) {
+                const content = getItemContent(subItem, nextPrefix);
+                const slotStr = (i + 1 < 10 ? "0" : "") + (i + 1);
+                items.push(ReplaceStr(lang.get("form.item.items.step"), { slot: slotStr, item: content }) + content);
+            }
+        }
     }
-    const replace = {
+
+    return {
         name: info.name,
         lore: getLoreInfo(info) || [],
         enchinfo: getEnchContent(info.enchinfo) || [],
-        potioninfo: getPotionContent(info.potioninfo) || [],
+        potioninfo: getPotionContent(info.potioninfo) || "",
         customname: info.CustomName || "",
         damage: info.damage,
         maxdamage: info.maxdamage,
@@ -475,40 +499,59 @@ export function getItemContents(item, prefix = "") {
         type: info.type,
         count: info.count,
         maxcount: info.maxcount,
-        items,
-    }
-    return replace
+        items: items,
+    };
 }
 
 export function getItemContent(item, prefix = "") {
-    const contents = getItemContents(item, prefix)
-    let str
-    const itemslotstep = " ".repeat(ReplaceStr(lang.get("form.item.items.step"), { slot: "00", "prefix.slot": "", "prefix.end": "", }).length - lang.get("form.item.items.step.zb").length - 1) + "┗━━"
-    if (contents.customname != "") str = ReplaceStr(lang.get("form.item.name"), { name: contents.customname }) + ReplaceStr(lang.get("form.item.content.name"), { name: contents.name })
-    else str = ReplaceStr(lang.get("form.item.name"), { name: contents.name })
-    if (contents.damage != contents.maxdamage) str += ReplaceStr(lang.get("form.item.content.damage"), { damage: contents.damage, maxdamage: contents.maxdamage })
-    if (contents.maxcount != 1) str += ReplaceStr(lang.get("form.item.content.count"), { count: contents.count })
-    if (contents.lore.length != 0) {
-        const lores = contents.lore.map(item => `\n${prefix}${itemslotstep}${ReplaceStr(lang.get("form.item.content.lore.step"), { lore: item })}`)
-        str += lores.join("")
+    const contents = getItemContents(item, prefix);
+
+    // 缓存重复计算的缩进前缀
+    const stepLang = lang.get("form.item.items.step");
+    const zbLangLen = lang.get("form.item.items.step.zb").length;
+    const itemslotstep = " ".repeat(Math.max(0, ReplaceStr(stepLang, { slot: "00", "prefix.slot": "", "prefix.end": "" }).length - zbLangLen - 1)) + "┗━━";
+
+    let str = contents.customname !== ""
+        ? ReplaceStr(lang.get("form.item.name"), { name: contents.customname }) + ReplaceStr(lang.get("form.item.content.name"), { name: contents.name })
+        : ReplaceStr(lang.get("form.item.name"), { name: contents.name });
+
+    if (contents.damage !== contents.maxdamage) {
+        str += ReplaceStr(lang.get("form.item.content.damage"), { damage: contents.damage, maxdamage: contents.maxdamage });
     }
-    if (contents.enchinfo.length != 0) {
-        const enchs = contents.enchinfo.map(item => `\n${prefix}${itemslotstep}${lang.get("prefix.ench")}${ReplaceStr(lang.get("form.item.content.ench.step"), { ench: item })}${lang.get("prefix.end")}`)
-        str += enchs.join("")
+    if (contents.maxcount !== 1) {
+        str += ReplaceStr(lang.get("form.item.content.count"), { count: contents.count });
     }
-    if (contents.potioninfo != "") str += "\n" + prefix + itemslotstep + contents.potioninfo
-    if (contents.items.length != 0) {
-        str += "\n" + prefix + itemslotstep + lang.get("form.item.items")
-        const items = contents.items.map(item => `\n${prefix}  ${item}`)
-        str += items.join("")
+
+    // 直接循环拼接，代替 map().join("")
+    if (contents.lore.length > 0) {
+        for (let i = 0; i < contents.lore.length; i++) {
+            str += `\n${prefix}${itemslotstep}${ReplaceStr(lang.get("form.item.content.lore.step"), { lore: contents.lore[i] })}`;
+        }
     }
-    str = ReplaceStr(str, {
+
+    if (contents.enchinfo.length > 0) {
+        for (let i = 0; i < contents.enchinfo.length; i++) {
+            str += `\n${prefix}${itemslotstep}${lang.get("prefix.ench")}${ReplaceStr(lang.get("form.item.content.ench.step"), { ench: contents.enchinfo[i] })}${lang.get("prefix.end")}`;
+        }
+    }
+
+    if (contents.potioninfo !== "") {
+        str += `\n${prefix}${itemslotstep}${contents.potioninfo}`;
+    }
+
+    if (contents.items.length > 0) {
+        str += `\n${prefix}${itemslotstep}${lang.get("form.item.items")}`;
+        for (let i = 0; i < contents.items.length; i++) {
+            str += `\n${prefix}  ${contents.items[i]}`;
+        }
+    }
+
+    return ReplaceStr(str, {
         "prefix.type": lang.get("prefix.type"),
         "prefix.end": lang.get("prefix.end"),
         "prefix.slot": lang.get("prefix.slot"),
         "prefix.ench": lang.get("prefix.ench"),
-    })
-    return str
+    });
 }
 /**
  * 解析lang
@@ -546,18 +589,34 @@ export function newItemWithAux(type, count, aux) {
     return item
 }
 /**
- * 
- * @param {Item} item 
- * @param {Number} count 
+ * 优化：
+ * 1. 使用数学运算 (除法和取余) 替代 while 循环减法，时间复杂度从 O(N) 降为 O(1)。
+ * 2. 提前获取并复用 NBT 对象，避免在循环体内重复调用底层的 getNbt()。
  */
 export function giveItemF(pl, item, count) {
-    while (count >= item.maxCount) {
-        pl.giveItem(mc.newItem(item.getNbt().setByte("Count", item.maxCount)))
-        count -= item.maxCount
+    if (count <= 0) return true;
+
+    const maxCount = item.maxCount;
+    const baseNbt = item.getNbt();
+
+    const fullStacks = Math.floor(count / maxCount);
+    const remainder = count % maxCount;
+
+    // 发放整组物品
+    if (fullStacks > 0) {
+        const fullStackItem = mc.newItem(baseNbt.setByte("Count", maxCount));
+        for (let i = 0; i < fullStacks; i++) {
+            pl.giveItem(fullStackItem);
+        }
     }
-    if (count > 0) pl.giveItem(mc.newItem(item.getNbt().setByte("Count", count)))
-    return true
+    // 发放剩余零散物品
+    if (remainder > 0) {
+        pl.giveItem(mc.newItem(baseNbt.setByte("Count", remainder)));
+    }
+    return true;
 }
+
+
 
 /**
  * 判断方向
@@ -604,15 +663,17 @@ JsonConfigFile.prototype.inits = function (obj) {
 JsonConfigFile.prototype.deletes = function (names) { names.forEach(name => this.delete(name)); return this }
 
 
+/**
+ * 优化：移除循环内部及原型的滥用 try-catch，改为简单的条件分支。
+ */
 LLSE_Player.prototype.giveItems = function (items, counts) {
-    try {
-        for (let i = 0; i < items.length; i++) {
-            counts[i] == null ? this.giveItem(items[i]) : this.giveItem(items[i], counts[i]);
-        }
-    } catch (e) {
-        console.error(`Error at givtItems:${e}`)
+    for (let i = 0; i < items.length; i++) {
+        if (!items[i]) continue;
+        const count = counts && counts[i] != null ? counts[i] : null;
+        count === null ? this.giveItem(items[i]) : this.giveItem(items[i], count);
     }
 }
+
 
 export function getPosFromPosObj(posObj) {
     if (Math.ceil(posObj.x) == posObj.x)

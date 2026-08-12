@@ -19,7 +19,7 @@ export const shop = {
             } else if (id == 1) {
                 shop.sell(player, (pl) => shop.main(pl, backfunction))
             } else if (id == 2) {
-                backfunction ? backfunction(player) : void 0
+                return backfunction ? backfunction(player) : 0
             }
         })
     },

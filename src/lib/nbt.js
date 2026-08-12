@@ -147,18 +147,18 @@ export function NBTtoObject(nbt) {
  * @param {LLSE_Item|NbtCompound} item 
  * @returns {Object}
  */
-export function parseItem(item) {
+export function parseItem(item, otherdeletes = []) {
     let itemnbt
     if (item?.obj) itemnbt = item.obj
     else itemnbt = item instanceof LLSE_Item ? item.getNbt() : item
-    const pd = parseItemNbt(itemnbt)
+    const pd = parseItemNbt(itemnbt, otherdeletes)
     return {
         obj: pd.parsednbtobj,
-        Items: parseItems(pd.nbtItems),
-        chargedItem: pd.chargedItem ? parseItem(pd.chargedItem) : null,
+        Items: parseItems(pd.nbtItems, otherdeletes),
+        chargedItem: pd.chargedItem ? parseItem(pd.chargedItem, otherdeletes) : null,
         Slot: item.Slot ?? pd.Slot ?? null
     }
 }
-export function parseItems(items) {
-    return items.map(parseItem)
+export function parseItems(items, otherdeletes = []) {
+    return items.map((i) => parseItem(i, otherdeletes))
 }
