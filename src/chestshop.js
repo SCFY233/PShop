@@ -1,5 +1,5 @@
-import { config, lang, moneyname, texture_paths, chestshopdata, getChestShopIDs, SignBlockMap, signtileDataMap, sideMap, saveChestShopData } from "./consts.js"
-import { same, samePos, putItemToContainer, reduceItemFromContainer, giveItemF, getSameItemCount, getMaxCount, getItemDisplayName, getPosObjFromPos, getAddPos, getDirection, moneys, isPositiveInteger, ReplaceStr, getItemInfo, getCanPutItemCount, newItemWithAux, getItemContent, getCanReductItemCount, reduceItembyType, reduceItembyNbt, getPosFromPosObj, wlog } from "./lib/lib.js"
+import { config, lang, moneyname, texture_paths, chestshopdata, getChestShopIDs, SignBlockMap, signtileDataMap, sideMap, saveChestShopData, givesdata } from "./consts.js"
+import { same, samePos, putItemToContainer, reduceItemFromContainer, giveItemF, getSameItemCount, getMaxCount, getItemDisplayName, getPosObjFromPos, getAddPos, getDirection, moneys, isPositiveInteger, ReplaceStr, getItemInfo, getCanPutItemCount, newItemWithAux, getItemContent, getCanReductItemCount, reduceItembyType, reduceItembyNbt, getPosFromPosObj, wlog, addgiveNotice, getgives } from "./lib/lib.js"
 import { updateSignText, getItemChestFloatPosFromIntPos, ChestShop, playClientSound, closeChatByContainer } from "./lib/packet.js"
 import { } from "./lib/form.js"
 /** @type {import("../../iListenAttentively-LseExport/lib/iListenAttentively.js")} */
@@ -119,6 +119,10 @@ export function newChestShop(player, chest, item, side, msg) {
 export function tradeChestShop(player, shopid, msg, count) {
     const plcount = msg == "all" ? count : Number(msg);
     const chs = chestshops[shopid];
+    if (!chs) {
+        playClientSound(player, getSound("fail"));
+        return player.tell(lang.get("tell.chestshop.error.system"));
+    }
     const isSell = chs.type == "sell"; // 商店出售(玩家购买)
 
     // 1. 输入校验
@@ -204,11 +208,9 @@ export function tradeChestShop(player, shopid, msg, count) {
                         ownerPlayer.tell(ReplaceStr(lang.get("notice.shop.income"), { pos: posStr, count: plcount, itemname: itemName }));
                         if (currentCount == 0) ownerPlayer.tell(ReplaceStr(lang.get("notice.shop.empty"), { pos: posStr, itemname: itemName }));
                     } else {
-                        addgiveNotice(ownerXuid, itemSnbt, plcount, shopid);
+                        addgiveNotice(ownerXuid, itemSnbt, plcount, shopid, "income", 0);
                         if (currentCount == 0) {
-                            let notices = getgives(ownerXuid);
-                            notices.push({ pl: String(ownerXuid), item: itemSnbt, count: 0, shopid: shopid, type: "empty" });
-                            givesdata.set(String(ownerXuid), notices);
+                            addgiveNotice(ownerXuid, itemSnbt, 0, shopid, "empty", 0);
                         }
                     }
                 } else {
@@ -220,12 +222,10 @@ export function tradeChestShop(player, shopid, msg, count) {
                         ownerPlayer.tell(ReplaceStr(lang.get("notice.shop.expense"), { pos: posStr, count: plcount, itemname: itemName, money: totalMoney, moneyname: moneyname }));
                         if (currentCount >= maxCount) ownerPlayer.tell(ReplaceStr(lang.get("notice.shop.full"), { pos: posStr, itemname: itemName }));
                     } else {
-                        let notices = getgives(ownerXuid);
-                        notices.push({ pl: String(ownerXuid), item: itemSnbt, count: plcount, shopid: shopid, type: "expense", money: totalMoney });
+                        addgiveNotice(ownerXuid, itemSnbt, plcount, shopid, "expense", totalMoney);
                         if (currentCount >= maxCount) {
-                            notices.push({ pl: String(ownerXuid), item: itemSnbt, count: 0, shopid: shopid, type: "full" });
+                            addgiveNotice(ownerXuid, itemSnbt, 0, shopid, "full", 0);
                         }
-                        givesdata.set(String(ownerXuid), notices);
                     }
                 }
             }
@@ -330,6 +330,12 @@ export function ManageChestShop(player, shopid, chs) {
             delete chestshops[shopid];
             delete chestmaps[getPosKey(chestPos)];
             delete signmaps[getPosKey(signPos)];
+            for (let uid in pendingTradeChestShop) {
+                if (pendingTradeChestShop[uid] && pendingTradeChestShop[uid].shopid === shopid) {
+                    clearTimeout(pendingTradeChestShop[uid].timeout);
+                    delete pendingTradeChestShop[uid];
+                }
+            }
             saveChestShopData();
             wlog(pl, ReplaceStr(lang.get("log.chestshop.delete"), {
                 pos: chestPos.toString(),
@@ -401,12 +407,16 @@ export function isProtectedShopBlock(pos, blockType) {
     // 1. 优先通过坐标快速检测箱子
     const key = `${pos.dimid}|${Math.floor(pos.x)}|${Math.floor(pos.y)}|${Math.floor(pos.z)}`;
     let shopid = chestmaps[key];
-
+    if (shopid == null && (!blockType || blockType == "minecraft:chest" || blockType == "minecraft:trapped_chest")) {
+        const linkedPos = getLinkedChestPos(pos);
+        if (linkedPos) {
+            shopid = chestmaps[getPosKey(linkedPos)];
+        }
+    }
     // 2. 如果不是箱子，调用原本已有的木牌查询函数检测是否为商店木牌
     if (shopid == null) {
-        // 如果明确传了方块类型，做个速筛优化性能；没传则直接查
         if (!blockType || blockType == "minecraft:wall_sign") {
-            shopid = getChestShopIDFromSign(pos)
+            shopid = getChestShopIDFromSign(pos);
         }
     }
     return shopid;
@@ -456,6 +466,7 @@ if (config.get("enable").chestshop) {
             const shopid = getChestShopIDFromSign(block.pos)
             if (shopid == null) return
             const chs = chestshops[shopid]
+            if (!chs) return
             setTimeout(() => chs?.updatesign(), 0)
             refresh2(chs.chestPos)
             if (!player.isSneaking) return false
@@ -518,7 +529,7 @@ if (config.get("enable").chestshop) {
         if (shopid == null) return;
 
         const chs = chestshops[shopid];
-        if (chs == null) return;
+        if (!chs) return;
 
         setTimeout(() => chs.updatesign?.(), 0);
         refresh2(chs.chestPos)
@@ -682,6 +693,7 @@ if (config.get("enable").chestshop) {
         if (bl.type != "minecraft:chest" && bl.type != "minecraft:wall_sign") return
         if ((bl.type == "minecraft:wall_sign" && getChestShopIDFromSign(bl.pos)) || (bl.type == "minecraft:chest" && getChestShopIDFromChest(bl.pos))) {
             const chs = chestshops[getChestShopIDFromSign(bl.pos) ?? getChestShopIDFromChest(bl.pos)]
+            if (!chs) return
             chs.updatesign()
             refresh2(chs.chestPos)
             return false
@@ -691,6 +703,7 @@ if (config.get("enable").chestshop) {
         if (bl.type != "minecraft:chest" && bl.type != "minecraft:wall_sign") return
         if (bl.type == "minecraft:chest" && getChestShopIDFromChest(bl.pos)) {
             const chs = chestshops[getChestShopIDFromChest(bl.pos)]
+            if (!chs) return
             chs.updatesign()
             refresh2(chs.chestPos)
         }

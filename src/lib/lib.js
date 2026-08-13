@@ -128,7 +128,7 @@ export function duration2str(duration) {
     if (typeof duration !== 'number') {
         throw new Error(`Invalid duration: ${duration}. Expected a numeric value.`);
     }
-    if (duration === 0) return "";
+    if (duration <= 1) return "";
     let seconds = duration / 20;
     const minutes = Math.floor(seconds / 60);
     seconds %= 60;
@@ -137,33 +137,33 @@ export function duration2str(duration) {
 //迫不得已
 export const moneys =
 {
-        /**
-         * 加钱
-         * @param {Player} player 玩家对象
-         * @param {Number} value 值
-         * @returns {Boolean} 是否成功
-         */
+    /**
+     * 加钱
+     * @param {Player} player 玩家对象
+     * @param {Number} value 值
+     * @returns {Boolean} 是否成功
+     */
     add: (player, value) => addSMoney(player instanceof LLSE_Player ? player.xuid : player, String(value)) ? true : error(`Failed to add money for ${player?.realName ?? player} (xuid: ${player.xuid})`),
-        /**
-         * 减钱
-         * @param {Player} player 玩家对象
-         * @param {Number} value 值
-         * @returns {Boolean} 是否成功
-         */
+    /**
+     * 减钱
+     * @param {Player} player 玩家对象
+     * @param {Number} value 值
+     * @returns {Boolean} 是否成功
+     */
     reduce: (player, value) => reduceSMoney(player instanceof LLSE_Player ? player.xuid : player, String(value)) ? true : error(`Failed to reduce money for ${player?.realName ?? player} (xuid: ${player.xuid})`),
-        /**
-         * 获取钱数
-         * @param {Player} player 玩家对象
-         * @returns {Number} 该玩家当前拥有的钱数
-         */
+    /**
+     * 获取钱数
+     * @param {Player} player 玩家对象
+     * @returns {Number} 该玩家当前拥有的钱数
+     */
     get: (player) => getSMoney(player instanceof LLSE_Player ? player.xuid : player),
-        /**
-         * 转账
-         * @param {Player} from 转出玩家对象
-         * @param {Player} to 转入玩家对象
-         * @param {Number} value 转账金额
-         * @returns {Boolean} 是否成功
-         */
+    /**
+     * 转账
+     * @param {Player} from 转出玩家对象
+     * @param {Player} to 转入玩家对象
+     * @param {Number} value 转账金额
+     * @returns {Boolean} 是否成功
+     */
     transfer: (from, to, value) => transferSMoney(from instanceof LLSE_Player ? from.xuid : form, to instanceof LLSE_Player ? to.xuid : to, String(value)) ? true : error(`Failed to transfer money from ${from?.realName ?? from} (xuid: ${from.xuid}) to ${to?.realName ?? to} (xuid: ${to.xuid})`),
 }
 
@@ -171,30 +171,27 @@ export const moneys =
 export function isPositiveInteger(number) {
     return Number.isInteger(number) && number > 0;
 }
-// 获取玩家的提示列表
+// 获取玩家的提示列表 (加入严格数组校验)
 export function getgives(plxuid) {
-    // 现在直接返回一个数组，没有则返回空数组
-    return givesdata.get(String(plxuid)) || [];
-}
+        let res = givesdata.get(String(plxuid));
+        // 如果存在脏数据导致返回的不是 Array，强制初始化为空数组
+        return Array.isArray(res) ? res : [];
+    }
 
-// 添加提示记录
-export function addgiveNotice(plxuid, itemSnbt, count, shopid) {
+// 优化：添加提示记录 (统一入参)
+export function addgiveNotice(plxuid, itemSnbt, count, shopid, type = "income", money = 0) {
     let notices = getgives(plxuid);
     notices.push({
         pl: String(plxuid),
         item: itemSnbt,
         count: count,
-        shopid: shopid
-    });
-    givesdata.set(String(plxuid), notices);
-}
+            shopid: shopid,
+            type: type,
+            money: money
+        });
+        givesdata.set(String(plxuid), notices);
+    }
 
-// 批量添加（如果需要）
-export function addgiveNotices(plxuid, noticesArray) {
-    let notices = getgives(plxuid);
-    notices.push(...noticesArray);
-    givesdata.set(String(plxuid), notices);
-}
 mc.listen("onJoin", (pl) => {
     let notices = getgives(pl.xuid);
 
@@ -457,8 +454,8 @@ export function getPotionInfo(parsed_data) {
     if (id.includes("potion")) {
         const potioninfo = {}
         if (!potions[parsed_data.obj?.Damage]?.effect) return null
-        potioninfo.effectname = gamelang.get(potions[parsed_data.obj?.Damage]?.effect?.desc) || "???"
-        potioninfo.effectduration = potions[parsed_data.obj?.Damage]?.effect?.duration == 0 ? "" : duration2str(potions[parsed_data.obj?.Damage]?.effect?.duration) || "0:00"
+        potioninfo.effectname = gamelang.get(potions[parsed_data.obj?.Damage]?.effect?.desc) + Num2Roman(Number(potions[parsed_data.obj?.Damage]?.effect?.amplifier) + 1 ?? 0) || "???"
+        potioninfo.effectduration = (potions[parsed_data.obj?.Damage]?.effect?.duration == 0 ? "" : duration2str(potions[parsed_data.obj?.Damage]?.effect?.duration)) ?? "0:00"
         return potioninfo
     } else return null
 }

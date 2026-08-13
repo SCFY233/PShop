@@ -988,7 +988,7 @@ export class ChestShop {
  * @returns {boolean} 是否发送成功
  */
 export function playClientSound(player, sound = { sound: "114514", volume: 1.0, pitch: 1.0 }, options = {}) {
-    if (!player || !player.sendPacket) {
+    if (!player || !player.sendPacket || !player.pos) {
         return false;
     }
     // 解析配置参数，设定默认值
