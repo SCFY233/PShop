@@ -37,8 +37,8 @@ LLSE_Player.prototype.sendBetterModalForm = function (title, content, confirmBut
     var gui = mc.newSimpleForm().setTitle(title).setContent(content)
     gui.addButtons([confirmButton, cancelButton], [confirmButtonImage, cancelButtonImage])
     return this.sendForm(gui, function (player, id) {
-        if (id == null) return callback(player, null); else return callback(player, !id);
-    }, true)
+        if (id == null) return callback(player, id); else return callback(player, !id);
+    })
 };
 /**
 * 发送一个消息框表单

@@ -98,7 +98,7 @@ export const shop = {
                             if (r) pl.sendBetterModalForm(ReplaceStr(lang.get("form.shop.buy.item.title"), { name: idata.name }),
                                 ReplaceStr(lang.get("form.shop.buy.item.success"), { plcount, iname: idata.name, moneyname: moneyname, plmoney: moneys.get(pl) }),
                                 lang.get("form.back"), lang.get("form.cancel"),
-                                config.getIcon("form:confirm"), config.getIcon("form:back"), (pl, id) => {
+                                config.getIcon("form:back"), config.getIcon("form:cancel"), (pl, id) => {
                                     if (id == null || id == false) return
                                     if (id == true) return backfunction(pl)
                                 })
@@ -161,7 +161,7 @@ export const shop = {
                             if (moneys.add(player, totalgive)) pl.sendBetterModalForm(ReplaceStr(lang.get("form.shop.sell.item.title"), { name: idata.name }),
                                 ReplaceStr(lang.get("form.shop.sell.item.success"), { totalgive, moneyname: moneyname, plmoney: moneys.get(pl) }),
                                 lang.get("form.back"), lang.get("form.cancel"),
-                                config.getIcon("form:confirm"), config.getIcon("form:back"), (pl, id) => {
+                                config.getIcon("form:back"), config.getIcon("form:cancel"), (pl, id) => {
                                     if (id == null || id == false) return
                                     if (id == true) return backfunction(pl)
                                 })

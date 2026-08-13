@@ -43,7 +43,14 @@ export const config = new JsonConfigFile(pluginpath + "config.json", JSON.string
         log: true,
     },
     icon: {
-        default: "textures/blocks/missing_tile"
+        "default": "textures/blocks/missing_tile",
+        "shop:buy": "textures/ui/MCoin",
+        "shop:sell": "textures/items/emerald",
+        "form:back": "textures/ui/icon_import",
+        "form:confirm": "textures/ui/check",
+        "form:cancel": "textures/ui/cancel",
+        "form:prev": "textures/ui/arrow_left",
+        "form:next": "textures/ui/arrow_right"
     },
     item_per_page: 6,
     shop_ignore_aux_default: false,
