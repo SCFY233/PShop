@@ -3,7 +3,6 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { TexturePathParser } from './lib/extractTextures.js';
 import { parseProperties, wlog, ReplaceStr, CompareVersion, getGameLang } from './lib/lib.js';
-import { loadChestShop } from './chestshop.js';
 import { getSMoneyConfig } from '../../SMoney/lib.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,7 +11,7 @@ export const BDSPath = path.join(__dirname, "..", "..", "..");
 export const pluginpath = "./plugins/Planet/PShop/";
 export const workpath = "./plugins/PShop/";
 export const versions = "4.0.0"
-export const fix = " Alpha 26.08.04-6"
+export const fix = " Alpha 26.08.13-5"
 export const author = "Planet工作室-星辰开发组-春风"
 export const moneyname = getSMoneyConfig().moneyname ?? "金币"
 
@@ -25,6 +24,10 @@ export const config = new JsonConfigFile(pluginpath + "config.json", JSON.string
             cmd: "shop",
             desc: "PShop-系统商店"
         },
+        chestshop: {
+            cmd: "chestshop",
+            desc: "PShop-箱子商店管理与快捷命令"
+        },
         pshop: {
             cmd: "pshop",
             desc: "PShop-主命令"
@@ -36,6 +39,7 @@ export const config = new JsonConfigFile(pluginpath + "config.json", JSON.string
     },
     enable: {
         shop: true,
+        chestshop: true,
         log: true,
     },
     icon: {
@@ -55,37 +59,31 @@ export const config = new JsonConfigFile(pluginpath + "config.json", JSON.string
     banitems: ["minecraft:bedrock"],
     update_url: "http://update.mcmap.top/?name=PShop",
     chestshop_sounds: {
-        // 交易成功 / 扣款发货
         success: {
             sound: "random.orb",
             volume: 1.0,
             pitch: 1.0
         },
-        // 操作失败 / 输入错误 / 余额不足
         fail: {
             sound: "mob.villager.no",
             volume: 1.0,
             pitch: 1.0
         },
-        // 商店完全创建成功
         create: {
             sound: "random.levelup",
             volume: 1.0,
             pitch: 1.0
         },
-        // 玩家物理左/右键点击商店 (标准的咔哒声)
         click: {
             sound: "note.hat",
             volume: 0.8,
             pitch: 1.0
         },
-        // 触发 Pending 状态提示看聊天框 (清脆的啵声)
         pending: {
             sound: "note.pling",
             volume: 1.0,
             pitch: 1.2
         },
-        // 输入超时 / 取消操作 (低沉的退出声)
         timeout: {
             sound: "note.bass",
             volume: 1.0,
@@ -200,6 +198,14 @@ langdata.inits({
     "tell.chestshop.create.money": "{prefix.chestshop}在聊天栏输入价格:  \n{prefix.chestshop}输入 '{keys.cancel}' 取消",
     "tell.chestshop.exit": "{prefix.chestshop}已退出交互",
     "tell.chestshop.trade": "在聊天栏输入你想要 {action} 的数量,您现在能够{action} {count} 个,输入all{action}全部物品",
+    "tell.chestshop.sign.notair": "告示牌所在位置:{pos}非空气方块,请你清除",
+    "tell.chestshop.create": '{prefix.chestshop} §a商店创建成功!',
+    "tell.chestshop.create.checkperm": "{prefix.chestshop} 现在请你打开箱子然后再次关闭完成创建(仅供校验权限)!",
+    // --- 箱子商店交易确认表单 ---
+    "form.chestshop.buy.title": "{prefix.chestshop} 确认购买: {name}",
+    "form.chestshop.buy.confirm": "你确定要向该商店购买 {count}个 {iname} 吗?\n这将会花费 {totalCost} {moneyname}, 你的余额将剩余 {plmoney} {moneyname}",
+    "form.chestshop.sell.title": "{prefix.chestshop} 确认出售: {name}",
+    "form.chestshop.sell.confirm": "你确定要向该商店出售 {count}个 {iname} 吗?\n这将会获得 {totalgive} {moneyname}, 你的余额将变为 {plmoney} {moneyname}",
 
     // --- 箱子商店管理界面 ---
     "form.chestshop.manage.title": "{prefix.chestshop} §l商店配置管理",
@@ -208,10 +214,43 @@ langdata.inits({
     "form.chestshop.manage.input.price.placeholder": "请输入有效数字(支持小数)",
     "form.chestshop.manage.dropdown.type": "商店类型",
     "form.chestshop.manage.switch.showitem": "展示悬浮物品",
+    "form.chestshop.manage.switch.hopper_search": "允许漏斗/矿车吸出物品",
+    "form.chestshop.manage.switch.hopper_push": "允许漏斗/矿车注入物品",
     "tell.chestshop.manage.success": "{prefix.chestshop} §a商店配置已成功更新!",
     "form.chestshop.manage.switch.delete": "§c删除该商店 (危险操作)§r",
-    "tell.chestshop.manage.delete.success": "{prefix.chestshop} §a商店已成功删除!"
+    "tell.chestshop.manage.delete.success": "{prefix.chestshop} §a商店已成功删除!",
+
+    // --- 离线通知与店铺状态异常提示 ---
+    "notice.shop.income": "{prefix.chestshop} §a[收益通知] 您位于 §e{pos} §a的商店售出了 {count}个 {itemname}!",
+    "notice.shop.empty": "{prefix.chestshop} §c[库存警告] 您位于 §e{pos} §c的商店(出售:{itemname}) 已经 §l脱销了§r§c,请及时补货!",
+    "notice.shop.full": "{prefix.chestshop} §c[空间警告] 您位于 §e{pos} §c的商店(收购:{itemname}) 已经 §l没有剩余空间了§r§c,请及时清理!",
+    "notice.shop.expense": "{prefix.chestshop} §e[支出通知] 您位于 §e{pos} §e的商店收购了 {count}个 {itemname},共支出 {money}{moneyname}!",
+
+    // --- 箱子商店交易结果提示 (新增) ---
+    "tell.chestshop.buy.success": "{prefix.chestshop} §a购买成功! 你花费了 {totalCost}{moneyname} 购买了 {iname}, 当前余额: {plmoney}{moneyname}",
+    "tell.chestshop.buy.fail": "{prefix.chestshop} §c购买失败! 可能是商店库存不足或你的背包已满.",
+    "tell.chestshop.sell.success": "{prefix.chestshop} §a出售成功! 你出售了 {iname}, 获得了 {totalgive}{moneyname}, 当前余额: {plmoney}{moneyname}",
+    "tell.chestshop.sell.fail": "{prefix.chestshop} §c出售失败! 可能是商店空间已满或你的物品不足.",
+    // --- 箱子商店报错相关 ---
+    "tell.chestshop.error.block": "§c无法获取箱子方块(请确保商店所在区块已加载)!",
+    "tell.chestshop.error.container": "§c无法访问箱子容器(该方块可能已不是箱子或被破坏)!",
+    "tell.chestshop.error.system": "§c交易期间发生系统错误,请联系管理员查看控制台日志!",
+    // --- 管理员专属 ---
+    "form.chestshop.manage.label.op": "\n§d[OP]§r 当前所有者: §e{ownername}§r\n(UUID: {uuid})",
+    "form.chestshop.manage.switch.system_shop": "§d[OP]§r 设为系统商店 (无限库存/无视所有者)",
+    // --- 箱子商店日志 (ChestShop Log) ---
+    "log.chestshop.create": "创建箱子商店 位置:{pos} 物品:{item.name} 价格:{money}",
+    "log.chestshop.buy": "在箱子商店购买 位置:{pos} 店主:{owner} 物品:{item.name} 数量:{quantity} 总花费:{totalCost}",
+    "log.chestshop.sell": "向箱子商店出售 位置:{pos} 店主:{owner} 物品:{item.name} 数量:{quantity} 总收益:{totalCost}",
+    "log.chestshop.delete": "删除箱子商店 位置:{pos} ID:{shopid}",
+    // --- 快捷命令 (chestshop) 提示语 ---
+    "command.chestshop.reload.success": "§a[PShop] 数据重载成功!",
+    "command.chestshop.reload.fail": "§c[PShop] 数据重载失败!",
+    "command.chestshop.permission.denied": "§c权限不足!你没有执行此操作的权限.",
+    "command.chestshop.target.invalid": "§c错误:请准心对准您的箱子商店或木牌再执行此命令!",
+    "command.chestshop.target.not_shop": "§c错误:该方块不是有效的箱子商店!",
 })
+
 export const lang = {}
 export function loadlang() {
     langdata.reload()
@@ -386,21 +425,15 @@ export const gamelang = {
 export function loadGameLang() {
     gamelang.data = getGameLang(config.get("gamelang") || "zh_CN")
 }
-// export const givesdata = new JsonConfigFile(pluginpath + "gives.json", JSON.stringify({
-//     version: versions,
-// }))
-// if (givesdata.get("version") == null) {
-//     let old = JSON.parse(givesdata.read())
-//     let ks = Object.keys(old)
-//     for (let k of ks) {
-//         if (typeof k != "number" && k != "version") {
-//             addgiveItems(data.name2xuid(k), [old[k].item], [''])
-//             addgiveMoneys(data.name2xuid(k), [old[k].money], [''])
-//             setgiveReduceMoneys(data.name2xuid(k), [])
-//             givesdata.delete(k)
-//         }
-//     }
-// }
+export const givesdata = new JsonConfigFile(pluginpath + "gives.json", JSON.stringify({
+    version: versions,
+}));
+
+// 因为你的数据结构完全变了,旧版本的复杂格式已失效
+// 如果检测到没有 version,直接给它打上版本号即可,丢弃无法兼容的老格式
+if (givesdata.get("version") == null) {
+    givesdata.set("version", versions);
+}
 
 export const SignBlockMap = {
     north: [0, 0, -1],
@@ -434,7 +467,6 @@ export function loaddatas() {
     loadTexture();
     loadShopData();
     loadChestShopData();
-    loadChestShop()
     const endMem = process.memoryUsage();
     logger.warn('完成!使用内存: ' + ((endMem.heapUsed - startMem.heapUsed) / 1024 / 1024).toFixed(2) + ' MB');
     console.timeEnd('加载数据用时');

@@ -1,5 +1,5 @@
 import { GMLIB_BinaryStream, Minecraft } from "../../../GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.js";
-import { getAddPos, getItemInfo, getPosFromPosObj, getPosObjFromPos, getSameItemCount, ReplaceStr, getMaxCount } from "./lib.js";
+import { getAddPos, getItemInfo, getPosFromPosObj, getPosObjFromPos, getSameItemCount, ReplaceStr, getMaxCount, getItemDisplayName } from "./lib.js";
 import { SignBlockMap, signtileDataMap, sideMap, lang, moneyname } from "../consts.js";
 //鸣谢:子沐 Gemini 千问
 const writeY = mc.getServerProtocolVersion() >= 944
@@ -407,17 +407,7 @@ export let mDecrementingID = 9223372036854775807n;
  * @since 2026-07-27
  */
 
-/**
- * 获取物品的显示名称
- */
-export function getItemDisplayName(item) {
-    const translateCode = (typeof config !== 'undefined' && config.get)
-        ? (config.get("itemtranslateCode") ?? "zh_CN")
-        : "zh_CN";
-    const baseName = item.getTranslateName(translateCode);
-    const itemInfo = getItemInfo(item);
-    return itemInfo.CustomName || baseName;
-}
+
 let globalDecrementingID = 9223372036854775807n;
 // export class DropItem {
 //     /**
@@ -629,7 +619,7 @@ let globalDecrementingID = 9223372036854775807n;
 //     }
 // }
 export function getItemChestFloatPosFromIntPos({ x, y, z, dimid }) {
-    return new FloatPos(x + 0.5, y + 0.8, z + 0.5, dimid)
+    return new FloatPos(x + 0.5, y + 0.85, z + 0.5, dimid)
 }
 // const testitem1 = mc.newItem("apple", 1)
 // testitem1.setDisplayName("114514")
@@ -717,7 +707,7 @@ export class ChestShop {
         this.id = --globalDecrementingID;
         this.item = mc.newItem(NBT.parseSNBT(item).setByte("Count", 1));
         this.displayName = getItemDisplayName(this.item);
-        this.ownerName = this.isSystem ? lang.get("chestshopsystem") : data.fromUuid(this.owner)?.name ?? "???",
+        this.ownerName = this.isSystem ? lang.get("chestshop.system") : data.fromUuid(this.owner)?.name ?? "???",
         this.frontText = options.frontText ?? "";
         this.backText = options.backText ?? "";
         this.persistFormatting = options.persistFormatting ?? true;
@@ -728,6 +718,8 @@ export class ChestShop {
         this.visibleDistance = options.visibleDistance || 32;
         this.checkInterval = options.checkInterval || 1500;
         this.renewInterval = options.renewInterval || 5 * 60 * 1000;
+        this.allowHopperPush = options.allowHopperPush ?? false
+        this.allowHopperSearch = options.allowHopperSearch ?? false
 
         this.activePlayers = new Set();
         this._checkTimer = null;
@@ -898,7 +890,7 @@ export class ChestShop {
     }
     getItemCountinChest() {
         if (this.isSystem) {
-            return lang.get("chestshopinfinite");
+            return lang.get("chestshop.infinite");
         }
         const block = mc.getBlock(this.chestPos.x, this.chestPos.y, this.chestPos.z, this.chestPos.dimid);
         if (!block) return 0
@@ -924,8 +916,9 @@ export class ChestShop {
                 break
         }
         if (mc.getBlock(this.signPos)?.isAir) mc.setBlock(this.signPos, "minecraft:wall_sign", signtileDataMap[this.side])
+        const displayCount = this.isSystem ? count : (this.type == "sell" ? count : maxCount - count);
         this.setSignText(lines.map(line => formatSignLine(ReplaceStr(line, {
-            count: this.type == "sell" ? count : maxCount - count,
+            count: displayCount,
             plname: this.ownerName,
             money: this.money,
             moneyname,
@@ -1023,4 +1016,29 @@ export function playClientSound(player, sound = { sound: "114514", volume: 1.0, 
     const packet = bs.createPacket(86);
     return player.sendPacket(packet);
 
+}
+
+/**
+ * 尝试通过 ContainerClosePacket (47) 清空 UI
+ * 
+ * @param {Player} player - 目标玩家对象
+ * @returns {boolean} 是否发送成功
+ */
+export function closeChatByContainer(player) {
+    if (!player || !player.sendPacket) return false;
+
+    try {
+        const bs = new BinaryStream();
+
+        // 写入 Window ID: 0 通常代表玩家的物品栏/背包，也可以尝试传入 -1 或 255
+        bs.writeByte(0);
+        // 写入是否由服务端主导关闭 (Server-side)
+        bs.writeBool(true);
+
+        // ContainerClosePacket 的数据包 ID 为 47
+        return player.sendPacket(bs.createPacket(47));
+    } catch (e) {
+        logger.error(`[PacketAPI] 发送 ContainerClosePacket 错误: ${e}`);
+        return false;
+    }
 }

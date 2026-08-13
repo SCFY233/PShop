@@ -17,7 +17,7 @@ export function parseItemNbt(nbt, otherdeletes = []) {
         if (nbtobj.Block) {
             delete nbtobj.Block.version;
         }
-        if (nbtobj.tag && typeof nbtobj.tag === "object") {
+        if (nbtobj.tag && typeof nbtobj.tag == "object") {
             if (!nbtConfig.MatchBucketEntityCustomName) {
                 const nameTags = ['CustomName', 'AppendCustomName', 'BodyID', 'GroupName'];
                 nameTags.forEach(tag => delete nbtobj.tag[tag]);
@@ -44,8 +44,8 @@ export function parseItemNbt(nbt, otherdeletes = []) {
             const chargedItem = nbtobj.tag.ChargedItem;
             delete nbtobj.tag.Items;
             delete nbtobj.tag.ChargedItem;
-            if (nbtobj.tag?.Damage === null) {
-                nbtobj.tag.Damage = 0
+            if (nbtobj?.tag?.Damage == 0) {
+                delete nbtobj.tag.Damage;
             }
             return {
                 parsednbtobj: nbtobj,
@@ -105,7 +105,7 @@ export function parseItemSNBTs(snbts) {
 export function NBTtoObject(nbt) {
     try {
         const simpleTypes = [NBT.Byte, NBT.Short, NBT.Int, NBT.Long, NBT.Float, NBT.Double, NBT.String];
-        if (nbt.getType() === NBT.Compound) {
+        if (nbt.getType() == NBT.Compound) {
             const obj = {};
             const keys = nbt.getKeys();
             for (const key of keys) {
@@ -113,14 +113,14 @@ export function NBTtoObject(nbt) {
                 const tagType = tag.getType();
                 if (simpleTypes.includes(tagType)) {
                     obj[key] = tag.get();
-                } else if (tagType === NBT.ByteArray) {
+                } else if (tagType == NBT.ByteArray) {
                     obj[key] = tag.getData();
-                } else if (tagType === NBT.List || tagType === NBT.Compound) {
+                } else if (tagType == NBT.List || tagType == NBT.Compound) {
                     obj[key] = NBTtoObject(tag);
                 }
             }
             return obj;
-        } else if (nbt.getType() === NBT.List) {
+        } else if (nbt.getType() == NBT.List) {
             const array = [];
             const size = nbt.getSize();
             for (let i = 0; i < size; i++) {
@@ -128,9 +128,9 @@ export function NBTtoObject(nbt) {
                 const tagType = tag.getType();
                 if (simpleTypes.includes(tagType)) {
                     array.push(tag.get());
-                } else if (tagType === NBT.ByteArray) {
+                } else if (tagType == NBT.ByteArray) {
                     array.push(tag.getData());
-                } else if (tagType === NBT.List || tagType === NBT.Compound) {
+                } else if (tagType == NBT.List || tagType == NBT.Compound) {
                     array.push(NBTtoObject(tag));
                 }
             }

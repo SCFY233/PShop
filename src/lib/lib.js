@@ -3,7 +3,7 @@
 ///<reference path="c:/ll3/bds/plugins/GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.d.ts" />
 import { addSMoney, reduceSMoney, getSMoney, transferSMoney } from "../../../SMoney/lib.js";
 import { parseItemNbt, parseItem } from "./nbt.js"
-import { config, enchs, potions, gamelang, lang, prefix } from "../consts.js"
+import { config, enchs, potions, gamelang, lang, prefix, givesdata } from "../consts.js"
 import fs from 'fs'
 import * as GMLIB from "../../../GMLIB-LegacyRemoteCallApi/lib/GMLIB_API-JS.js"
 /**
@@ -171,80 +171,58 @@ export const moneys =
 export function isPositiveInteger(number) {
     return Number.isInteger(number) && number > 0;
 }
-// //gives相关函数
-// export function addgiveItem(plxuid, item, note) {
-//     let gives = getgives(plxuid)
-//     gives.item.push({
-//         item: item,
-//         note: note
-//     })
-//     givesdata.set(String(plxuid), gives)
-// }
-// export function addgiveMoney(plxuid, money, note) {
-//     let gives = getgives(plxuid)
-//     gives.money.push({
-//         value: money,
-//         note: note
-//     })
-//     givesdata.set(String(plxuid), gives)
-// }
-// export function addgiveReduceMoney(plxuid, money, note) {
-//     let gives = getgives(plxuid)
-//     gives.reducemoney.push({
-//         value: money,
-//         note: note
-//     })
-//     givesdata.set(String(plxuid), gives)
-// }
-// export function addgiveItems(plxuid, items, note) {
-//     items.forEach(item => addgiveItem(plxuid, item, note))
-// }
-// export function addgiveMoneys(plxuid, moneys, note) {
-//     moneys.forEach(money => addgiveMoney(plxuid, money, note))
-// }
-// export function addgiveReduceMoneys(plxuid, moneys, note) {
-//     moneys.forEach(money => addgiveReduceMoney(plxuid, money, note))
-// }
-// export function setgiveItems(plxuid, items = []) {
-//     let gives = getgives(plxuid)
-//     gives.item = items
-//     givesdata.set(String(plxuid), gives)
-// }
-// export function setgiveMoneys(plxuid, moneys = []) {
-//     let gives = getgives(plxuid)
-//     gives.money = moneys
-//     givesdata.set(String(plxuid), gives)
-// }
-// export function setgiveReduceMoneys(plxuid, moneys = []) {
-//     let gives = getgives(plxuid)
-//     gives.reducemoney = moneys
-//     givesdata.set(String(plxuid), gives)
-// }
-// export function getgives(plxuid) {
-//     let gives = givesdata.get(String(plxuid)) || {}
-//     return gives
-// }
-// mc.listen("onJoin", (pl) => {
-//     let gdata = getgives(pl.xuid)
-//     if (!gdata?.item) setgiveItems(pl.xuid, [])
-//     else if (!gdata?.money) setgiveMoneys(pl.xuid, [])
-//     else if (!gdata?.reducemoney) setgiveReduceMoneys(pl.xuid, [])
-//     else {
-//         gdata = getgives(pl.xuid)
-//         gdata.item.forEach(itemsnbt => {
-//             pl.giveItem(mc.newItem(NBT.parseSNBT(itemsnbt.item)))
-//             itemsnbt.note && pl.sendLang("give.item.note", { note: itemsnbt.note })
-//         })
-//         gdata.money.forEach(money => {
-//             moneys.add(pl.xuid, money.money)
-//             money.note && pl.sendLang("give.money.note", { note: money.note })
-//         })
-//         gdata.reducemoney.forEach(money => {
-//             moneys.reduce(pl.xuid, money.money)
-//             money.note && pl.sendLang("give.reducemoney.note", { note: money.note })
-//         })
-//     }
-// })
+// 获取玩家的提示列表
+export function getgives(plxuid) {
+    // 现在直接返回一个数组，没有则返回空数组
+    return givesdata.get(String(plxuid)) || [];
+}
+
+// 添加提示记录
+export function addgiveNotice(plxuid, itemSnbt, count, shopid) {
+    let notices = getgives(plxuid);
+    notices.push({
+        pl: String(plxuid),
+        item: itemSnbt,
+        count: count,
+        shopid: shopid
+    });
+    givesdata.set(String(plxuid), notices);
+}
+
+// 批量添加（如果需要）
+export function addgiveNotices(plxuid, noticesArray) {
+    let notices = getgives(plxuid);
+    notices.push(...noticesArray);
+    givesdata.set(String(plxuid), notices);
+}
+mc.listen("onJoin", (pl) => {
+    let notices = getgives(pl.xuid);
+
+    // 如果该玩家没有待处理的离线提示，直接结束，避免多余运算
+    if (!notices.length) return;
+
+    notices.forEach(d => {
+        // 1. 解析 SNBT 临时生成物品对象，用于获取该物品的真实名称
+        let tempItem = mc.newItem(NBT.parseSNBT(d.item));
+        let itemName = tempItem ? getItemDisplayName(tempItem) : "???";
+        let posStr = "???(?,?,?)";
+        if (chestshops?.[d.shopid]?.chestPos) {
+            posStr = chestshops[d.shopid].chestPos.toString();
+        }
+        let langKey = "notice.shop.income";
+        if (d.type === "empty") {
+            langKey = "notice.shop.empty";
+        } else if (d.type === "full") {
+            langKey = "notice.shop.full";
+        }
+        pl.tell(ReplaceStr(lang.get(langKey), {
+            pos: posStr,
+            count: d.count,
+            itemname: itemName
+        }));
+    });
+    givesdata.set(String(pl.xuid), []);
+});
 /**
  * 获取可以添加的物品数量
  * @param {Player} player 
@@ -252,16 +230,38 @@ export function isPositiveInteger(number) {
  * @param {Number} aux 
  */
 export function getCanPutItemCount(player, item, aux, auxStrict) {
-    let its = player.getInventory().getAllItems()
-    let count = 0
+    let its = player.getInventory().getAllItems();
+    let count = 0;
+
     if (typeof item === "string") {
-        its.filter(i => i.isNull() || (i.type == item && (!auxStrict || i.aux == aux))).forEach(i => count += i.isNull() ? i.maxCount : (i.maxCount - i.count))
+        // 创建一个示例物品来获取该物品真实的 maxCount (比如末影珍珠是16，剑是1)
+        const example = mc.newItem(item, 1);
+        const maxStack = example ? example.maxCount : 64;
+
+        for (let i of its) {
+            if (i.isNull()) {
+                count += maxStack;
+            } else if (i.type === item && (!auxStrict || i.aux === aux)) {
+                count += (i.maxCount - i.count);
+            }
+        }
     } else if (item instanceof NbtCompound) {
-        const example = mc.newItem(item)
-        const examplenbt = parseItem(item)
-        if (auxStrict) its.filter(i => i.isNull() || (i.type == example.type && i.aux == example.aux && same(parseItem(i), examplenbt))).forEach(i => count += i.isNull() ? 64 : (64 - i.count))
+        const example = mc.newItem(item);
+        const maxStack = example ? example.maxCount : 64;
+        const examplenbt = parseItem(item);
+
+        for (let i of its) {
+            if (i.isNull()) {
+                count += maxStack;
+            } else if (i.type === example.type) {
+                const isMatch = !auxStrict || (i.aux === example.aux && same(parseItem(i), examplenbt));
+                if (isMatch) {
+                    count += (i.maxCount - i.count);
+                }
+            }
+        }
     }
-    return count
+    return count;
 }
 export function parseItemNbtForCount(item) {
     const obj = parseItem(item)
@@ -456,8 +456,9 @@ export function getPotionInfo(parsed_data) {
     const id = parsed_data.obj.Name
     if (id.includes("potion")) {
         const potioninfo = {}
+        if (!potions[parsed_data.obj?.Damage]?.effect) return null
         potioninfo.effectname = gamelang.get(potions[parsed_data.obj?.Damage]?.effect?.desc) || "???"
-        potioninfo.effectduration = duration2str(potions[parsed_data.obj?.Damage]?.effect?.duration) || "0:00"
+        potioninfo.effectduration = potions[parsed_data.obj?.Damage]?.effect?.duration == 0 ? "" : duration2str(potions[parsed_data.obj?.Damage]?.effect?.duration) || "0:00"
         return potioninfo
     } else return null
 }
@@ -616,8 +617,93 @@ export function giveItemF(pl, item, count) {
     return true;
 }
 
+/**
+ * 向容器内安全放入指定数量的物品（支持超过最大堆叠数的超大数量）
+ * @param {Container} ct 目标容器对象
+ * @param {Item} item 待增加的物品对象
+ * @param {Number} count 欲添加物品数量
+ * @returns {Boolean} 是否全部放入成功
+ */
+export function putItemToContainer(ct, item, count) {
+    if (count <= 0) return true;
 
+    const maxCount = item.maxCount;
+    const fullStacks = Math.floor(count / maxCount);
+    const remainder = count % maxCount;
 
+    // 提前获取底层 NBT，作为接下来“克隆”新物品的模板
+    const baseNbt = item.getNbt();
+    let isAllSuccess = true;
+
+    // 分批放入整组物品
+    for (let i = 0; i < fullStacks; i++) {
+        // 关键修复：每次必须利用 NBT 实例化一个全新的物品对象，并设定好这一摞的数量
+        const fullStackItem = mc.newItem(baseNbt.setByte("Count", maxCount));
+
+        // 只传入物品对象即可，不需要传第二个参数
+        if (!ct.addItem(fullStackItem)) {
+            isAllSuccess = false;
+            break; // 既然已经失败（通常是箱子满了），直接跳出循环，省去多余性能消耗
+        }
+    }
+
+    // 如果前面的整组都放进去了，再放入剩余零散物品
+    if (remainder > 0 && isAllSuccess) {
+        // 同样：必须新实例化一个对象
+        const remainderItem = mc.newItem(baseNbt.setByte("Count", remainder));
+
+        if (!ct.addItem(remainderItem)) {
+            isAllSuccess = false;
+        }
+    }
+
+    return isAllSuccess;
+}
+/**
+ * 从容器中减少指定数量的特定物品
+ * @param {Container} ct 目标容器对象
+ * @param {Item} item 欲减少的物品参考对象
+ * @param {Number} count 欲减少的数量
+ * @returns {Boolean} 是否完整扣除了指定数量
+ */
+export function reduceItemFromContainer(ct, item, count) {
+    if (count <= 0) return true;
+
+    const items = ct.getAllItems();
+
+    // 将目标物品的 NBT 解析提前，只执行一次，避免在循环中重复开销
+    const targetNbt = parseItemNbtForCount(item);
+
+    let remainingCount = count;
+
+    for (let i = 0; i < items.length; i++) {
+        const curItem = items[i];
+
+        if (!curItem || curItem.isNull()) continue;
+
+        // 先通过 type 进行基础速筛（Fast-fail），再统一使用专用的 forCount 解析并结合高效的 same 深度比较
+        if (curItem.type === item.type && same(parseItemNbtForCount(curItem), targetNbt)) {
+            const deduct = Math.min(curItem.count, remainingCount);
+            if (deduct === curItem.count) {
+                // 如果需要扣除的数量等于当前格子的所有数量，直接将该物品对象置空
+                curItem.setNull();
+            } else {
+                // 如果只扣除一部分，通过修改底层 NBT 字节来改变数量，规避 API 可能的同步异常
+                const nbt = curItem.getNbt();
+                nbt.setByte("Count", curItem.count - deduct);
+                curItem.setNbt(nbt);
+            }
+            // 将修改后的物品对象强制写回容器的对应格子序号
+            ct.setItem(i, curItem);
+
+            remainingCount -= deduct;
+
+            if (remainingCount <= 0) break;
+        }
+    }
+
+    return remainingCount === 0;
+}
 /**
  * 判断方向
  * @param {IntPos} playerPos
@@ -684,3 +770,14 @@ export function getPosObjFromPos(pos) {
     return { x: pos.x, y: pos.y, z: pos.z, dimid: pos.dimid };
 }
 
+/**
+ * 获取物品的显示名称
+ */
+export function getItemDisplayName(item) {
+    const translateCode = (typeof config !== 'undefined' && config.get)
+        ? (config.get("itemtranslateCode") ?? "zh_CN")
+        : "zh_CN";
+    const baseName = item.getTranslateName(translateCode);
+    const itemInfo = getItemInfo(item);
+    return itemInfo.CustomName || baseName;
+}

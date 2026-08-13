@@ -301,7 +301,7 @@
             "effect": {
                 "id": 0,
                 "name": "empty",
-                "desc": "",
+                "desc": "potion.empty",
                 "duration": 0,
                 "amplifier": 0
             }
@@ -333,7 +333,7 @@
             "effect": {
                 "id": 0,
                 "name": "empty",
-                "desc": "",
+                "desc": "potion.empty",
                 "duration": 0,
                 "amplifier": 0
             }
@@ -349,7 +349,7 @@
             "effect": {
                 "id": 0,
                 "name": "empty",
-                "desc": "",
+                "desc": "potion.empty",
                 "duration": 0,
                 "amplifier": 0
             }
@@ -381,7 +381,7 @@
             "effect": {
                 "id": 0,
                 "name": "empty",
-                "desc": "",
+                "desc": "potion.empty",
                 "duration": 0,
                 "amplifier": 0
             }
@@ -413,7 +413,7 @@
             "effect": {
                 "id": 0,
                 "name": "empty",
-                "desc": "",
+                "desc": "potion.empty",
                 "duration": 0,
                 "amplifier": 0
             }

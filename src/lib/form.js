@@ -36,9 +36,9 @@ LLSE_SimpleForm.prototype.addLabels = function (texts) {
 LLSE_Player.prototype.sendBetterModalForm = function (title, content, confirmButton, cancelButton, confirmButtonImage, cancelButtonImage, callback) {
     var gui = mc.newSimpleForm().setTitle(title).setContent(content)
     gui.addButtons([confirmButton, cancelButton], [confirmButtonImage, cancelButtonImage])
-    this.sendForm(gui, function (player, id) {
-        if (id == null) return callback(player, id); else return callback(player, !id);
-    })
+    return this.sendForm(gui, function (player, id) {
+        if (id == null) return callback(player, null); else return callback(player, !id);
+    }, true)
 };
 /**
 * 发送一个消息框表单
