@@ -764,7 +764,7 @@ export class TexturePathParser {
      */
     saveToFile() {
         const json = JSON.stringify(this.result, null, 4);
-        fs.writeFileSync(this.outputPath, json, 'utf8');
+        File.writeTo(this.outputPath, json);
         console.log(`结果已保存到: ${this.outputPath}`);
     }
 
