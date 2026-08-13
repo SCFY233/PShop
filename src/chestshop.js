@@ -403,20 +403,16 @@ export function ManageChestShop(player, shopid, chs) {
     });
 }
 // 商店防护机制 - 提取公共检测函数 (同时检测箱子与木牌)
+// 商店防护机制 - 提取公共检测函数 (同时检测箱子与木牌)
 export function isProtectedShopBlock(pos, blockType) {
     // 1. 优先通过坐标快速检测箱子
     const key = `${pos.dimid}|${Math.floor(pos.x)}|${Math.floor(pos.y)}|${Math.floor(pos.z)}`;
     let shopid = chestmaps[key];
-    if (shopid == null && (!blockType || blockType == "minecraft:chest" || blockType == "minecraft:trapped_chest")) {
-        const linkedPos = getLinkedChestPos(pos);
-        if (linkedPos) {
-            shopid = chestmaps[getPosKey(linkedPos)];
-        }
-    }
+
     // 2. 如果不是箱子，调用原本已有的木牌查询函数检测是否为商店木牌
     if (shopid == null) {
         if (!blockType || blockType == "minecraft:wall_sign") {
-            shopid = getChestShopIDFromSign(pos);
+            shopid = getChestShopIDFromSign(pos)
         }
     }
     return shopid;
