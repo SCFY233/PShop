@@ -11,7 +11,7 @@ export const BDSPath = path.join(__dirname, "..", "..", "..");
 export const pluginpath = "./plugins/Planet/PShop/";
 export const workpath = "./plugins/PShop/";
 export const versions = "4.0.0"
-export const fix = " Alpha 26.08.13-5"
+export const fix = " Release"
 export const author = "Planet工作室-星辰开发组-春风"
 export const moneyname = getSMoneyConfig().moneyname ?? "金币"
 
