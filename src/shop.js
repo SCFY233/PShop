@@ -122,7 +122,7 @@ export const shop = {
             if (data.snbt)
                 maxcount = getCanReductItemCount(player, NBT.parseSNBT(data.snbtstr))
             else
-                maxcount = getCanReductItemCount(player, data.id, data.aux, data.auxStrict ?? false)
+                maxcount = getCanReductItemCount(player, data.id, data.aux, data.auxStrict ?? config.get("shop_ignore_aux_default") ?? false)
             gui.setTitle(ReplaceStr(lang.get("form.shop.sell.item.title"), { name: idata.name }))
             gui.addLabel(icontent)
             gui.addDivider()
@@ -153,7 +153,7 @@ export const shop = {
                             if (id == false) return shop.sellItem(pl, idata, Object.assign(options, { input: String(plcount) }), backfunction)
                             let r
                             if (data.snbt != true)
-                                r = reduceItembyType(player, data.id, data.aux, plcount, data.auxStrict ?? false)
+                                r = reduceItembyType(player, data.id, data.aux, plcount, data.auxStrict ?? config.get("shop_ignore_aux_default") ?? false)
                             else
                                 r = reduceItembyNbt(player, data.snbtstr, plcount)
                             if (r == false) return

@@ -34,8 +34,8 @@ export const config = new JsonConfigFile(pluginpath + "config.json", JSON.string
         }
     },
     prefix: {
-        shop: "[PShop-商店]",
-        chestshop: "[PShop-箱子商店]"
+        shop: "[系统商店]",
+        chestshop: "[箱子商店]"
     },
     enable: {
         shop: true,
@@ -63,6 +63,7 @@ export const config = new JsonConfigFile(pluginpath + "config.json", JSON.string
     },
     gamelang: "zh_CN",
     itemtranslateCode: "zh_CN",
+    protectChestAndSign: true,
     banitems: ["minecraft:bedrock"],
     update_url: "http://update.mcmap.top/?name=PShop",
     chestshop_sounds: {
