@@ -56,14 +56,14 @@ export function getLinkedChestPos(pos) {
 }
 const checkPerms = {}
 //新建箱子商店函数
-    /**
-     * 
-     * @param {Player} player 
-     * @param {Block} chest 
-     * @param {Item} item 
-     * @param {Number} side 
-     * @param {String} msg
-     */
+/**
+ * 
+ * @param {Player} player 
+ * @param {Block} chest 
+ * @param {Item} item 
+ * @param {Number} side 
+ * @param {String} msg
+ */
 export function newChestShop(player, chest, item, side, msg) {
 
     const money = Number(msg)
@@ -324,7 +324,7 @@ export function ManageChestShop(player, shopid, chs) {
             const signPos = getAddPos(chestPos, SignBlockMap[sideMap[d.side]]);
 
             // 1. 销毁实例（清理悬浮物等）
-                chs.destroy();
+            chs.destroy();
             // 2. 从内存和持久化数据中彻底移除
             delete chestshopdata[shopid];
             delete chestshops[shopid];
@@ -385,7 +385,7 @@ export function ManageChestShop(player, shopid, chs) {
         }
         saveChestShopData();
         // 2. 销毁旧实例
-            chs.destroy();
+        chs.destroy();
 
 
         // 3. 重新生成并覆盖
@@ -405,14 +405,17 @@ export function ManageChestShop(player, shopid, chs) {
 // 商店防护机制 - 提取公共检测函数 (同时检测箱子与木牌)
 // 商店防护机制 - 提取公共检测函数 (同时检测箱子与木牌)
 export function isProtectedShopBlock(pos, blockType) {
-    // 1. 优先通过坐标快速检测箱子
-    const key = `${pos.dimid}|${Math.floor(pos.x)}|${Math.floor(pos.y)}|${Math.floor(pos.z)}`;
+    // 1. 预先计算并向下取整确保精度，生成一次 Key 即可
+    const dimid = pos.dimid;
+    const x = Math.floor(pos.x), y = Math.floor(pos.y), z = Math.floor(pos.z);
+    const key = `${dimid}|${x}|${y}|${z}`;
+
     let shopid = chestmaps[key];
 
-    // 2. 如果不是箱子，调用原本已有的木牌查询函数检测是否为商店木牌
+    // 2. 如果不是箱子，直接复用 key 查询木牌字典，避免产生多余的函数调用与字符串碎片
     if (shopid == null) {
-        if (!blockType || blockType == "minecraft:wall_sign") {
-            shopid = getChestShopIDFromSign(pos)
+        if (!blockType || blockType === "minecraft:wall_sign") {
+            shopid = signmaps[key];
         }
     }
     return shopid;
@@ -443,12 +446,8 @@ export function loadChestShop() {
     }
     return true
 }
-const SHOP_BLOCK_TYPES = new Set([
-    "minecraft:wall_sign",
-    "minecraft:chest"
-]);
-const pendingCreateChestShop = {}
-const pendingTradeChestShop = {}
+const pendingCreateChestShop = Object.create(null)
+const pendingTradeChestShop = Object.create(null)
 const manageLockMap = new Set();
 
 
@@ -711,25 +710,24 @@ if (config.get("enable").chestshop) {
 
     mc.listen("onHopperSearchItem", (pos, isMinecart, item) => {
         const x = Math.floor(pos.x); const y = Math.floor(pos.y); const z = Math.floor(pos.z); const dimid = pos.dimid;
-        for (let i = 0; i < HOPPER_SEARCH_OFFSETS.length; i++) {
-            const offset = HOPPER_SEARCH_OFFSETS[i];
-            const shopid = chestmaps[`${dimid}|${x + offset[0]}|${y + offset[1]}|${z + offset[2]}`];
-            if (shopid != null) {
-                const chs = chestshops[shopid];
-                if (chs && !chs.allowHopperSearch) return false;
-            }
+        const shopid = chestmaps[`${dimid}|${x}|${y + 1}|${z}`]
+            ?? chestmaps[`${dimid}|${x}|${y}|${z}`];
+        if (shopid != null) {
+            const chs = chestshops[shopid];
+            if (chs && !chs.allowHopperSearch) return false;
         }
     });
 
     mc.listen("onHopperPushOut", (pos, isMinecart, item) => {
-        const x = Math.floor(pos.x); const y = Math.floor(pos.y); const z = Math.floor(pos.z); const dimid = pos.dimid;
-        for (let i = 0; i < HOPPER_PUSH_OFFSETS.length; i++) {
-            const offset = HOPPER_PUSH_OFFSETS[i];
-            const shopid = chestmaps[`${dimid}|${x + offset[0]}|${y + offset[1]}|${z + offset[2]}`];
-            if (shopid != null) {
-                const chs = chestshops[shopid];
-                if (chs && !chs.allowHopperPush) return false;
-            }
+        const x = Math.floor(pos.x), y = Math.floor(pos.y), z = Math.floor(pos.z), dimid = pos.dimid;
+        const shopid = chestmaps[`${dimid}|${x}|${y - 1}|${z}`]
+            ?? chestmaps[`${dimid}|${x + 1}|${y}|${z}`]
+            ?? chestmaps[`${dimid}|${x - 1}|${y}|${z}`]
+            ?? chestmaps[`${dimid}|${x}|${y}|${z + 1}`]
+            ?? chestmaps[`${dimid}|${x}|${y}|${z - 1}`];
+        if (shopid != null) {
+            const chs = chestshops[shopid];
+            if (chs && !chs.allowHopperPush) return false;
         }
     });
 
@@ -758,60 +756,60 @@ if (config.get("enable").chestshop) {
         }
         return true;
     });
+    if (config.get("protectChestAndSign")) {
+        // Hook 爆炸 by 子沐呀
+        // 子沐nb666(雾)
+        const protectedResistances = [];
 
-    // Hook 爆炸 by 子沐呀
-    // 子沐nb666(雾)
-    const protectedResistances = [];
+        function registerBlockResistances(blockName, minState, maxState, defaultVal) {
+            const name = iListenAttentively.alignedMallocMemory(48, 8);
+            iListenAttentively.setUnsignedLongLong(name, "14916867654084188803"); // hash 
+            iListenAttentively.callExportedFunction("ctorString", false, name + 8, blockName); // name 
+            iListenAttentively.setUnsignedLongLong(name + 40, 0); // last match 
+            const block = iListenAttentively.mallocMemory(8);
+            const funcPtr = iListenAttentively.getAddressFromSymbol("LeviLamina", `?tryGetFromRegistry@Block@@SA?AV?$optional_ref@$$CBVBlock@@@@AEBVHashedString@@G@Z`);
 
-    function registerBlockResistances(blockName, minState, maxState, defaultVal) {
-        const name = iListenAttentively.alignedMallocMemory(48, 8);
-        iListenAttentively.setUnsignedLongLong(name, "14916867654084188803"); // hash 
-        iListenAttentively.callExportedFunction("ctorString", false, name + 8, blockName); // name 
-        iListenAttentively.setUnsignedLongLong(name + 40, 0); // last match 
-        const block = iListenAttentively.mallocMemory(8);
-        const funcPtr = iListenAttentively.getAddressFromSymbol("LeviLamina", `?tryGetFromRegistry@Block@@SA?AV?$optional_ref@$$CBVBlock@@@@AEBVHashedString@@G@Z`);
-
-        for (let index = minState; index <= maxState; index++) { // 遍历方块朝向状态
-            iListenAttentively.dynamicCall(
-                funcPtr,
-                iListenAttentively.NativeType.Pointer,
-                [iListenAttentively.NativeType.Pointer, iListenAttentively.NativeType.Pointer, iListenAttentively.NativeType.UnsignedShort],
-                [block, name, index]
-            );
-            const blockPtr = iListenAttentively.getUnsignedLongLong(block);
-            if (blockPtr) {
-                protectedResistances.push({
-                    address: blockPtr + 188, // 抗性字段偏移
-                    defaultVal: defaultVal   // 原始默认抗性
-                });
+            for (let index = minState; index <= maxState; index++) { // 遍历方块朝向状态
+                iListenAttentively.dynamicCall(
+                    funcPtr,
+                    iListenAttentively.NativeType.Pointer,
+                    [iListenAttentively.NativeType.Pointer, iListenAttentively.NativeType.Pointer, iListenAttentively.NativeType.UnsignedShort],
+                    [block, name, index]
+                );
+                const blockPtr = iListenAttentively.getUnsignedLongLong(block);
+                if (blockPtr) {
+                    protectedResistances.push({
+                        address: blockPtr + 188, // 抗性字段偏移
+                        defaultVal: defaultVal   // 原始默认抗性
+                    });
+                }
             }
+
+            iListenAttentively.callExportedFunction("dtorString", false, name + 8); // name 
+            iListenAttentively.alignedFreeMemory(name);
         }
 
-        iListenAttentively.callExportedFunction("dtorString", false, name + 8); // name 
-        iListenAttentively.alignedFreeMemory(name);
+        mc.listen("onServerStarted", () => {
+            registerBlockResistances("minecraft:chest", 2, 5, 2.5);
+            registerBlockResistances("minecraft:wall_sign", 2, 5, 1.0);
+        });
+
+        iListenAttentively.hook(
+            iListenAttentively.getAddressFromSymbol(
+                `?explode@Explosion@@QEAA_NAEAVIRandom@@@Z`
+            ),
+            (origin, self, random) => {
+                for (let item of protectedResistances) {
+                    iListenAttentively.setFloat(item.address, 1314520);
+                }
+                origin(self, random);
+                for (let item of protectedResistances) {
+                    iListenAttentively.setFloat(item.address, item.defaultVal);
+                }
+            },
+            iListenAttentively.NativeType.Void,
+            [iListenAttentively.NativeType.Pointer, iListenAttentively.NativeType.Pointer]
+        );
     }
-
-    mc.listen("onServerStarted", () => {
-        registerBlockResistances("minecraft:chest", 2, 5, 2.5);
-        registerBlockResistances("minecraft:wall_sign", 2, 5, 1.0);
-        loadChestShop()
-    });
-
-    iListenAttentively.hook(
-        iListenAttentively.getAddressFromSymbol(
-            `?explode@Explosion@@QEAA_NAEAVIRandom@@@Z`
-        ),
-        (origin, self, random) => {
-            for (let item of protectedResistances) {
-                iListenAttentively.setFloat(item.address, 1314520);
-            }
-            origin(self, random);
-            for (let item of protectedResistances) {
-                iListenAttentively.setFloat(item.address, item.defaultVal);
-            }
-        },
-        iListenAttentively.NativeType.Void,
-        [iListenAttentively.NativeType.Pointer, iListenAttentively.NativeType.Pointer]
-    );
-
+    mc.listen("onServerStarted", () => loadChestShop())
 }
